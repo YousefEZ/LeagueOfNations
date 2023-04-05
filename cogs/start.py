@@ -1,16 +1,14 @@
-from typing import Literal
-
 import sqlalchemy
 from discord.ext import commands
 
-from qalib import qalib_context
+from qalib import qalib_context, QalibContext
 from qalib.template_engines import formatter
 
 from host.player import Player
 
-NameTooLong = Literal["name_too_long"]
-NameTooShort = Literal["name_too_short"]
-NationStarted = Literal["start"]
+NameTooLong = "name_too_long"
+NameTooShort = "name_too_short"
+NationStarted = "start"
 
 
 class Start(commands.Cog):
@@ -22,19 +20,19 @@ class Start(commands.Cog):
 
     @commands.command()
     @qalib_context(formatter.Formatter(), "templates/start.xml")
-    async def start(self, ctx, *args):
+    async def start(self, ctx: QalibContext, *args):
         name = ' '.join(args)
 
         if len(name) < 3:
-            await ctx.rendered_send(NameTooShort, name)
+            await ctx.rendered_send(NameTooShort, keywords={"name": name})
             return
 
         if len(name) > 75:
-            await ctx.rendered_send(NameTooLong, name)
+            await ctx.rendered_send(NameTooLong, keywords={"name": name})
             return
 
         Player.start(ctx.message.author.id, name, self._engine)
-        await ctx.rendered_send(NationStarted, name)
+        await ctx.rendered_send(NationStarted, keywords={"name": name})
 
 
 def setup(bot):

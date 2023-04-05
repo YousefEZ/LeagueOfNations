@@ -1,0 +1,77 @@
+<discord>
+    <message key="start">
+        <embed>
+            <title>__NATION CREATED__</title>
+            <colour>teal</colour>
+            <fields>
+                <field>
+                    <name>:white_check_mark: {nation_name} Entered the League of Nations</name>
+                    <value>
+                        :sparkles: On welcome, the body hereby grants you £**`3,000,000`**
+                        We suggest joining the official server to receive updates, chat with the community, post
+                        suggestions, voice your opinion on certain game updates, and much more!
+                        https://discord.gg/ZuhPxsK
+                        **Need Help?**
+                        Type **-`help`** to view a list of all help categories.
+                    </value>
+                </field>
+            </fields>
+            <footer>
+                <text>\u00A9 2018 | LoN Bot</text>
+                <icon>https://cdn.discordapp.com/avatars/449719890312691715/f4ed4549080d4925f4954cf5077620b1.png</icon>
+            </footer>
+            <thumbnail>https://i.redd.it/piou3xdt6epz.png</thumbnail>
+        </embed>
+    </message>
+    <message key="name_taken">
+        <embed>
+            <title>Name Taken</title>
+            <colour>magenta</colour>
+            <fields>
+                <field>
+                    <name>Please use a different name</name>
+                    <value>{name} is already taken, please select a different name.</value>
+                </field>
+            </fields>
+        </embed>
+    </message>
+    <message key="name_too_long">
+        <embed>
+            <title>Too Long</title>
+            <colour>magenta</colour>
+            <fields>
+                <field>
+                    <name>Please use a shorter name</name>
+                    <value>{name} is too long, please select a shorter name (less than 75 characters).</value>
+                </field>
+            </fields>
+        </embed>
+    </message>
+    <message key="name_too_short">
+        <embed>
+            <title>Too Short</title>
+            <colour>magenta</colour>
+            <fields>
+                <field>
+                    <name>Please use a longer name</name>
+                    <value>{name} is too short, please select a longer name (more than 3 characters).</value>
+                </field>
+            </fields>
+        </embed>
+    </message>
+    <message key="error_occurred">
+        <embed>
+            <title>Error Occurred</title>
+            <colour>magenta</colour>
+            <fields>
+                <field>
+                    <name>An error occurred</name>
+                    <value>
+                        Please take a screenshot, and report it on the official discord server:
+                        https://discord.gg/ZuhPxsK
+                    </value>
+                </field>
+            </fields>
+        </embed>
+    </message>
+</discord>

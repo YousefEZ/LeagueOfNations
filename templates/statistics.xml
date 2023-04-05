@@ -1,0 +1,54 @@
+<discord>
+    <menu key="statistics">
+        <message key="player_statistics">
+            <embed>
+                <title>Statistics {player.meta.nation}</title>
+                <colour>teal</colour>
+                <fields>
+                    <field>
+                        <name>This is accurate of {timestamp}</name>
+                        <value>
+                            :population: Population: {player.population}
+                        </value>
+                    </field>
+                </fields>
+            </embed>
+        </message>
+        <message key="finance">
+            <embed>
+                <title>Finance Page</title>
+                <colour>teal</colour>
+                <fields>
+                    <field>
+                        <name>Commercial Development</name>
+                        <value>:dollars: {player.bank.balance}</value>
+                    </field>
+                </fields>
+            </embed>
+        </message>
+    </menu>
+    <message key="balance">
+        <embed>
+            <title>Balance {player.meta.nation}</title>
+            <colour>magenta</colour>
+            <fields>
+                <field>
+                    <name>Bank of {player.bank.name}</name>
+                    <value>:dollar: {player.bank.balance}</value>
+                </field>
+            </fields>
+        </embed>
+    </message>
+    <message key="Invalid Nation">
+        <embed>
+            <title>Invalid Nation</title>
+            <colour>red</colour>
+            <fields>
+                <field>
+                    <name>Invalid Nation</name>
+                    <value>Invalid Nation</value>
+                </field>
+            </fields>
+        </embed>
+    </message>
+</discord>

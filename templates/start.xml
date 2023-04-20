@@ -22,6 +22,24 @@
             </footer>
             <thumbnail>https://i.redd.it/piou3xdt6epz.png</thumbnail>
         </embed>
+        <view>
+            <button key="confirm_start">
+                <label>Confirm</label>
+                <emoji>
+                    <name>✅</name>
+                </emoji>
+                <colour>green</colour>
+                <style>primary</style>
+            </button>
+            <button key="decline_start">
+                <label>Decline</label>
+                <colour>red</colour>
+                <emoji>
+                    <name>❌</name>
+                </emoji>
+                <style>primary</style>
+            </button>
+        </view>
     </message>
     <message key="name_taken">
         <embed>

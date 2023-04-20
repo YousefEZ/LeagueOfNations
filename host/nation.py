@@ -17,7 +17,6 @@ class MetadataModel(Base):
     nation: Mapped[str] = mapped_column(candidate_key=True)
 
 
-
 class Metadata:
     def __init__(self, identifier: int):
         self._identifier = identifier
@@ -28,7 +27,7 @@ class Metadata:
         return self._metadata.nation
 
 
-class Player:
+class Nation:
     def __init__(self, identifier: int):
         self._identifier: int = identifier
 

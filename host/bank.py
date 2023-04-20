@@ -6,7 +6,7 @@ import sqlalchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session
 
 if TYPE_CHECKING:
-    from host.player import Player
+    from host.nation import Nation
 
 
 class Base(DeclarativeBase):
@@ -26,9 +26,9 @@ class BankModel(Base):
 class Bank:
     __slots__ = "_identifier", "_player", "_engine", "_bank"
 
-    def __init__(self, identifier: int, player: Player, engine: sqlalchemy.Engine):
+    def __init__(self, identifier: int, player: Nation, engine: sqlalchemy.Engine):
         self._identifier: int = identifier
-        self._player: Player = player
+        self._player: Nation = player
         self._engine: sqlalchemy.Engine = engine
         with Session(self._engine) as session:
             bank: Optional[BankModel] = session.query(BankModel).filter_by(user_id=self._identifier).first()

@@ -6,7 +6,11 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
-cogs = "start",
+from host.player import Nation
+
+cogs = "start", "economy"
+
+connect_to_db = False
 
 
 class LeagueOfNations(commands.AutoShardedBot):
@@ -18,9 +22,21 @@ class LeagueOfNations(commands.AutoShardedBot):
             case_insensitive=True,
             intents=discord.Intents.all()
         )
-        self._engine = create_engine(url, echo=True)
+        self.engine = create_engine(url, echo=True) if connect_to_db else None
         self.remove_command('help')
+
+    async def setup_hook(self) -> None:
         self.loop.create_task(self.ready())
+
+    async def get_nation(self, user_id: int) -> Nation:
+        """Get the nation of the user with that user identifier
+
+        Args:
+            user_id (int): The ID of the user to get
+
+        Returns (discord.User): The user
+        """
+        ...
 
     @property
     def connection(self) -> sqlalchemy.engine.Connection:
@@ -28,7 +44,7 @@ class LeagueOfNations(commands.AutoShardedBot):
 
         Returns (sqlalchemy.engine.Connection): An active connection to the database
         """
-        return self._engine.connect()
+        return self.engine.connect()
 
     async def ready(self):
         await self.wait_until_ready()
@@ -41,13 +57,15 @@ class LeagueOfNations(commands.AutoShardedBot):
         else:
             print('*[CLIENT][LOADING_EXTENSION][STATUS] SUCCESS')
 
+        await self.tree.sync()
+
 
 if __name__ == "__main__":
     load_dotenv()
+
     TOKEN = os.getenv("DISCORD_TOKEN")
     URL = os.getenv("DATABASE_URL")
-
     assert TOKEN is not None, "MISSING TOKEN IN .env FILE"
     assert URL is not None, "MISSING DATABASE_URL IN .env FILE"
 
-    LeagueOfNations(URL).run(TOKEN)
+    LeagueOfNations(URL).run(token=TOKEN)

@@ -1,0 +1,9 @@
+{
+  "School": {
+    "emoji": "🏫",
+    "boosts": {
+    },
+    "limit": 1,
+    "cost": 250000
+  }
+}

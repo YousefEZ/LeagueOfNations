@@ -1,5 +1,5 @@
-discord-qalib==2.1.2
-discord.py==2.2.2
+discord-qalib==2.2.1
+discord.py==2.2.3
 python-dotenv==1.0.0
-sqlalchemy==2.0.9
-Pint>=0.20.1
+sqlalchemy==2.0.12
+Pint==0.21

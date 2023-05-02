@@ -1,9 +1,9 @@
 from typing import Literal
 
-import qalib
 from discord import app_commands
 from discord.ext import commands
 from qalib.template_engines import formatter
+import qalib
 
 from lon import LeagueOfNations
 

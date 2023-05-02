@@ -5,7 +5,7 @@ import qalib
 from discord import app_commands
 from discord.ext import commands
 from qalib.template_engines import formatter
-from sqlalchemy import Engine
+from sqlalchemy.engine import Engine
 
 from lon import LeagueOfNations
 

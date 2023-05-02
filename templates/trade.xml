@@ -1,0 +1,29 @@
+<discord>
+
+    <message key="trade_sent">
+
+    </message>
+    <message key="trade_accepted">
+
+    </message>
+    <message key="trade_declined">
+    </message>
+    <message key="trade_cancelled">
+    </message>
+
+    <message key="too_many_trades">
+        <content>:x: Too Many Active Trades</content>
+    </message>
+    <message key="too_many_active_agreements">
+
+    </message>
+    <message key="trade_partner_full">
+
+    </message>
+    <message key="cannot_trade_with_self">
+
+    </message>
+    <message>
+
+    </message>
+</discord>

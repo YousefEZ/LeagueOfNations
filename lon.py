@@ -5,8 +5,10 @@ import sqlalchemy.engine
 from discord.ext import commands
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 
 from host.nation import Nation
+from host.types import UserId
 
 cogs = "start", "economy"
 
@@ -22,7 +24,7 @@ class LeagueOfNations(commands.AutoShardedBot):
             case_insensitive=True,
             intents=discord.Intents.all()
         )
-        self.engine = create_engine(url, echo=True) if connect_to_db else None
+        self.engine: Engine = create_engine(url, echo=True)
         self.remove_command('help')
 
     async def setup_hook(self) -> None:
@@ -32,11 +34,11 @@ class LeagueOfNations(commands.AutoShardedBot):
         """Get the nation of the user with that user identifier
 
         Args:
-            user_id (int): The ID of the user to get
+            user_id (UserId): The ID of the user to get
 
         Returns (discord.User): The user
         """
-        ...
+        return Nation(UserId(user_id), self.engine)
 
     @property
     def connection(self) -> sqlalchemy.engine.Connection:

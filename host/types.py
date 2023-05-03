@@ -6,7 +6,7 @@ from pint import UnitRegistry
 from typing_extensions import NotRequired
 
 Ministries = Literal["Bank", "Trade"]
-Boosts = Literal["happiness_modifier", "daily_income", "income_modifier"]
+Boosts = Literal["happiness_modifier", "income_modifier", "income_increase", "bill_modifier", "bill_reduction"]
 
 Infrastructure = NewType("Infrastructure", int)
 Happiness = NewType("Happiness", float)
@@ -26,6 +26,15 @@ ResourceTypes = Literal[
 ImprovementTypes = Literal[
     "School", "Hospital", "Clinic", "Theater", "Stadium", "Factory", "Bank", "Supermarket", "Shopping Mall",
 ]
+
+GovernmentTypes = Literal["Democracy", "Monarchy", "Dictatorship", "Communism", "Anarchy"]
+
+
+class Government(TypedDict):
+    name: GovernmentTypes
+    emoji: str
+    description: str
+    boosts: BoostsLookup
 
 
 class BoostsLookup(TypedDict):

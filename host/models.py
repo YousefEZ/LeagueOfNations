@@ -78,3 +78,10 @@ class ImprovementsModel(Base):
     user_id: Mapped[int]
     name: Mapped[types.ImprovementTypes]
     quantity: Mapped[int]
+
+
+class GovernmentModel(Base):
+    __tablename__ = "Government"
+
+    user_id: Mapped[int] = mapped_column(primary_key=True)
+    type: Mapped[types.GovernmentTypes]

@@ -49,12 +49,12 @@ class Improvement:
     @property
     @types.ureg.wraps(types.Currency, None)
     def price(self) -> Quantity:
-        return Quantity(self.improvement["price"], types.Currency)
+        return types.ureg.Quantity(self.improvement["price"], types.Currency)
 
     @property
     @types.ureg.wraps(types.CurrencyRate, None)
     def cost(self) -> Quantity:
-        return Quantity(self.improvement["cost"] * self._improvement.quantity, types.CurrencyRate)
+        return self.improvement["cost"] * self._improvement.quantity * types.CurrencyRate
 
     def _buy(self, quantity: int) -> None:
         self._player.bank.deduct(self.price * quantity)
@@ -126,8 +126,8 @@ class Interior(Ministry):
 
     @property
     @types.ureg.wraps(types.CurrencyRate, None)
-    def expenditure(self) -> Quantity:
-        return Quantity(0, types.CurrencyRate)
+    def bill(self) -> Quantity:
+        return types.ureg.Quantity(0, types.CurrencyRate)
 
     @property
     def infrastructure(self) -> types.Infrastructure:

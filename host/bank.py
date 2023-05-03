@@ -7,7 +7,7 @@ from pint import Quantity
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-from host.types import Currency, ureg, CurrencyRate
+from host import types
 from host.ministry import Ministry
 from host.models import BankModel
 
@@ -45,35 +45,36 @@ class Bank(Ministry, FundReceiver, FundSender):
             self._bank: BankModel = bank
 
     @property
-    @ureg.wraps(Currency, None)
+    @types.ureg.wraps(types.Currency, None)
     def funds(self) -> Quantity:
         self._update_treasury()
-        return Quantity(self._bank.treasury, Currency)
-
-    def _calculate_revenue(self) -> Quantity:
-        happiness = self._player.happiness
-        population = self._player.population
-        revenue = happiness * 3 * 86400 * population
-        return revenue * self.tax_rate
+        return self._bank.treasury
 
     @property
-    @ureg.wraps(CurrencyRate, None)
+    @types.ureg.wraps(types.CurrencyRate, None)
     def national_revenue(self) -> Quantity:
-        revenue = ureg.Quantity(sum(ministry.boost("daily_income") for ministry in self._player.ministries),
-                                Currency / ureg.day)
+        income_modifier = self._player.boost("income_modifier")
+        income_increase = self._player.boost("income_increase") * types.CurrencyRate
 
-        return revenue
+        revenue = self._player.revenue
+        revenue += sum(ministry.revenue for ministry in self._player.ministries) * types.CurrencyRate + income_increase
+        return revenue * (1 + income_modifier / 100)
+
+    @types.ureg.wraps(types.CurrencyRate, None)
+    def national_bill(self) -> Quantity:
+        bill_modifier = self._player.boost("bill_modifier")
+        bill_reduction = self._player.boost("bill_reduction") * types.CurrencyRate
+
+        costs = sum(ministry.bill for ministry in self._player.ministries)
+        costs = 0 * types.CurrencyRate if costs < bill_reduction else costs - bill_reduction
+
+        return costs * (1 - bill_modifier / 100)
 
     @property
-    @ureg.wraps(CurrencyRate, None)
-    def national_expenditure(self) -> Quantity:
-        return Quantity(0.0, CurrencyRate)
-
-    @property
-    @ureg.wraps(CurrencyRate, None)
+    @types.ureg.wraps(types.CurrencyRate, None)
     def national_profit(self) -> Quantity:
         revenue: Quantity = self.national_revenue
-        expenditure: Quantity = self.national_expenditure
+        expenditure: Quantity = self.national_bill
         return revenue - expenditure
 
     @property
@@ -92,40 +93,42 @@ class Bank(Ministry, FundReceiver, FundSender):
 
     def _update_treasury(self) -> None:
         current_time = datetime.now()
-        self._bank.treasury += self._retrieve_profit(current_time)
+        self._bank.treasury += int(self._retrieve_profit(current_time).magnitude)
         self._bank.last_accessed = current_time
         with Session(self._engine) as session:
             session.commit()
 
-    @ureg.wraps(Currency, None)
+    @types.ureg.wraps(types.Currency, None)
     def _retrieve_revenue(self, timestamp: datetime) -> Quantity:
         time_difference: timedelta = timestamp - self._bank.last_accessed
-        seconds = Quantity(time_difference.total_seconds(), ureg.seconds)
-        return self.national_revenue * seconds
+        seconds = time_difference.total_seconds() * types.ureg.seconds
+        return self.national_revenue.to(types.Currency / types.ureg.seconds) * seconds
 
-    @ureg.wraps(Currency, None)
-    def _retrieve_expenses(self, timestamp: datetime) -> Quantity:
+    @types.ureg.wraps(types.Currency, None)
+    def _retrieve_bill(self, timestamp: datetime) -> Quantity:
         time_difference: timedelta = timestamp - self._bank.last_accessed
-        seconds = Quantity(time_difference.total_seconds(), ureg.seconds)
-        return self.national_expenditure * seconds
+        seconds = time_difference.total_seconds() * types.ureg.seconds
+        return self.national_bill.to(types.Currency / types.ureg.seconds) * seconds
 
-    @ureg.wraps(Currency, None)
+    @types.ureg.wraps(types.Currency, None)
     def _retrieve_profit(self, timestamp: datetime) -> Quantity:
         revenue: Quantity = self._retrieve_revenue(timestamp)
-        expenses: Quantity = self._retrieve_expenses(timestamp)
+        expenses: Quantity = self._retrieve_bill(timestamp)
         return revenue - expenses
 
-    @ureg.wraps(None, [None, Currency])
+    @types.ureg.wraps(None, [None, types.Currency])
     def add(self, amount: Quantity) -> None:
+        if amount < 0 * types.Currency:
+            raise ValueError("Cannot add negative funds")
         self._bank.treasury = self.funds + amount
         with Session(self._engine) as session:
             session.commit()
 
-    @ureg.wraps(None, [None, Currency])
+    @types.ureg.wraps(None, [None, types.Currency])
     def enough_funds(self, amount: Quantity) -> bool:
         return self.funds >= amount
 
-    @ureg.wraps(None, [None, Currency, None])
+    @types.ureg.wraps(None, [None, types.Currency, None])
     def deduct(self, amount: Quantity, force: bool = True) -> None:
         if self._bank < amount and not force:
             raise ValueError("Insufficient funds")
@@ -134,7 +137,7 @@ class Bank(Ministry, FundReceiver, FundSender):
         with Session(self._engine) as session:
             session.commit()
 
-    @ureg.wraps(None, [None, Currency, None])
+    @types.ureg.wraps(None, [None, types.Currency, None])
     def send(self, amount: Quantity, target: FundReceiver) -> SendingResponses:
         if self.funds < amount:
             return "insufficient_funds"
@@ -146,6 +149,6 @@ class Bank(Ministry, FundReceiver, FundSender):
             raise e
         return "success"
 
-    @ureg.wraps(None, [None, Currency])
+    @types.ureg.wraps(None, [None, types.Currency])
     def receive(self, funds: Quantity) -> None:
         self.add(funds)

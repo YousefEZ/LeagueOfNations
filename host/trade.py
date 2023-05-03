@@ -8,8 +8,7 @@ from uuid import uuid4
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-from host.models import TradeRequestModel, TradeModel, ResourcesModel
-from host.types import ResourcePair, Boosts, UserId, ResourceTypes
+from host import types, models
 from host.ministry import Ministry
 
 if TYPE_CHECKING:
@@ -25,11 +24,14 @@ DeclineMessages = Literal["trade_declined"]
 
 CancelMessages = Literal["trade_cancelled"]
 
+with open("objects/resources.json", "r") as resources_file:
+    Resources = resources_file.read()
+
 
 class TradeRequest:
 
-    def __init__(self, trade: TradeRequestModel):
-        self._trade: Optional[TradeRequestModel] = trade
+    def __init__(self, trade: models.TradeRequestModel):
+        self._trade: Optional[models.TradeRequestModel] = trade
 
     @cached_property
     def id(self) -> str:
@@ -38,13 +40,13 @@ class TradeRequest:
         return self._trade.trade_id
 
     @cached_property
-    def sponsor(self) -> UserId:
+    def sponsor(self) -> types.UserId:
         if self._trade is None:
             raise ValueError("Trade has already been accepted or declined")
         return self._trade.sponsor
 
     @cached_property
-    def recipient(self) -> UserId:
+    def recipient(self) -> types.UserId:
         if self._trade is None:
             raise ValueError("Trade has already been accepted or declined")
         return self._trade.recipient
@@ -67,17 +69,17 @@ class TradeRequest:
 
 class TradeAgreement:
 
-    def __init__(self, trade: TradeModel):
-        self._trade: Optional[TradeModel] = trade
+    def __init__(self, trade: models.TradeModel):
+        self._trade: Optional[models.TradeModel] = trade
 
     @cached_property
-    def sponsor(self) -> UserId:
+    def sponsor(self) -> types.UserId:
         if self._trade is None:
             raise ValueError("Trade has been cancelled")
         return self._trade.sponsor
 
     @cached_property
-    def recipient(self) -> UserId:
+    def recipient(self) -> types.UserId:
         if self._trade is None:
             raise ValueError("Trade has been cancelled")
         return self._trade.recipient
@@ -92,9 +94,9 @@ class TradeAgreement:
         self._trade = None
 
 
-def filter_expired(trades: List[TradeRequestModel], session: Session) -> List[TradeRequestModel]:
+def filter_expired(trades: List[models.TradeRequestModel], session: Session) -> List[models.TradeRequestModel]:
     now = datetime.now()
-    active_requests: List[TradeRequestModel] = []
+    active_requests: List[models.TradeRequestModel] = []
     for trade in trades:
         if trade.expires < now:
             session.delete(trade)
@@ -111,32 +113,32 @@ class TradeError(Exception):
 class Trade(Ministry):
 
     def __init__(self, player: Nation, engine: Engine):
-        self._identifier: UserId = player.identifier
+        self._identifier: types.UserId = player.identifier
         self._player: Nation = player
         self._engine: Engine = engine
 
     @property
-    def resources(self) -> ResourcePair:
+    def resources(self) -> types.ResourcePair:
         with Session(self._engine) as session:
-            resources = session.query(ResourcesModel).filter_by(user_id=self._identifier).first()
+            resources = session.query(models.ResourcesModel).filter_by(user_id=self._identifier).first()
             if resources is None:
-                resources = ResourcesModel(user_id=self._identifier, primary=0, secondary=0)
+                resources = models.ResourcesModel(user_id=self._identifier, primary=0, secondary=0)
                 session.add(resources)
                 session.commit()
-            return ResourcePair(resources.primary, resources.secondary)
+            return types.ResourcePair(resources.primary, resources.secondary)
 
     @resources.setter
-    def resources(self, resources: ResourcePair) -> None:
+    def resources(self, resources: types.ResourcePair) -> None:
         with Session(self._engine) as session:
-            resource_model = ResourcesModel(user_id=self._identifier,
-                                            primary=resources.primary,
-                                            secondary=resources.secondary)
+            resource_model = models.ResourcesModel(user_id=self._identifier,
+                                                   primary=resources.primary,
+                                                   secondary=resources.secondary)
             session.add(resource_model)
             session.commit()
 
     @property
-    def all_resources(self) -> List[ResourceTypes]:
-        resources: List[ResourceTypes] = list(self.resources)
+    def all_resources(self) -> List[types.ResourceTypes]:
+        resources: List[types.ResourceTypes] = list(self.resources)
         for agreement in self.sponsored:
             resources.extend(self._player.find_player(agreement.recipient).trade.resources)
         for agreement in self.recipient:
@@ -146,13 +148,13 @@ class Trade(Ministry):
     @property
     def sponsored(self) -> List[TradeAgreement]:
         with Session(self._engine) as session:
-            trades = session.query(TradeModel).filter_by(sponsor=self._identifier).all()
+            trades = session.query(models.TradeModel).filter_by(sponsor=self._identifier).all()
             return [TradeAgreement(trade) for trade in trades]
 
     @property
     def recipient(self) -> List[TradeAgreement]:
         with Session(self._engine) as session:
-            trades = session.query(TradeModel).filter_by(recipient=self._identifier).all()
+            trades = session.query(models.TradeModel).filter_by(recipient=self._identifier).all()
             return [TradeAgreement(trade) for trade in trades]
 
     @property
@@ -162,27 +164,27 @@ class Trade(Ministry):
     @property
     def requests(self) -> List[TradeRequest]:
         with Session(self._engine) as session:
-            requests = session.query(TradeRequestModel).filter_by(recipient=self._identifier).all()
+            requests = session.query(models.TradeRequestModel).filter_by(recipient=self._identifier).all()
             return [TradeRequest(request) for request in filter_expired(requests, session)]
 
     @property
     def received(self) -> List[TradeRequest]:
         with Session(self._engine) as session:
-            requests = session.query(TradeRequestModel).filter_by(sponsor=self._identifier).all()
+            requests = session.query(models.TradeRequestModel).filter_by(sponsor=self._identifier).all()
             return [TradeRequest(request) for request in filter_expired(requests, session)]
 
-    def _send(self, recipient: UserId) -> None:
+    def _send(self, recipient: types.UserId) -> None:
         date = datetime.now()
-        trade_request = TradeRequestModel(trade_id=str(int(uuid4())),
-                                          date=date,
-                                          expires=date + timedelta(days=1),
-                                          sponsor=self._identifier,
-                                          recipient=recipient)
+        trade_request = models.TradeRequestModel(trade_id=str(int(uuid4())),
+                                                 date=date,
+                                                 expires=date + timedelta(days=1),
+                                                 sponsor=self._identifier,
+                                                 recipient=recipient)
         with Session(self._engine) as session:
             session.add(trade_request)
             session.commit()
 
-    def send(self, recipient: UserId) -> SendMessages:
+    def send(self, recipient: types.UserId) -> SendMessages:
         if self._identifier == recipient:
             return "cannot_trade_with_self"
 
@@ -197,10 +199,10 @@ class Trade(Ministry):
         return "trade_sent"
 
     def _accept(self, trade_request: TradeRequest) -> None:
-        trade_agreement = TradeModel(trade_id=trade_request.id,
-                                     date=trade_request.date,
-                                     sponsor=trade_request.sponsor,
-                                     recipient=trade_request.recipient)
+        trade_agreement = models.TradeModel(trade_id=trade_request.id,
+                                            date=trade_request.date,
+                                            sponsor=trade_request.sponsor,
+                                            recipient=trade_request.recipient)
         with Session(self._engine) as session:
             session.delete(trade_request)
             session.add(trade_agreement)
@@ -239,5 +241,5 @@ class Trade(Ministry):
         trade_agreement.invalidate()
         return "trade_cancelled"
 
-    def boost(self, boost: Boosts) -> float:
+    def boost(self, boost: types.Boosts) -> float:
         raise NotImplementedError

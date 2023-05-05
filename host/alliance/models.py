@@ -10,7 +10,7 @@ from host.base_models import Base
 class AllianceMetaModel(Base):
     __tablename__ = "AllianceMeta"
 
-    id: Mapped[types.AllianceId] = mapped_column(primary_key=True)
+    id: Mapped[str] = mapped_column(primary_key=True)
     name: Mapped[str]
     flag: Mapped[str]
     date_founded: Mapped[datetime]
@@ -20,7 +20,7 @@ class AllianceMetaModel(Base):
 class AllianceBankModel(Base):
     __tablename__ = "AllianceBank"
 
-    id: Mapped[types.AllianceId] = mapped_column(primary_key=True)
+    id: Mapped[str] = mapped_column(primary_key=True)
     bank_name: Mapped[str] = mapped_column(primary_key=True)
     treasury: Mapped[int]
 
@@ -28,7 +28,7 @@ class AllianceBankModel(Base):
 class AllianceMemberModel(Base):
     __tablename__ = "AllianceMember"
 
-    id: Mapped[types.AllianceId] = mapped_column(primary_key=True)
-    user_id: Mapped[base_types.UserId] = mapped_column(primary_key=True)
+    id: Mapped[str] = mapped_column(primary_key=True)
+    user_id: Mapped[str] = mapped_column(primary_key=True)
     role: Mapped[types.AllianceRoles]
     date_joined: Mapped[datetime]

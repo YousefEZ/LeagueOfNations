@@ -8,7 +8,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 from host.base_models import Base
 from host.nation import types
 from host.nation.types import ResourceTypes
-from host.base_types import UserId
 
 
 class TradeRequestModel(Base):
@@ -17,8 +16,8 @@ class TradeRequestModel(Base):
     trade_id: Mapped[str] = mapped_column(primary_key=True)
     date: Mapped[datetime]
     expires: Mapped[datetime]
-    sponsor: Mapped[UserId]
-    recipient: Mapped[UserId]
+    sponsor: Mapped[str]
+    recipient: Mapped[str]
 
 
 class TradeModel(Base):
@@ -26,8 +25,8 @@ class TradeModel(Base):
 
     trade_id: Mapped[str] = mapped_column(primary_key=True)
     date: Mapped[datetime]
-    sponsor: Mapped[UserId]
-    recipient: Mapped[UserId]
+    sponsor: Mapped[str]
+    recipient: Mapped[str]
 
 
 class AidRequestModel(Base):
@@ -36,8 +35,8 @@ class AidRequestModel(Base):
     aid_id: Mapped[str] = mapped_column(primary_key=True)
     date: Mapped[datetime]
     expires: Mapped[datetime]
-    sponsor: Mapped[UserId]
-    recipient: Mapped[UserId]
+    sponsor: Mapped[str]
+    recipient: Mapped[str]
     amount: Mapped[int]
 
 
@@ -47,15 +46,15 @@ class AidModel(Base):
     aid_id: Mapped[str] = mapped_column(primary_key=True)
     date: Mapped[datetime]
     expires: Mapped[datetime]
-    sponsor: Mapped[UserId]
-    recipient: Mapped[UserId]
+    sponsor: Mapped[str]
+    recipient: Mapped[str]
     amount: Mapped[int]
 
 
 class ResourcesModel(Base):
     __tablename__ = "Resources"
 
-    user_id: Mapped[UserId] = mapped_column(primary_key=True)
+    user_id: Mapped[str] = mapped_column(primary_key=True)
     primary: Mapped[ResourceTypes]
     secondary: Mapped[ResourceTypes]
 
@@ -63,7 +62,7 @@ class ResourcesModel(Base):
 class MetadataModel(Base):
     __tablename__ = "metadata"
 
-    user_id: Mapped[UserId] = mapped_column(primary_key=True)
+    user_id: Mapped[str] = mapped_column(primary_key=True)
     nation: Mapped[str] = mapped_column(primary_key=True)
     flag: Mapped[str]
 
@@ -89,7 +88,7 @@ class InteriorModel(Base):
 class ImprovementsModel(Base):
     __tablename__ = "Improvements"
 
-    user_id: Mapped[int]
+    user_id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[types.ImprovementTypes]
     quantity: Mapped[int]
 

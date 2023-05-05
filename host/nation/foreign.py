@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional, Union, Literal
@@ -9,9 +11,10 @@ from host import alliance, base_types
 from host.alliance import Alliance
 import host.alliance.models
 from host.nation.ministry import Ministry
+from host.nation import models
 
 if TYPE_CHECKING:
-    from host.nation import Nation, models
+    from host.nation import Nation
 
 AidMessages = Literal['success', 'insufficient_funds', 'invalid_recipient', 'invalid_amount', 'invalid_sponsor']
 

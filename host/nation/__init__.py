@@ -1,20 +1,18 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import List, get_args, Optional
+from typing import List, get_args
 
 from pint import Quantity
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-from host import base_types, alliance
-from host.alliance import Alliance
-import host.alliance.models
+from host import base_types
 from host.nation import types, models
-from host.nation.foreign import Foreign
-from host.nation.meta import Meta
 from host.nation.bank import Bank
+from host.nation.foreign import Foreign
 from host.nation.interior import Interior
+from host.nation.meta import Meta
 from host.nation.meta import Meta
 from host.nation.ministry import Ministry
 from host.nation.trade import Trade

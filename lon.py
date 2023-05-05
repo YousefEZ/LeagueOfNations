@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
+import host.base_models
 from host.nation import Nation
 from host.base_types import UserId
 
@@ -25,6 +26,7 @@ class LeagueOfNations(commands.AutoShardedBot):
             intents=discord.Intents.all()
         )
         self.engine: Engine = create_engine(url, echo=True)
+        host.base_models.Base.metadata.create_all(self.engine)
         self.remove_command('help')
 
     async def setup_hook(self) -> None:

@@ -10,9 +10,10 @@ from sqlalchemy.orm import Session
 
 from host import base_types
 from host.nation.ministry import Ministry
+from host.nation import models, types
 
 if TYPE_CHECKING:
-    from host.nation import Nation, models, types
+    from host.nation import Nation
 
 InfrastructureMessages = Literal["infrastructure_built", "insufficient_funds", "insufficient_resources"]
 ImprovementMessages = Literal[
@@ -20,7 +21,7 @@ ImprovementMessages = Literal[
     "exceeding_maximum_quantity"
 ]
 
-with open("object/improvements.json", "r") as improvements_file:
+with open("objects/improvements.json", "r", encoding="utf8") as improvements_file:
     Improvements = json.load(improvements_file)
 
 
@@ -133,7 +134,7 @@ class Interior(Ministry):
     def infrastructure(self) -> types.Infrastructure:
         return types.Infrastructure(0)
 
-    @base_types.ureg.wraps(base_types.Currency, None)
+    @base_types.ureg.wraps(base_types.Currency, [None, None])
     def infrastructure_cost(self, quantity: int) -> Quantity:
         return 1000 * base_types.Currency * self.infrastructure * quantity
 

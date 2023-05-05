@@ -98,19 +98,19 @@ class Bank(Ministry, FundReceiver, FundSender):
         with Session(self._engine) as session:
             session.commit()
 
-    @base_types.ureg.wraps(base_types.Currency, None)
+    @base_types.ureg.wraps(base_types.Currency, [None, None])
     def _retrieve_revenue(self, timestamp: datetime) -> Quantity:
         time_difference: timedelta = timestamp - self._bank.last_accessed
         seconds = time_difference.total_seconds() * base_types.ureg.seconds
         return self.national_revenue.to(base_types.Currency / base_types.ureg.seconds) * seconds
 
-    @base_types.ureg.wraps(base_types.Currency, None)
+    @base_types.ureg.wraps(base_types.Currency, [None, None])
     def _retrieve_bill(self, timestamp: datetime) -> Quantity:
         time_difference: timedelta = timestamp - self._bank.last_accessed
         seconds = time_difference.total_seconds() * base_types.ureg.seconds
         return self.national_bill.to(base_types.Currency / base_types.ureg.seconds) * seconds
 
-    @base_types.ureg.wraps(base_types.Currency, None)
+    @base_types.ureg.wraps(base_types.Currency, [None, None])
     def _retrieve_profit(self, timestamp: datetime) -> Quantity:
         revenue: Quantity = self._retrieve_revenue(timestamp)
         expenses: Quantity = self._retrieve_bill(timestamp)

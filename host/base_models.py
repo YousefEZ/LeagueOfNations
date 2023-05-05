@@ -13,6 +13,6 @@ class NotificationModel(Base):
     __tablename__ = "Notifications"
 
     notification_id: Mapped[str] = mapped_column(primary_key=True)
-    user_id: Mapped[UserId]
+    user_id: Mapped[str]
     date: Mapped[datetime]
     message: Mapped[str]

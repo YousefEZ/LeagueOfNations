@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
 from host.nation import Nation
-from host.types import UserId
+from host.base_types import UserId
 
 cogs = "start", "economy"
 

@@ -8,11 +8,11 @@ from pint import Quantity
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-from host.ministry import Ministry
-from host import models, types
+from host import base_types
+from host.nation.ministry import Ministry
 
 if TYPE_CHECKING:
-    from host.nation import Nation
+    from host.nation import Nation, models, types
 
 InfrastructureMessages = Literal["infrastructure_built", "insufficient_funds", "insufficient_resources"]
 ImprovementMessages = Literal[
@@ -47,14 +47,14 @@ class Improvement:
             return cls(improvement, player, engine)
 
     @property
-    @types.ureg.wraps(types.Currency, None)
+    @base_types.ureg.wraps(base_types.Currency, None)
     def price(self) -> Quantity:
-        return types.ureg.Quantity(self.improvement["price"], types.Currency)
+        return base_types.ureg.Quantity(self.improvement["price"], base_types.Currency)
 
     @property
-    @types.ureg.wraps(types.CurrencyRate, None)
+    @base_types.ureg.wraps(base_types.CurrencyRate, None)
     def cost(self) -> Quantity:
-        return self.improvement["cost"] * self._improvement.quantity * types.CurrencyRate
+        return self.improvement["cost"] * self._improvement.quantity * base_types.CurrencyRate
 
     def _buy(self, quantity: int) -> None:
         self._player.bank.deduct(self.price * quantity)
@@ -125,17 +125,17 @@ class Interior(Ministry):
         return self._improvements[improvement]
 
     @property
-    @types.ureg.wraps(types.CurrencyRate, None)
+    @base_types.ureg.wraps(base_types.CurrencyRate, None)
     def bill(self) -> Quantity:
-        return types.ureg.Quantity(0, types.CurrencyRate)
+        return base_types.ureg.Quantity(0, base_types.CurrencyRate)
 
     @property
     def infrastructure(self) -> types.Infrastructure:
         return types.Infrastructure(0)
 
-    @types.ureg.wraps(types.Currency, None)
+    @base_types.ureg.wraps(base_types.Currency, None)
     def infrastructure_cost(self, quantity: int) -> Quantity:
-        return 1000 * types.Currency * self.infrastructure * quantity
+        return 1000 * base_types.Currency * self.infrastructure * quantity
 
     @property
     def population(self) -> types.Population:

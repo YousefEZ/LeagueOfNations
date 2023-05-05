@@ -2,21 +2,14 @@ from __future__ import annotations
 
 from typing import NamedTuple, TypedDict, Dict, Literal, NewType
 
-from pint import UnitRegistry
 from typing_extensions import NotRequired
 
-Ministries = Literal["Bank", "Trade"]
+Ministries = Literal["Bank", "Trade", "Interior", "Foreign"]
 Boosts = Literal["happiness_modifier", "income_modifier", "income_increase", "bill_modifier", "bill_reduction"]
 
 Infrastructure = NewType("Infrastructure", int)
 Happiness = NewType("Happiness", float)
-UserId = NewType("UserId", int)
 Population = NewType("Population", int)
-
-ureg = UnitRegistry()
-ureg.define("LND = [currency]")
-Currency = ureg.LND
-CurrencyRate = ureg.LND / ureg.seconds
 
 ResourceTypes = Literal[
     "Cattle", "Fish", "Fruit", "Pigs", "Wheat", "Aluminum", "Coal", "Iron", "Lead", "Oil", "Uranium", "Bread", "Cheese",

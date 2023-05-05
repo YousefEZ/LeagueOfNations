@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from functools import cached_property
 from typing import List, Optional, Literal, TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-from host import types, models
-from host.ministry import Ministry
+from host import base_types
+from host.nation.ministry import Ministry
 
 if TYPE_CHECKING:
-    from host.nation import Nation
+    from host.nation import Nation, models, types
 
 AcceptMessages = Literal["trade_accepted", "too_many_active_agreements", "trade_partner_full"]
 
@@ -33,31 +32,31 @@ class TradeRequest:
     def __init__(self, trade: models.TradeRequestModel):
         self._trade: Optional[models.TradeRequestModel] = trade
 
-    @cached_property
+    @property
     def id(self) -> str:
         if self._trade is None:
             raise ValueError("Trade has already been accepted or declined")
         return self._trade.trade_id
 
-    @cached_property
-    def sponsor(self) -> types.UserId:
+    @property
+    def sponsor(self) -> base_types.UserId:
         if self._trade is None:
             raise ValueError("Trade has already been accepted or declined")
         return self._trade.sponsor
 
-    @cached_property
-    def recipient(self) -> types.UserId:
+    @property
+    def recipient(self) -> base_types.UserId:
         if self._trade is None:
             raise ValueError("Trade has already been accepted or declined")
         return self._trade.recipient
 
-    @cached_property
+    @property
     def date(self) -> datetime:
         if self._trade is None:
             raise ValueError("Trade has already been accepted or declined")
         return self._trade.date
 
-    @cached_property
+    @property
     def expires(self) -> datetime:
         if self._trade is None:
             raise ValueError("Trade has already been accepted or declined")
@@ -72,19 +71,19 @@ class TradeAgreement:
     def __init__(self, trade: models.TradeModel):
         self._trade: Optional[models.TradeModel] = trade
 
-    @cached_property
-    def sponsor(self) -> types.UserId:
+    @property
+    def sponsor(self) -> base_types.UserId:
         if self._trade is None:
             raise ValueError("Trade has been cancelled")
         return self._trade.sponsor
 
-    @cached_property
-    def recipient(self) -> types.UserId:
+    @property
+    def recipient(self) -> base_types.UserId:
         if self._trade is None:
             raise ValueError("Trade has been cancelled")
         return self._trade.recipient
 
-    @cached_property
+    @property
     def date(self) -> datetime:
         if self._trade is None:
             raise ValueError("Trade has been cancelled")
@@ -113,7 +112,7 @@ class TradeError(Exception):
 class Trade(Ministry):
 
     def __init__(self, player: Nation, engine: Engine):
-        self._identifier: types.UserId = player.identifier
+        self._identifier: base_types.UserId = player.identifier
         self._player: Nation = player
         self._engine: Engine = engine
 
@@ -173,7 +172,7 @@ class Trade(Ministry):
             requests = session.query(models.TradeRequestModel).filter_by(sponsor=self._identifier).all()
             return [TradeRequest(request) for request in filter_expired(requests, session)]
 
-    def _send(self, recipient: types.UserId) -> None:
+    def _send(self, recipient: base_types.UserId) -> None:
         date = datetime.now()
         trade_request = models.TradeRequestModel(trade_id=str(int(uuid4())),
                                                  date=date,
@@ -184,7 +183,7 @@ class Trade(Ministry):
             session.add(trade_request)
             session.commit()
 
-    def send(self, recipient: types.UserId) -> SendMessages:
+    def send(self, recipient: base_types.UserId) -> SendMessages:
         if self._identifier == recipient:
             return "cannot_trade_with_self"
 

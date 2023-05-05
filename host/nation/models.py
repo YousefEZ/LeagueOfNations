@@ -3,14 +3,12 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import String
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
-from host import types
-from host.types import UserId, ResourceTypes
-
-
-class Base(DeclarativeBase):
-    pass
+from host.base_models import Base
+from host.nation import types
+from host.nation.types import ResourceTypes
+from host.base_types import UserId
 
 
 class TradeRequestModel(Base):
@@ -30,6 +28,28 @@ class TradeModel(Base):
     date: Mapped[datetime]
     sponsor: Mapped[UserId]
     recipient: Mapped[UserId]
+
+
+class AidRequestModel(Base):
+    __tablename__ = "AidRequests"
+
+    aid_id: Mapped[str] = mapped_column(primary_key=True)
+    date: Mapped[datetime]
+    expires: Mapped[datetime]
+    sponsor: Mapped[UserId]
+    recipient: Mapped[UserId]
+    amount: Mapped[int]
+
+
+class AidModel(Base):
+    __tablename__ = "Aid"
+
+    aid_id: Mapped[str] = mapped_column(primary_key=True)
+    date: Mapped[datetime]
+    expires: Mapped[datetime]
+    sponsor: Mapped[UserId]
+    recipient: Mapped[UserId]
+    amount: Mapped[int]
 
 
 class ResourcesModel(Base):
@@ -56,12 +76,6 @@ class BankModel(Base):
     treasury: Mapped[int]
     tax_rate: Mapped[float]
     last_accessed: Mapped[datetime]
-
-
-class AidModel(Base):
-    __tablename__ = "Aid"
-
-    user_id: Mapped[int] = mapped_column(primary_key=True)
 
 
 class InteriorModel(Base):

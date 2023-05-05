@@ -5,12 +5,10 @@ from typing import TYPE_CHECKING, Dict
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-from host import models, types
-
-from host.ministry import Ministry
+from host.nation.ministry import Ministry
 
 if TYPE_CHECKING:
-    from host.nation import Nation
+    from host.nation import Nation, models, types
 
 with open("object/governments.json", "r") as governments_file:
     Governments: Dict[types.GovernmentTypes, types.Government] = json.load(governments_file)

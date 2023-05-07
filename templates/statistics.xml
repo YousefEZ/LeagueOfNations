@@ -8,7 +8,25 @@
                     <field>
                         <name>This is accurate of {timestamp}</name>
                         <value>
-                            :population: Population: {player.population}
+                            Welcome to your nation's Stats overview. All public statistics are __LISTED HERE__.
+
+                            :radio_button: __Nation Name__: **{player.nation}**
+
+                            :crown: __Ruler__: **<@{player.id}>**
+
+                            :muscle::skin-tone-1: __Total Strength__: **`{player.total_strength:,.1f}`**
+
+                            :chart: __Economic Strength__: **`{player.economy:,.1f}`**
+
+                            {player.government.emoji} __Government__: **{player.government}**
+
+                            :island: __Land Area Diameter__: **`{player.land:,.2f} kilometres`**
+
+                            :family_mwg: __Population Density__: **`{player.density:,.2f}`**
+
+                            :star2: __Formed On__: **`{player.created}`**
+
+                            :beginner: __Alliance__: **{player.alliance_name}**
                         </value>
                     </field>
                 </fields>

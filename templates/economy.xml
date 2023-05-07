@@ -1,0 +1,26 @@
+<discord>
+    <message key="balance">
+        <content>{{ nation.bank.name }} has :moneybag: {{ nation.bank.funds|currency }}</content>
+    </message>
+    <message key="education">
+        <embed>
+            <title>Educational Institution</title>
+            <colour>teal</colour>
+            <field>
+                <name>{{ institution.name }}</name>
+                <value>
+                    {{ institution.details }}
+
+                    Requires:
+                        cost: {{ institution.cost|currency }}
+                        bill: {{ institution.cost|currency_rate }}
+                        land: {{ institution.land }}
+
+                    Provides:
+                        literacy score: {{ institution.literacy }}
+                        employs: {{ institution.employment }}
+                </value>
+            </field>
+        </embed>
+    </message>
+</discord>

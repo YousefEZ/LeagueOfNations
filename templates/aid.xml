@@ -1,0 +1,14 @@
+<discord>
+    <expansive key="requests">
+        <embed>
+            <title>Aid Requests</title>
+            <colour>teal</colour>
+            <expansive_field>
+                <name>Open Request</name>
+                <value>
+                    {{ "\n".join(map(str, player.foreign.requests)) }}
+                </value>
+            </expansive_field>
+        </embed>
+    </expansive>
+</discord>

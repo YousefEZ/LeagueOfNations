@@ -5,9 +5,9 @@ from datetime import datetime
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
+import host.nation.types.government
 from host.base_models import Base
 from host.nation import types
-from host.nation.types import ResourceTypes
 
 
 class TradeRequestModel(Base):
@@ -16,8 +16,8 @@ class TradeRequestModel(Base):
     trade_id: Mapped[str] = mapped_column(primary_key=True)
     date: Mapped[datetime]
     expires: Mapped[datetime]
-    sponsor: Mapped[str]
-    recipient: Mapped[str]
+    sponsor: Mapped[int]
+    recipient: Mapped[int]
 
 
 class TradeModel(Base):
@@ -25,8 +25,8 @@ class TradeModel(Base):
 
     trade_id: Mapped[str] = mapped_column(primary_key=True)
     date: Mapped[datetime]
-    sponsor: Mapped[str]
-    recipient: Mapped[str]
+    sponsor: Mapped[int]
+    recipient: Mapped[int]
 
 
 class AidRequestModel(Base):
@@ -35,8 +35,8 @@ class AidRequestModel(Base):
     aid_id: Mapped[str] = mapped_column(primary_key=True)
     date: Mapped[datetime]
     expires: Mapped[datetime]
-    sponsor: Mapped[str]
-    recipient: Mapped[str]
+    sponsor: Mapped[int]
+    recipient: Mapped[int]
     amount: Mapped[int]
 
 
@@ -46,23 +46,23 @@ class AidModel(Base):
     aid_id: Mapped[str] = mapped_column(primary_key=True)
     date: Mapped[datetime]
     expires: Mapped[datetime]
-    sponsor: Mapped[str]
-    recipient: Mapped[str]
+    sponsor: Mapped[int]
+    recipient: Mapped[int]
     amount: Mapped[int]
 
 
 class ResourcesModel(Base):
     __tablename__ = "Resources"
 
-    user_id: Mapped[str] = mapped_column(primary_key=True)
-    primary: Mapped[ResourceTypes]
-    secondary: Mapped[ResourceTypes]
+    user_id: Mapped[int] = mapped_column(primary_key=True)
+    primary: Mapped[types.resources.ResourceTypes]
+    secondary: Mapped[types.resources.ResourceTypes]
 
 
 class MetadataModel(Base):
-    __tablename__ = "metadata"
+    __tablename__ = "Metadata"
 
-    user_id: Mapped[str] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(primary_key=True)
     nation: Mapped[str] = mapped_column(primary_key=True)
     flag: Mapped[str]
 
@@ -83,18 +83,24 @@ class InteriorModel(Base):
     user_id: Mapped[int] = mapped_column(primary_key=True)
     infrastructure: Mapped[int]
     land: Mapped[int]
+    technology: Mapped[int]
+    spent_technology: Mapped[int]
 
 
-class ImprovementsModel(Base):
-    __tablename__ = "Improvements"
+class InfrastructureModel(Base):
+    __tablename__ = "Infrastructure"
 
     user_id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[types.ImprovementTypes]
-    quantity: Mapped[int]
+    building: Mapped[types.interior.BuildingTypes]
+    amount: Mapped[int]
+
+
+class BuildRequestModel:
+    pass
 
 
 class GovernmentModel(Base):
     __tablename__ = "Government"
 
     user_id: Mapped[int] = mapped_column(primary_key=True)
-    type: Mapped[types.GovernmentTypes]
+    type: Mapped[types.government.GovernmentTypes]

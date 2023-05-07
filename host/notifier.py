@@ -8,7 +8,9 @@ from sched import scheduler
 from typing import Optional, Callable, Any, List, Coroutine, Dict, Union
 from uuid import uuid4
 
-from qalib import Renderer, Jinja2
+import discord.ui
+from qalib import Renderer
+from qalib.template_engines.jinja2 import Jinja2
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
@@ -41,8 +43,9 @@ class NotifierError(Exception):
 
 
 def _template_notification(notification: TemplateNotification) -> Notification:
-    renderer = Renderer(Jinja2(), notification.template)
+    renderer: Renderer[str] = Renderer(Jinja2(), notification.template)
     message = renderer.render(notification.key, keywords=notification.keywords)
+    assert not isinstance(message, discord.ui.Modal)
     return Notification(
         user_id=notification.user_id,
         time=notification.time,
@@ -91,6 +94,10 @@ class Notifier:
             session.commit()
 
     async def _display(self, notification: Notification):
+        if notification.payload is None:
+            self._delete_notification(notification.notification_id)
+            return
+
         for hook in self._notification_hooks:
             await hook(notification.payload)
 

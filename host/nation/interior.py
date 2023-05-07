@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import json
+from datetime import datetime
 from functools import cached_property
-from typing import TYPE_CHECKING, Literal, Dict, get_args
+from typing import TYPE_CHECKING, Literal, List, Optional
 
-from pint import Quantity
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-from host import base_types
+from host import currency
+from host.nation import types, models
 from host.nation.ministry import Ministry
-from host.nation import models, types
 
 if TYPE_CHECKING:
     from host.nation import Nation
@@ -21,77 +20,16 @@ ImprovementMessages = Literal[
     "exceeding_maximum_quantity"
 ]
 
-with open("objects/improvements.json", "r", encoding="utf8") as improvements_file:
-    Improvements = json.load(improvements_file)
 
+class BuildRequest:
 
-class Improvement:
-    __slots__ = "_improvement", "_player", "_engine"
+    def __init__(self, building: types.interior.BuildingTypes, amount: int, start_time: Optional[datetime] = None):
+        self._building = building
+        self._amount = amount
+        self._start_time = start_time or datetime.now()
 
-    resale_rate: float = 0.5
-
-    def __init__(self, improvement: models.ImprovementsModel, player: Nation, engine: Engine):
-        self._improvement = improvement
-        self._player = player
-        self._engine = engine
-
-    @property
-    def improvement(self) -> types.Improvement:
-        return Improvements[self._improvement.name]
-
-    @classmethod
-    def create(cls, improvement_type: types.ImprovementTypes, player: Nation, engine: Engine) -> Improvement:
-        with Session(engine) as session:
-            improvement = models.ImprovementsModel(user_id=player.identifier, name=improvement_type, quantity=0)
-            session.add(improvement)
-            session.commit()
-            return cls(improvement, player, engine)
-
-    @property
-    @base_types.ureg.wraps(base_types.Currency, None)
-    def price(self) -> Quantity:
-        return base_types.ureg.Quantity(self.improvement["price"], base_types.Currency)
-
-    @property
-    @base_types.ureg.wraps(base_types.CurrencyRate, None)
-    def cost(self) -> Quantity:
-        return self.improvement["cost"] * self._improvement.quantity * base_types.CurrencyRate
-
-    def _buy(self, quantity: int) -> None:
-        self._player.bank.deduct(self.price * quantity)
-        self._improvement.quantity += quantity
-        with Session(self._engine) as session:
-            session.commit()
-
-    def buy(self, quantity: int) -> ImprovementMessages:
-        if quantity < 0:
-            return "negative_quantity"
-        if self._improvement.quantity + quantity <= self.improvement["max_quantity"]:
-            return "exceeding_maximum_quantity"
-        if self._player.bank.funds < self.price * quantity:
-            return "insufficient_funds"
-        self._buy(quantity)
-        return "improvement_bought"
-
-    def _sell(self, quantity: int) -> None:
-        self._player.bank.add(self.price * quantity * self.resale_rate)
-        self._improvement.quantity -= quantity
-        with Session(self._engine) as session:
-            session.commit()
-
-    def sell(self, quantity: int) -> ImprovementMessages:
-        if quantity < 0:
-            return "negative_quantity"
-        if self._improvement.quantity < quantity:
-            return "not_enough_improvements"
-        self._sell(quantity)
-        return "improvement_sold"
-
-    def boost(self, boost: types.Boosts) -> float:
-        return self.improvement["boosts"].get(boost, 0.0) * self._improvement.quantity
-
-
-ImprovementsLookup = Dict[types.ImprovementTypes, Improvement]
+    def create_request(self) -> models.BuildRequestModel:
+        ...
 
 
 class Interior(Ministry):
@@ -106,41 +44,28 @@ class Interior(Ministry):
         with Session(self._engine) as session:
             interior = session.query(models.InteriorModel).filter_by(user_id=self._player.identifier).first()
             if interior is None:
-                interior = models.InteriorModel(user_id=self._player.identifier, infrastructure=0, land=0)
+                interior = models.InteriorModel(user_id=self._player.identifier, land=0)
                 session.add(interior)
                 session.commit()
             return interior
 
-    @cached_property
-    def _improvements(self) -> ImprovementsLookup:
+    @property
+    @currency.ureg.wraps(currency.CurrencyRate, None)
+    def bill(self) -> currency.CurrencyRate:
+        return 0 * currency.CurrencyRate
+
+    @property
+    def infrastructure(self) -> List[models.InfrastructureModel]:
         with Session(self._engine) as session:
-            improvements = session.query(models.ImprovementsModel).filter_by(user_id=self._player.identifier).all()
-            return {improvement.name: Improvement(improvement, self._player, self._engine)
-                    for improvement in improvements}
+            return session.query(models.InfrastructureModel).filter_by(user_id=self._player.identifier).all()
 
-    def get(self, improvement: types.ImprovementTypes) -> Improvement:
-        if improvement not in get_args(types.ImprovementTypes):
-            raise ValueError(f"Improvement type {improvement} not found")
-        if improvement not in self._improvements:
-            self._improvements[improvement] = Improvement.create(improvement, self._player, self._engine)
-        return self._improvements[improvement]
+    @currency.ureg.wraps(currency.Currency, [None, None])
+    def infrastructure_cost(self, quantity: int) -> currency.Currency:
+        return 1000 * currency.Currency * self.infrastructure * quantity
 
     @property
-    @base_types.ureg.wraps(base_types.CurrencyRate, None)
-    def bill(self) -> Quantity:
-        return base_types.ureg.Quantity(0, base_types.CurrencyRate)
-
-    @property
-    def infrastructure(self) -> types.Infrastructure:
-        return types.Infrastructure(0)
-
-    @base_types.ureg.wraps(base_types.Currency, [None, None])
-    def infrastructure_cost(self, quantity: int) -> Quantity:
-        return 1000 * base_types.Currency * self.infrastructure * quantity
-
-    @property
-    def population(self) -> types.Population:
-        return types.Population(0)
+    def population(self) -> types.basic.Population:
+        return types.basic.Population(0)
 
     def build_infrastructure(self, quantity: int) -> InfrastructureMessages:
         cost = self.infrastructure_cost(quantity)

@@ -3,16 +3,14 @@ from __future__ import annotations
 from functools import cached_property
 from typing import List, get_args
 
-from pint import Quantity
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-from host import base_types
+from host import base_types, Defaults, currency
 from host.nation import types, models
 from host.nation.bank import Bank
 from host.nation.foreign import Foreign
 from host.nation.interior import Interior
-from host.nation.meta import Meta
 from host.nation.meta import Meta
 from host.nation.ministry import Ministry
 from host.nation.trade import Trade
@@ -53,11 +51,11 @@ class Nation:
 
     @cached_property
     def ministries(self) -> List[Ministry]:
-        return [getattr(self, ministry_object) for ministry_object in get_args(types.Ministries)]
+        return [getattr(self, ministry_object) for ministry_object in get_args(types.ministries.Ministries)]
 
     @classmethod
     def start(cls, identifier: base_types.UserId, name: str, engine: Engine) -> Nation:
-        metadata = models.MetadataModel(user_id=identifier, nation=name)
+        metadata = models.MetadataModel(user_id=identifier, nation=name, flag=Defaults["flag"])
 
         with Session(engine) as session:
             session.add(metadata)
@@ -69,9 +67,10 @@ class Nation:
         return Nation(identifier, self._engine)
 
     @property
-    def happiness(self) -> types.Happiness:
-        happiness: types.Happiness = sum(ministry_object.happiness for ministry_object in self.ministries)
-        return types.Happiness(happiness * self.happiness_modifier)
+    def happiness(self) -> types.basic.Happiness:
+        happiness: types.basic.Happiness = sum((ministry_object.happiness for ministry_object in self.ministries),
+                                               types.basic.Happiness(0))
+        return types.basic.Happiness(happiness * self.happiness_modifier)
 
     @property
     def population(self) -> int:
@@ -81,12 +80,12 @@ class Nation:
     def happiness_modifier(self) -> float:
         return 1 + self.boost("happiness_modifier") / 100
 
-    def boost(self, boost: types.Boosts) -> float:
+    def boost(self, boost: types.boosts.Boosts) -> float:
         return sum(ministry_object.boost(boost) for ministry_object in self.ministries)
 
     @property
-    @base_types.ureg.wraps(base_types.CurrencyRate, None)
-    def revenue(self) -> Quantity:
+    @currency.ureg.wraps(currency.CurrencyRate, None)
+    def revenue(self) -> currency.CurrencyRate:
         happiness = self.happiness
         population = self.population
-        return happiness * 3 * population * base_types.CurrencyRate
+        return happiness * 3 * population * currency.CurrencyRate

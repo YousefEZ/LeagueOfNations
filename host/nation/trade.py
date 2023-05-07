@@ -7,11 +7,13 @@ from uuid import uuid4
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
+import host.nation.types
+
 from host import base_types
-from host.nation.ministry import Ministry
+from host.nation import ministry, models
 
 if TYPE_CHECKING:
-    from host.nation import Nation, models, types
+    from host.nation import Nation
 
 AcceptMessages = Literal["trade_accepted", "too_many_active_agreements", "trade_partner_full"]
 
@@ -42,13 +44,13 @@ class TradeRequest:
     def sponsor(self) -> base_types.UserId:
         if self._trade is None:
             raise ValueError("Trade has already been accepted or declined")
-        return self._trade.sponsor
+        return base_types.UserId(self._trade.sponsor)
 
     @property
     def recipient(self) -> base_types.UserId:
         if self._trade is None:
             raise ValueError("Trade has already been accepted or declined")
-        return self._trade.recipient
+        return base_types.UserId(self._trade.recipient)
 
     @property
     def date(self) -> datetime:
@@ -75,13 +77,13 @@ class TradeAgreement:
     def sponsor(self) -> base_types.UserId:
         if self._trade is None:
             raise ValueError("Trade has been cancelled")
-        return self._trade.sponsor
+        return base_types.UserId(self._trade.sponsor)
 
     @property
     def recipient(self) -> base_types.UserId:
         if self._trade is None:
             raise ValueError("Trade has been cancelled")
-        return self._trade.recipient
+        return base_types.UserId(self._trade.recipient)
 
     @property
     def date(self) -> datetime:
@@ -109,7 +111,7 @@ class TradeError(Exception):
     pass
 
 
-class Trade(Ministry):
+class Trade(ministry.Ministry):
 
     def __init__(self, player: Nation, engine: Engine):
         self._identifier: base_types.UserId = player.identifier
@@ -117,17 +119,17 @@ class Trade(Ministry):
         self._engine: Engine = engine
 
     @property
-    def resources(self) -> types.ResourcePair:
+    def resources(self) -> host.nation.types.resources.ResourcePair:
         with Session(self._engine) as session:
             resources = session.query(models.ResourcesModel).filter_by(user_id=self._identifier).first()
             if resources is None:
                 resources = models.ResourcesModel(user_id=self._identifier, primary=0, secondary=0)
                 session.add(resources)
                 session.commit()
-            return types.ResourcePair(resources.primary, resources.secondary)
+            return host.nation.types.resources.ResourcePair(resources.primary, resources.secondary)
 
     @resources.setter
-    def resources(self, resources: types.ResourcePair) -> None:
+    def resources(self, resources: host.nation.types.resources.ResourcePair) -> None:
         with Session(self._engine) as session:
             resource_model = models.ResourcesModel(user_id=self._identifier,
                                                    primary=resources.primary,
@@ -136,8 +138,8 @@ class Trade(Ministry):
             session.commit()
 
     @property
-    def all_resources(self) -> List[types.ResourceTypes]:
-        resources: List[types.ResourceTypes] = list(self.resources)
+    def all_resources(self) -> List[host.nation.types.resources.ResourceTypes]:
+        resources: List[host.nation.types.resources.ResourceTypes] = list(self.resources)
         for agreement in self.sponsored:
             resources.extend(self._player.find_player(agreement.recipient).trade.resources)
         for agreement in self.recipient:
@@ -240,5 +242,5 @@ class Trade(Ministry):
         trade_agreement.invalidate()
         return "trade_cancelled"
 
-    def boost(self, boost: types.Boosts) -> float:
-        raise NotImplementedError
+    def boost(self, boost: host.nation.types.boosts.Boosts) -> float:
+        return 0

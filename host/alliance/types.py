@@ -1,5 +1,5 @@
 from typing import NewType, Literal
 
-AllianceId = NewType("AllianceId", int)
+AllianceId = NewType("AllianceId", str)
 
 AllianceRoles = Literal["Leader", "Officer", "Member"]

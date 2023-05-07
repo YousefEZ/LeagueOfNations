@@ -12,7 +12,6 @@ from host.nation import Nation
 from host.base_types import UserId
 
 cogs = "start", "economy"
-
 connect_to_db = False
 
 
@@ -32,7 +31,7 @@ class LeagueOfNations(commands.AutoShardedBot):
     async def setup_hook(self) -> None:
         self.loop.create_task(self.ready())
 
-    async def get_nation(self, user_id: int) -> Nation:
+    def get_nation(self, user_id: int) -> Nation:
         """Get the nation of the user with that user identifier
 
         Args:
@@ -41,6 +40,11 @@ class LeagueOfNations(commands.AutoShardedBot):
         Returns (discord.User): The user
         """
         return Nation(UserId(user_id), self.engine)
+
+    @commands.command()
+    async def sync(self, ctx):
+        await ctx.bot.tree.sync(guid=ctx.guild)
+        await ctx.send("Synced")
 
     @property
     def connection(self) -> sqlalchemy.engine.Connection:

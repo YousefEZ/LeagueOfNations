@@ -5,13 +5,15 @@ from typing import TYPE_CHECKING, Dict
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
+from host.nation import models, types
 from host.nation.ministry import Ministry
 
 if TYPE_CHECKING:
-    from host.nation import Nation, models, types
+    from host.nation import Nation
 
 with open("object/governments.json", "r") as governments_file:
-    Governments: Dict[types.GovernmentTypes, types.Government] = json.load(governments_file)
+    Governments: Dict[
+        types.government.GovernmentTypes, types.government.Government] = json.load(governments_file)
 
 
 class Government(Ministry):
@@ -33,14 +35,14 @@ class Government(Ministry):
         return government
 
     @property
-    def government(self) -> types.Government:
-        return Governments[self.model.government]
+    def government(self) -> types.government.Government:
+        return Governments[self.model.type]
 
     @government.setter
-    def government(self, government: types.GovernmentTypes) -> None:
+    def government(self, government_type: types.government.GovernmentTypes) -> None:
         with Session(self._engine) as session:
-            self.model.government = government
+            self.model.type = government_type
             session.commit()
 
-    def boost(self, boost: types.Boosts) -> float:
+    def boost(self, boost: types.boosts.Boosts) -> float:
         return self.government["boosts"].get(boost, 0.0)

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, List, Optional, Union, Literal
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
+import host.currency
 from host import alliance, base_types
 from host.alliance import Alliance
 import host.alliance.models
@@ -16,7 +17,12 @@ from host.nation import models
 if TYPE_CHECKING:
     from host.nation import Nation
 
-AidMessages = Literal['success', 'insufficient_funds', 'invalid_recipient', 'invalid_amount', 'invalid_sponsor']
+AidAcceptMessages = Literal["not_a_recipient", "insufficient_funds", "expired", "success"]
+
+AidMessages = Literal[
+    AidAcceptMessages,
+    "cannot_be_sponsor", 'success', 'insufficient_funds', 'invalid_recipient', 'invalid_amount', 'invalid_sponsor'
+]
 
 
 class Aid:
@@ -29,24 +35,24 @@ class Aid:
         return self._model
 
     @property
-    def id(self) -> int:
+    def id(self) -> str:
         return self._model.aid_id
 
     @property
-    def sponsor(self) -> int:
-        return self._model.sponsor
+    def sponsor(self) -> base_types.UserId:
+        return base_types.UserId(self._model.sponsor)
 
     @property
-    def recipient(self) -> int:
-        return self._model.recipient
+    def recipient(self) -> base_types.UserId:
+        return base_types.UserId(self._model.recipient)
 
     @property
     def expires(self) -> datetime:
         return self._model.date
 
     @property
-    @base_types.ureg.wraps(base_types.Currency, None)
-    def amount(self) -> base_types.Currency:
+    @host.currency.ureg.wraps(host.currency.Currency, None)
+    def amount(self) -> host.currency.Currency:
         return self._model.amount
 
 
@@ -77,12 +83,12 @@ class Foreign(Ministry):
             session.add(request)
             session.commit()
 
-    @base_types.ureg.wraps(None, [None, None, base_types.Currency])
-    def send(self, recipient: base_types.UserId, amount: base_types.Currency) -> AidMessages:
+    @host.currency.ureg.wraps(None, [None, None, host.currency.Currency])
+    def send(self, recipient: base_types.UserId, amount: host.currency.Currency) -> AidMessages:
         if recipient == self._player.identifier:
             return "cannot_be_sponsor"
 
-        if amount < 0 * base_types.Currency:
+        if amount < 0 * host.currency.Currency:
             return "invalid_amount"
 
         if not self._player.bank.enough_funds(amount):
@@ -98,13 +104,16 @@ class Foreign(Ministry):
 
     def remove_request(self, request: AidRequest) -> None:
         with Session(self._engine) as session:
-            session.delete(request._model)
+            model_request = session.query(models.AidRequestModel).filter_by(aid_id=request.id).first()
+            if model_request is None:
+                return
+            session.delete(model_request)
             session.commit()
 
-    def accept(self, request: AidRequest) -> AidMessages:
-        raise NotImplementedError
+    def _accept(self, request: AidRequest) -> None:
+        ...
 
-    def accept(self, request: AidRequest) -> AidMessages:
+    def accept(self, request: AidRequest) -> AidAcceptMessages:
         if request.recipient != self._player.identifier:
             return "not_a_recipient"
 
@@ -125,4 +134,4 @@ class Foreign(Ministry):
             member = session.query(alliance.models.AllianceMemberModel).filter_by(user=self._player.identifier).first()
             if member is None:
                 return None
-            return Alliance(member.id, self._engine)
+            return Alliance(alliance.types.AllianceId(member.id), self._engine)

@@ -4,7 +4,6 @@ import json
 from datetime import timedelta
 from typing import Dict, cast, Literal, TypedDict
 
-from pint import Quantity
 from typing_extensions import NotRequired
 
 from . import basic
@@ -176,3 +175,18 @@ class Commerce(EmployableBuilding):
     @currency.ureg.wraps(currency.CurrencyRate, None)
     def income(self) -> currency.CurrencyRate:
         return self.building["income"] * self._amount * currency.CurrencyRate
+
+
+INFRASTRUCTURE_GROUPS = {
+    "housing": Housing,
+    "education": Education,
+    "health": Health,
+    "commerce": Commerce
+}
+
+
+def get_building(name: BuildingTypes, amount: int) -> Building:
+    for group in INFRASTRUCTURE:
+        if name in INFRASTRUCTURE[group]:
+            return INFRASTRUCTURE_GROUPS[group](name, amount)
+    raise ValueError(f"Building {name} not found")

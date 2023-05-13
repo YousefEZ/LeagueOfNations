@@ -88,7 +88,32 @@ class Interior(Ministry):
 
     @property
     def population(self) -> types.basic.Population:
-        return types.basic.Population(0)
+        population = sum(building.population for building in self.infrastructure.values()
+                         if isinstance(building, types.interior.Housing))
+
+        return types.basic.Population(population)
+
+    @property
+    def employed(self) -> types.basic.Employment:
+        employment = sum(building.employment for building in self.infrastructure.values()
+                         if isinstance(building, types.interior.EmployableBuilding))
+        population = self.population
+        return types.basic.Employment(population if population < employment else employment)
+
+    @property
+    def literacy(self) -> types.basic.Literacy:
+        literacy = sum(building.literacy for building in self.infrastructure.values()
+                       if isinstance(building, types.interior.Education))
+
+        rate = self.population / literacy
+        return types.basic.Literacy(rate)
+
+    @property
+    def life_expectancy(self) -> types.basic.LifeExpectancy:
+        health = sum(building.health for building in self.infrastructure.values()
+                     if isinstance(building, types.interior.Health))
+        life_expectancy = health / 20
+        return types.basic.LifeExpectancy(life_expectancy)
 
     def build(self, building: types.interior.Building) -> InfrastructureMessages:
         if not self._player.bank.enough_funds(building.price):

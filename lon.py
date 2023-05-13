@@ -41,11 +41,6 @@ class LeagueOfNations(commands.AutoShardedBot):
         """
         return Nation(UserId(user_id), self.engine)
 
-    @commands.command()
-    async def sync(self, ctx):
-        await ctx.bot.tree.sync(guid=ctx.guild)
-        await ctx.send("Synced")
-
     @property
     def connection(self) -> sqlalchemy.engine.Connection:
         """Get an active connection to the database, or if one does not exist, then establish a connection

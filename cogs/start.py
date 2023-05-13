@@ -4,7 +4,6 @@ import discord
 import qalib
 from discord import app_commands
 from discord.ext import commands
-from qalib.template_engines import formatter
 from qalib.template_engines.jinja2 import Jinja2
 
 from cogs.custom_jinja2 import ENVIRONMENT

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
+import uuid
 from functools import cached_property
-from typing import TYPE_CHECKING, Literal, List, Optional
+from typing import TYPE_CHECKING, Literal, Dict
 
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-from host import currency
+from host import currency, base_types
 from host.nation import types, models
 from host.nation.ministry import Ministry
 
@@ -22,14 +22,32 @@ ImprovementMessages = Literal[
 
 
 class BuildRequest:
+    __slots__ = "_model", "_engine"
 
-    def __init__(self, building: types.interior.BuildingTypes, amount: int, start_time: Optional[datetime] = None):
-        self._building = building
-        self._amount = amount
-        self._start_time = start_time or datetime.now()
+    def __init__(self, model: models.BuildRequestModel, engine: Engine):
+        self._model = model
+        self._engine = engine
 
-    def create_request(self) -> models.BuildRequestModel:
-        ...
+    @property
+    def id(self) -> str:
+        return self._model.build_id
+
+    @property
+    def user(self) -> base_types.UserId:
+        return base_types.UserId(self._model.user_id)
+
+    @property
+    def building(self) -> types.interior.Building:
+        return types.interior.get_building(self._model.building, self._model.amount)
+
+    @classmethod
+    def make_request(cls, building: types.interior.Building, engine: Engine) -> BuildRequest:
+        model = models.BuildRequestModel(
+            user_id=str(int(uuid.uuid4())),
+            building=building.name,
+            quantity=building.amount
+        )
+        return cls(model, engine)
 
 
 class Interior(Ministry):
@@ -40,7 +58,7 @@ class Interior(Ministry):
         self._engine = engine
 
     @cached_property
-    def interior(self) -> models.InteriorModel:
+    def _interior(self) -> models.InteriorModel:
         with Session(self._engine) as session:
             interior = session.query(models.InteriorModel).filter_by(user_id=self._player.identifier).first()
             if interior is None:
@@ -52,24 +70,32 @@ class Interior(Ministry):
     @property
     @currency.ureg.wraps(currency.CurrencyRate, None)
     def bill(self) -> currency.CurrencyRate:
-        return 0 * currency.CurrencyRate
+        return sum(building.bill for building in self.infrastructure.values())
 
     @property
-    def infrastructure(self) -> List[models.InfrastructureModel]:
+    def infrastructure(self) -> Dict[types.interior.BuildingTypes, types.interior.Building]:
         with Session(self._engine) as session:
-            return session.query(models.InfrastructureModel).filter_by(user_id=self._player.identifier).all()
+            infrastructure = session.query(models.InfrastructureModel).filter_by(user_id=self._player.identifier).all()
+            return {
+                model.building: types.interior.get_building(model.building, model.amount) for model in infrastructure
+            }
 
-    @currency.ureg.wraps(currency.Currency, [None, None])
-    def infrastructure_cost(self, quantity: int) -> currency.Currency:
-        return 1000 * currency.Currency * self.infrastructure * quantity
+    @property
+    def constructing(self) -> bool:
+        with Session(self._engine) as session:
+            query = session.query(models.BuildRequestModel).filter_by(user_id=self._player.identifier)
+            return query.count() > 0
 
     @property
     def population(self) -> types.basic.Population:
         return types.basic.Population(0)
 
-    def build_infrastructure(self, quantity: int) -> InfrastructureMessages:
-        cost = self.infrastructure_cost(quantity)
-        if not self._player.bank.enough_funds(cost):
+    def build(self, building: types.interior.Building) -> InfrastructureMessages:
+        if not self._player.bank.enough_funds(building.price):
             return "insufficient_funds"
-        self._player.bank.deduct(cost)
+
+        if self.constructing:
+            return "already_constructing"
+        self._player.bank.deduct(building.price)
+        BuildRequest.make_request(building, self._engine)
         return "infrastructure_built"

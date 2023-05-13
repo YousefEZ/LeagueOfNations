@@ -5,7 +5,6 @@ from datetime import datetime
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
-import host.nation.types.government
 from host.base_models import Base
 from host.nation import types
 
@@ -95,8 +94,14 @@ class InfrastructureModel(Base):
     amount: Mapped[int]
 
 
-class BuildRequestModel:
-    pass
+class BuildRequestModel(Base):
+    __tablename__ = "BuildRequests"
+
+    build_id: Mapped[str] = mapped_column(primary_key=True)
+    user_id: Mapped[int]
+    building: Mapped[types.interior.BuildingTypes]
+    amount: Mapped[int]
+    start: Mapped[datetime]
 
 
 class GovernmentModel(Base):

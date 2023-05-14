@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 import discord
@@ -10,6 +12,7 @@ from sqlalchemy.engine import Engine
 import host.base_models
 from host.nation import Nation
 from host.base_types import UserId
+from view.notifications import NotificationRenderer
 
 cogs = "start", "economy"
 connect_to_db = False
@@ -26,7 +29,7 @@ class LeagueOfNations(commands.AutoShardedBot):
         )
         self.engine: Engine = create_engine(url, echo=True)
         host.base_models.Base.metadata.create_all(self.engine)
-        self.remove_command('help')
+        self.notification_renderer = NotificationRenderer(self)
 
     async def setup_hook(self) -> None:
         self.loop.create_task(self.ready())
@@ -54,13 +57,15 @@ class LeagueOfNations(commands.AutoShardedBot):
 
         try:
             for cog in cogs:
-                await self.load_extension(f"cogs.{cog}")
+                await self.load_extension(f"view.cogs.{cog}")
         except Exception as e:
             print('*[CLIENT][LOADING_EXTENSION][STATUS] ERROR ', e)
         else:
             print('*[CLIENT][LOADING_EXTENSION][STATUS] SUCCESS')
 
         await self.tree.sync()
+        self.notification_renderer.start()
+        print("*[CLIENT][NOTIFICATIONS][STATUS] READY")
 
 
 if __name__ == "__main__":

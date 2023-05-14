@@ -1,12 +1,14 @@
 from datetime import datetime
+from typing import Any, Dict
 
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.types import JSON
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedAsDataclass
 
-from host.base_types import UserId
 
-
-class Base(DeclarativeBase):
-    pass
+class Base(MappedAsDataclass, DeclarativeBase):
+    type_annotation_map = {
+        Dict[str, Any]: JSON
+    }
 
 
 class NotificationModel(Base):
@@ -16,3 +18,4 @@ class NotificationModel(Base):
     user_id: Mapped[str]
     date: Mapped[datetime]
     message: Mapped[str]
+    keywords: Mapped[Dict[str, Any]]

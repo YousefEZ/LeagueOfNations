@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import datetime
 import uuid
+from datetime import timedelta
 from functools import cached_property
 from typing import TYPE_CHECKING, Literal, Dict
 
@@ -10,14 +12,13 @@ from sqlalchemy.orm import Session
 from host import currency, base_types
 from host.nation import types, models
 from host.nation.ministry import Ministry
+from host.notifier import Notifier, Notification
 
 if TYPE_CHECKING:
     from host.nation import Nation
 
-InfrastructureMessages = Literal["infrastructure_built", "insufficient_funds", "insufficient_resources"]
-ImprovementMessages = Literal[
-    "not_enough_improvements", "negative_quantity", "improvement_sold", "improvement_bought", "insufficient_funds",
-    "exceeding_maximum_quantity"
+InfrastructureMessages = Literal[
+    "infrastructure_built", "insufficient_funds", "insufficient_resources", "already_constructing", "build_request_sent"
 ]
 
 
@@ -39,6 +40,20 @@ class BuildRequest:
     @property
     def building(self) -> types.interior.Building:
         return types.interior.get_building(self._model.building, self._model.amount)
+
+    @property
+    def completed(self) -> bool:
+        return datetime.datetime.now() >= self.completion
+
+    @property
+    def remaining_time(self) -> timedelta:
+        if self.completed:
+            return timedelta()
+        return datetime.datetime.now() - self.completion
+
+    @property
+    def completion(self) -> datetime.datetime:
+        return self._model.start + self.building.build_time
 
     @classmethod
     def make_request(cls, building: types.interior.Building, engine: Engine) -> BuildRequest:
@@ -122,5 +137,8 @@ class Interior(Ministry):
         if self.constructing:
             return "already_constructing"
         self._player.bank.deduct(building.price)
-        BuildRequest.make_request(building, self._engine)
-        return "infrastructure_built"
+        request = BuildRequest.make_request(building, self._engine)
+        notification = Notification(self._player.identifier, request.completion, "building_complete",
+                                    {"user": self._player.identifier, "request": request.id})
+        Notifier(self._engine).schedule(notification)
+        return "build_request_sent"

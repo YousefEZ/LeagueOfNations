@@ -18,4 +18,4 @@ class NotificationModel(Base):
     user_id: Mapped[str]
     date: Mapped[datetime]
     message: Mapped[str]
-    keywords: Mapped[Dict[str, Any]]
+    data: Mapped[Dict[str, Any]]

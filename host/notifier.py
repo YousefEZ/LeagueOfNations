@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from host.base_models import NotificationModel
 from host.base_types import UserId
 
-RESOLUTION: timedelta = timedelta(seconds=5)
+NOTIFIER_RESOLUTION: timedelta = timedelta(seconds=5)
 
 
 @dataclass(frozen=True)
@@ -22,7 +22,7 @@ class Notification:
     user_id: UserId
     time: datetime
     message: str
-    keywords: Optional[dict[str, Any]] = None
+    data: Optional[dict[str, Any]] = None
     notification_id: str = field(default_factory=lambda: str(hex(int(uuid4()))))
 
 
@@ -72,7 +72,7 @@ class Notifier:
                 user_id=result.user_id,
                 time=result.date,
                 message=result.message,
-                keywords=result.keywords,
+                data=result.data,
                 notification_id=result.notification_id
             )
 
@@ -90,7 +90,7 @@ class Notifier:
                 user_id=notification.user_id,
                 date=notification.time,
                 message=notification.message,
-                keywords=notification.keywords
+                keywords=notification.data
             ))
             session.commit()
 
@@ -116,6 +116,6 @@ class Notifier:
         def run():
             while True:
                 self._scheduler.run(blocking=False)
-                time.sleep(RESOLUTION.total_seconds())
+                time.sleep(NOTIFIER_RESOLUTION.total_seconds())
 
         threading.Thread(target=run, daemon=True).start()

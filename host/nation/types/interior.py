@@ -61,7 +61,7 @@ class EducationalDescription(EmployableDescription):
     literacy: float
 
 
-with open("objects/infrastructure.json") as file:
+with open("objects/infrastructure.json", "r", encoding="utf8") as file:
     INFRASTRUCTURE: Dict[str, BuildingDescription] = json.load(file)
 
 

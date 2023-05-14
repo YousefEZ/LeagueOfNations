@@ -5,7 +5,7 @@ from discord import app_commands
 from discord.ext import commands
 from qalib.template_engines.jinja2 import Jinja2
 
-from cogs.custom_jinja2 import ENVIRONMENT
+from view.cogs.custom_jinja2 import ENVIRONMENT
 from lon import LeagueOfNations
 
 EconomyMessages = Literal["balance"]

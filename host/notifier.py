@@ -1,40 +1,28 @@
 from __future__ import annotations
 
-import asyncio
-import warnings
+import threading
+import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 from sched import scheduler
-from typing import Optional, Callable, Any, List, Coroutine, Dict, Union
+from typing import Optional, Callable, Any, List
 from uuid import uuid4
 
-import discord.ui
-from qalib import Renderer
-from qalib.template_engines.jinja2 import Jinja2
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
 from host.base_models import NotificationModel
 from host.base_types import UserId
 
+RESOLUTION: timedelta = timedelta(seconds=5)
+
 
 @dataclass(frozen=True)
-class BaseNotification:
+class Notification:
     user_id: UserId
     time: datetime
-
-
-@dataclass(frozen=True)
-class TemplateNotification(BaseNotification):
-    template: str
-    key: str
-    keywords: Dict[str, Any]
-    notification_id: str = field(default_factory=lambda: str(hex(int(uuid4()))))
-
-
-@dataclass(frozen=True)
-class Notification(BaseNotification):
-    payload: Optional[str] = None
+    message: str
+    keywords: Optional[dict[str, Any]] = None
     notification_id: str = field(default_factory=lambda: str(hex(int(uuid4()))))
 
 
@@ -42,86 +30,92 @@ class NotifierError(Exception):
     pass
 
 
-def _template_notification(notification: TemplateNotification) -> Notification:
-    renderer: Renderer[str] = Renderer(Jinja2(), notification.template)
-    message = renderer.render(notification.key, keywords=notification.keywords)
-    assert not isinstance(message, discord.ui.Modal)
-    return Notification(
-        user_id=notification.user_id,
-        time=notification.time,
-        payload=message.content,
-        notification_id=notification.notification_id
-    )
-
-
 class Notifier:
+    """Singleton class that handles the tracking and consumption of Notifications"""
     _instance: Optional[Notifier] = None
+    _scheduler: scheduler = scheduler()
+    _hooks: List[Callable[[Notification], Any]] = []
+    _loaded: bool = False
+    _lock: threading.Lock = threading.Lock()
 
     def __init__(self, engine: Engine):
         self._engine = engine
-        self._scheduler = scheduler()
-        self._scheduler.run(blocking=False)
-        self._notification_hooks: List[Callable[[str], Coroutine[Any, Any, Any]]] = []
+        if not self._loaded:
+            self._load_notifications_from_db()
 
-    def _load_notification_from_db(self):
+    def _load_notifications_from_db(self) -> None:
+        with self._lock:
+            if self._loaded:
+                return
+            with Session(self._engine) as session:
+                result = session.query(NotificationModel.notification_id, NotificationModel.date).all()
+                for notification in result:
+                    self._schedule(notification.notification_id, notification.date)
+                self._loaded = True
+
+    def _schedule(self, notification_id: str, date: datetime) -> None:
+        """Private method that schedules a notification for consumption by the view"""
+        now = datetime.now()
+        print(f"Scheduling For {date - now} from now")
+        if date < now:
+            self._display(notification_id)
+            return
+        delay = int((date - now).total_seconds())
+        self._scheduler.enter(delay, 0, self._display, argument=(notification_id,))
+
+    def _display(self, notification_id: str) -> None:
+        print("Displaying notification", notification_id)
         with Session(self._engine) as session:
-            result = session.query(NotificationModel).all()
-            for row in result:
-                notification = Notification(
-                    user_id=row.user_id,
-                    time=row.date,
-                    payload=row.message,
-                    notification_id=row.notification_id
-                )
-                self._scheduler.enterabs((notification.time - datetime.now()).seconds, 0, self.display,
-                                         argument=(notification,))
+            result = session.query(NotificationModel).filter_by(notification_id=notification_id).first()
+            assert result is not None, "Notification not found"
+            notification = Notification(
+                user_id=result.user_id,
+                time=result.date,
+                message=result.message,
+                keywords=result.keywords,
+                notification_id=result.notification_id
+            )
 
-    def __new__(cls, *args, **kwargs):
-        if not hasattr(cls, '_instance'):
-            cls._instance = Notifier(*args, **kwargs)
-            return cls._instance
-        warnings.warn("An instance has already been instantiated use get_instance instead", RuntimeWarning)
+            for hook in self._hooks:
+                hook(notification)
 
-    @staticmethod
-    def get_instance() -> Notifier:
-        if Notifier._instance is None:
-            raise NotifierError("Notifier has not been started")
-        return Notifier._instance
-
-    def _delete_notification(self, notification_id: str) -> None:
-        with Session(self._engine) as session:
-            session.query(NotificationModel).filter_by(notification_id=notification_id).delete()
+            session.delete(result)
             session.commit()
 
-    async def _display(self, notification: Notification):
-        if notification.payload is None:
-            self._delete_notification(notification.notification_id)
-            return
-
-        for hook in self._notification_hooks:
-            await hook(notification.payload)
-
-        self._delete_notification(notification.notification_id)
-
-    def display(self, notification: Notification):
-        asyncio.get_running_loop().create_task(self._display(notification))
-
-    def _add_notification_to_db(self, notification: Notification):
+    def _add_notification_to_db(self, notification: Notification) -> None:
+        """Private method that stores the notification in the database"""
         with Session(self._engine) as session:
             session.add(NotificationModel(
                 notification_id=notification.notification_id,
                 user_id=notification.user_id,
                 date=notification.time,
-                message=notification.payload
+                message=notification.message,
+                keywords=notification.keywords
             ))
             session.commit()
 
-    def schedule(self, notification: Union[Notification, TemplateNotification]):
-        delay = (notification.time - datetime.now()).seconds
+    @staticmethod
+    def hook(hook: Callable[[Notification], Any]) -> None:
 
-        if isinstance(notification, TemplateNotification):
-            notification = _template_notification(notification)
+        """Method that adds a hook to the notifier
 
-        assert notification.payload is not None, "Message content cannot be None"
+        Args:
+            hook (Callable[[Notification], Coroutine[Any, Any, Any]]): the hook to be added
+        """
+        Notifier._hooks.append(hook)
+
+    def schedule(self, notification: Notification) -> None:
+        """Method that schedules a notification for consumption by the view"""
+
         self._add_notification_to_db(notification)
-        self._scheduler.enter(delay, 0, self.display, argument=(notification,))
+        self._schedule(notification.notification_id, notification.time)
+
+    def start(self) -> None:
+        """This method is start when the view is ready, so it begins consuming updates"""
+
+        def run():
+            while True:
+                self._scheduler.run(blocking=False)
+                time.sleep(RESOLUTION.total_seconds())
+
+        threading.Thread(target=run, daemon=True).start()

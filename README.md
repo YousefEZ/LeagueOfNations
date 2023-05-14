@@ -1,4 +1,4 @@
-# League Of Nations Rewritten
+# ![lon_icon-25x25](https://github.com/YousefEZ/LeagueOfNations/assets/45167695/87612009-5423-4359-9266-43590a196f5d) League Of Nations Rewritten
 
 ## :wrench: Setup
 

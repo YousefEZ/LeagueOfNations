@@ -4,7 +4,8 @@ import datetime
 import uuid
 from datetime import timedelta
 from functools import cached_property
-from typing import TYPE_CHECKING, Literal, Dict
+from queue import Queue
+from typing import TYPE_CHECKING, Literal, Dict, Union
 
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
@@ -12,20 +13,22 @@ from sqlalchemy.orm import Session
 from host import currency, base_types
 from host.nation import types, models
 from host.nation.ministry import Ministry
-from host.notifier import Notifier, Notification
+from host import notifier
 
 if TYPE_CHECKING:
     from host.nation import Nation
 
+InfrastructureQueueMessage = Literal["added_to_queue"]
 InfrastructureMessages = Literal[
-    "infrastructure_built", "insufficient_funds", "insufficient_resources", "already_constructing", "build_request_sent"
+    "infrastructure_built", "insufficient_funds", "insufficient_resources", "already_constructing",
+    "build_request_sent", InfrastructureQueueMessage
 ]
 
 
 class BuildRequest:
     __slots__ = "_model", "_engine"
 
-    def __init__(self, model: models.BuildRequestModel, engine: Engine):
+    def __init__(self, model: Union[models.BuildRequestModel, models.BuildRequestQueuedModel], engine: Engine):
         self._model = model
         self._engine = engine
 
@@ -130,15 +133,42 @@ class Interior(Ministry):
         life_expectancy = health / 20
         return types.basic.LifeExpectancy(life_expectancy)
 
+    def _add_building_to_queue(self, building: types.interior.Building) -> InfrastructureQueueMessage:
+        self._player.bank.deduct(building.price)
+        model = models.BuildRequestQueuedModel(
+            user_id=self._player.identifier,
+            building=building.name,
+            amount=building.amount,
+            start=datetime.datetime.now()
+        )
+        request = BuildRequest(model, self._engine)
+        notification = notifier.Notification(self._player.identifier, "building_complete",
+                                             {"user": self._player.identifier, "request": request.id},
+                                             request.completion)
+        notifier.schedule(notification, self._engine)
+        return "added_to_queue"
+
+    @property
+    def queue(self) -> Queue[BuildRequest]:
+        return Queue()
+
     def build(self, building: types.interior.Building) -> InfrastructureMessages:
         if not self._player.bank.enough_funds(building.price):
             return "insufficient_funds"
 
         if self.constructing:
-            return "already_constructing"
+            return self._add_building_to_queue(building)
+
         self._player.bank.deduct(building.price)
-        request = BuildRequest.make_request(building, self._engine)
-        notification = Notification(self._player.identifier, request.completion, "building_complete",
-                                    {"user": self._player.identifier, "request": request.id})
-        Notifier(self._engine).schedule(notification)
+        model = models.BuildRequestModel(
+            user_id=self._player.identifier,
+            building=building.name,
+            amount=building.amount,
+            start=datetime.datetime.now()
+        )
+        request = BuildRequest(model, self._engine)
+        notification = notifier.Notification(self._player.identifier, "building_complete",
+                                             {"user": self._player.identifier, "request": request.id},
+                                             request.completion)
+        notifier.schedule(notification, self._engine)
         return "build_request_sent"

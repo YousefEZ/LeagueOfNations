@@ -104,6 +104,16 @@ class BuildRequestModel(Base):
     start: Mapped[datetime]
 
 
+class BuildRequestQueuedModel(Base):
+    __tablename__ = "BuildRequestsQueued"
+
+    build_id: Mapped[str] = mapped_column(primary_key=True)
+    user_id: Mapped[int]
+    building: Mapped[types.interior.BuildingTypes]
+    amount: Mapped[int]
+    submitted: Mapped[datetime]
+
+
 class GovernmentModel(Base):
     __tablename__ = "Government"
 

@@ -13,6 +13,7 @@ from host.alliance import Alliance
 import host.alliance.models
 from host.nation.ministry import Ministry
 from host.nation import models
+from host import notifier
 
 if TYPE_CHECKING:
     from host.nation import Nation
@@ -102,13 +103,21 @@ class Foreign(Ministry):
         self._send(request)
         return "success"
 
-    def remove_request(self, request: AidRequest) -> None:
+    def _remove_request(self, request: AidRequest) -> None:
         with Session(self._engine) as session:
             model_request = session.query(models.AidRequestModel).filter_by(aid_id=request.id).first()
             if model_request is None:
                 return
             session.delete(model_request)
             session.commit()
+
+    def decline(self, request: AidRequest) -> None:
+        if request.recipient != self._player.identifier:
+            return
+
+        self._remove_request(request)
+        notification = notifier.Notification(request.sponsor, "AidDeclined", {"recipient": self._player.identifier})
+        notifier.schedule(notification, self._engine)
 
     def _accept(self, request: AidRequest) -> None:
         ...
@@ -121,11 +130,10 @@ class Foreign(Ministry):
             return "insufficient_funds"
 
         if request.expires < datetime.now():
-            self.remove_request(request)
+            self._remove_request(request)
             return "expired"
 
         self._accept(request)
-
         return "success"
 
     @property

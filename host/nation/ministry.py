@@ -4,18 +4,19 @@ from abc import ABC
 
 import host.base_types
 import host.currency
+import host.ureg
 from host.nation import types
 
 
 class Ministry(ABC):
 
     @property
-    @host.currency.ureg.wraps(host.currency.CurrencyRate, None)
+    @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
     def bill(self) -> host.currency.CurrencyRate:
         return 0 * host.currency.CurrencyRate
 
     @property
-    @host.currency.ureg.wraps(host.currency.CurrencyRate, None)
+    @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
     def revenue(self) -> host.currency.CurrencyRate:
         return 0 * host.currency.CurrencyRate
 

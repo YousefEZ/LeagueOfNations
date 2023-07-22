@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from pint import UnitRegistry
+from host.ureg import Registry
 
-ureg = UnitRegistry()
-ureg.define("LND = [currency]")
-
-Currency = ureg.LND
-CurrencyRate = ureg.LND / ureg.days
+Registry.define("LND = [currency]")
+Currency = Registry.LND
+CurrencyRate = Registry.LND / Registry.days

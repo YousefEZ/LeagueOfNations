@@ -7,6 +7,7 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
 import host.currency
+import host.ureg
 from host import base_types, Defaults
 from host.nation.ministry import Ministry
 from host.nation.models import BankModel
@@ -22,14 +23,14 @@ REVENUE_PER_HAPPINESS = 3 * 86400
 
 class FundReceiver(Protocol):
 
-    @host.currency.ureg.wraps(None, [None, host.currency.Currency])
+    @host.ureg.Registry.wraps(None, [None, host.currency.Currency])
     def receive(self, funds: host.currency.Currency) -> None:
         raise NotImplementedError
 
 
 class FundSender(Protocol):
 
-    @host.currency.ureg.wraps(None, [None, host.currency.Currency, None])
+    @host.ureg.Registry.wraps(None, [None, host.currency.Currency, None])
     def send(self, funds: host.currency.Currency, target: FundReceiver) -> SendingResponses:
         raise NotImplementedError
 
@@ -68,13 +69,13 @@ class Bank(Ministry, FundReceiver, FundSender):
             session.commit()
 
     @property
-    @host.currency.ureg.wraps(host.currency.Currency, None)
+    @host.ureg.Registry.wraps(host.currency.Currency, None)
     def funds(self) -> host.currency.Currency:
         self._update_treasury()
         return self.model.treasury
 
     @property
-    @host.currency.ureg.wraps(host.currency.CurrencyRate, None)
+    @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
     def national_revenue(self) -> host.currency.CurrencyRate:
         income_modifier = self._player.boost("income_modifier")
         income_increase = self._player.boost("income_increase") * host.currency.CurrencyRate
@@ -85,7 +86,7 @@ class Bank(Ministry, FundReceiver, FundSender):
         return revenue + income_increase
 
     @property
-    @host.currency.ureg.wraps(host.currency.CurrencyRate, None)
+    @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
     def national_bill(self) -> host.currency.CurrencyRate:
         bill_modifier = self._player.boost("bill_modifier")
         bill_reduction = self._player.boost("bill_reduction") * host.currency.CurrencyRate
@@ -96,7 +97,7 @@ class Bank(Ministry, FundReceiver, FundSender):
         return costs * (1 - bill_modifier / 100)
 
     @property
-    @host.currency.ureg.wraps(host.currency.CurrencyRate, None)
+    @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
     def national_profit(self) -> host.currency.CurrencyRate:
         revenue: host.currency.CurrencyRate = self.national_revenue
         expenditure: host.currency.CurrencyRate = self.national_bill
@@ -125,25 +126,25 @@ class Bank(Ministry, FundReceiver, FundSender):
         with Session(self._engine) as session:
             session.commit()
 
-    @host.currency.ureg.wraps(host.currency.Currency, [None, None])
+    @host.ureg.Registry.wraps(host.currency.Currency, [None, None])
     def _retrieve_revenue(self, timestamp: datetime) -> host.currency.Currency:
         time_difference: timedelta = timestamp - self.model.last_accessed
-        seconds = time_difference.total_seconds() * host.currency.ureg.seconds
-        return self.national_revenue.to(host.currency.Currency / host.currency.ureg.seconds) * seconds
+        seconds = time_difference.total_seconds() * host.ureg.Registry.seconds
+        return self.national_revenue.to(host.currency.Currency / host.ureg.Registry.seconds) * seconds
 
-    @host.currency.ureg.wraps(host.currency.Currency, [None, None])
+    @host.ureg.Registry.wraps(host.currency.Currency, [None, None])
     def _retrieve_bill(self, timestamp: datetime) -> host.currency.Currency:
         time_difference: timedelta = timestamp - self.model.last_accessed
-        seconds = time_difference.total_seconds() * host.currency.ureg.seconds
-        return self.national_bill.to(host.currency.Currency / host.currency.ureg.seconds) * seconds
+        seconds = time_difference.total_seconds() * host.ureg.Registry.seconds
+        return self.national_bill.to(host.currency.Currency / host.ureg.Registry.seconds) * seconds
 
-    @host.currency.ureg.wraps(host.currency.Currency, [None, None])
+    @host.ureg.Registry.wraps(host.currency.Currency, [None, None])
     def _retrieve_profit(self, timestamp: datetime) -> host.currency.Currency:
         revenue: host.currency.Currency = self._retrieve_revenue(timestamp)
         expenses: host.currency.Currency = self._retrieve_bill(timestamp)
         return revenue - expenses
 
-    @host.currency.ureg.wraps(None, [None, host.currency.Currency])
+    @host.ureg.Registry.wraps(None, [None, host.currency.Currency])
     def add(self, amount: host.currency.Currency) -> None:
         if amount < 0 * host.currency.Currency:
             raise ValueError("Cannot add negative funds")
@@ -151,11 +152,11 @@ class Bank(Ministry, FundReceiver, FundSender):
         with Session(self._engine) as session:
             session.commit()
 
-    @host.currency.ureg.wraps(None, [None, host.currency.Currency])
+    @host.ureg.Registry.wraps(None, [None, host.currency.Currency])
     def enough_funds(self, amount: host.currency.Currency) -> bool:
         return self.funds >= amount
 
-    @host.currency.ureg.wraps(None, [None, host.currency.Currency, None])
+    @host.ureg.Registry.wraps(None, [None, host.currency.Currency, None])
     def deduct(self, amount: host.currency.Currency, force: bool = True) -> None:
         if self.model < amount and not force:
             raise ValueError("Insufficient funds")
@@ -164,7 +165,7 @@ class Bank(Ministry, FundReceiver, FundSender):
         with Session(self._engine) as session:
             session.commit()
 
-    @host.currency.ureg.wraps(None, [None, host.currency.Currency, None])
+    @host.ureg.Registry.wraps(None, [None, host.currency.Currency, None])
     def send(self, amount: host.currency.Currency, target: FundReceiver) -> SendingResponses:
         if self.funds < amount:
             return "insufficient_funds"
@@ -176,6 +177,6 @@ class Bank(Ministry, FundReceiver, FundSender):
             raise e
         return "success"
 
-    @host.currency.ureg.wraps(None, [None, host.currency.Currency])
+    @host.ureg.Registry.wraps(None, [None, host.currency.Currency])
     def receive(self, funds: host.currency.Currency) -> None:
         self.add(funds)

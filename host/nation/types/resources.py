@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Literal, NamedTuple, TypedDict, Dict
 
 from host.nation.types.boosts import BoostsLookup
@@ -22,3 +23,5 @@ class Resource(TypedDict):
 
 
 Resources = Dict[ResourceTypes, Resource]
+with open("host/nation/resources.json", "r") as file:
+    resources: Resources = {resource: Resource(**data) for resource, data in json.load(file).items()}

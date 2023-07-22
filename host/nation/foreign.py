@@ -8,6 +8,7 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
 import host.currency
+import host.ureg
 from host import alliance, base_types
 from host.alliance import Alliance
 import host.alliance.models
@@ -51,7 +52,7 @@ class Aid:
         return self._model.date
 
     @property
-    @host.currency.ureg.wraps(host.currency.Currency, None)
+    @host.ureg.Registry.wraps(host.currency.Currency, None)
     def amount(self) -> host.currency.Currency:
         return self._model.amount
 
@@ -83,7 +84,7 @@ class Foreign(Ministry):
             session.add(request)
             session.commit()
 
-    @host.currency.ureg.wraps(None, [None, None, host.currency.Currency])
+    @host.ureg.Registry.wraps(None, [None, None, host.currency.Currency])
     def send(self, recipient: base_types.UserId, amount: host.currency.Currency) -> AidMessages:
         if recipient == self._player.identifier:
             return "cannot_be_sponsor"

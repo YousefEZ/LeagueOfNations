@@ -12,8 +12,8 @@ if TYPE_CHECKING:
     from host.nation import Nation
 
 with open("object/governments.json", "r") as governments_file:
-    Governments: Dict[
-        types.government.GovernmentTypes, types.government.Government] = json.load(governments_file)
+    Governments = {identifier: types.government.Government(**government) for identifier, government in
+                   json.load(governments_file).items()}
 
 
 class Government(Ministry):
@@ -45,4 +45,4 @@ class Government(Ministry):
             session.commit()
 
     def boost(self, boost: types.boosts.Boosts) -> float:
-        return self.government["boosts"].get(boost, 0.0)
+        return self.government.boosts.get(boost, 0.0)

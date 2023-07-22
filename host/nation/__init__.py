@@ -6,6 +6,7 @@ from typing import List, get_args
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
+import host.ureg
 from host import base_types, Defaults, currency
 from host.nation import types, models
 from host.nation.bank import Bank
@@ -14,6 +15,9 @@ from host.nation.interior import Interior
 from host.nation.meta import Meta
 from host.nation.ministry import Ministry
 from host.nation.trade import Trade
+from host.nation.types.basic import Population
+
+POPULATION_PER_INFRASTRUCTURE = Defaults.get("population_per_infrastructure", 9)
 
 
 class Nation:
@@ -73,8 +77,8 @@ class Nation:
         return types.basic.Happiness(happiness * self.happiness_modifier)
 
     @property
-    def population(self) -> int:
-        return self.interior.population
+    def population(self) -> Population:
+        return Population(self.interior.infrastructure.amount * POPULATION_PER_INFRASTRUCTURE)
 
     @property
     def happiness_modifier(self) -> float:
@@ -84,7 +88,7 @@ class Nation:
         return sum(ministry_object.boost(boost) for ministry_object in self.ministries)
 
     @property
-    @currency.ureg.wraps(currency.CurrencyRate, None)
+    @host.ureg.Registry.wraps(currency.CurrencyRate, None)
     def revenue(self) -> currency.CurrencyRate:
         happiness = self.happiness
         population = self.population

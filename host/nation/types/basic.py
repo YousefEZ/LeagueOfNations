@@ -1,8 +1,9 @@
 from typing import NewType
 
+from host import ureg
+
 Happiness = NewType("Happiness", float)
 Population = NewType("Population", int)
-Literacy = NewType("Literacy", float)
-Employment = NewType("Employment", float)
-LifeExpectancy = NewType("LifeExpectancy", float)
-Health = NewType("Health", float)
+Infrastructure = NewType("Infrastructure", int)
+Technology = NewType("Technology", int)
+Land = ureg.Registry.kilometer ** 2

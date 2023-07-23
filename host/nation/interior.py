@@ -11,7 +11,7 @@ import host.ureg
 from host import currency
 from host.nation import models
 from host.nation.ministry import Ministry
-from host.nation.types.basic import Infrastructure, Land, Technology
+from host.nation.types.basic import InfrastructureUnit, LandUnit, TechnologyUnit
 from host.nation.types.boosts import PriceModifierBoosts, BillModifierBoosts
 
 if TYPE_CHECKING:
@@ -162,142 +162,142 @@ def calculator(cls: Data[K]) -> CalculatorProtocol[K]:
 
 
 @calculator
-class InfrastructureCalculator(Calculator[Infrastructure]):
+class Infrastructure(Calculator[InfrastructureUnit]):
     PriceModifier = "infrastructure_cost_modifier"
     FloorPrice = currency.Currency(500)
     PricePoints = OrderedDict([
-        (20, currency.Currency(12)),
-        (100, currency.Currency(15)),
-        (200, currency.Currency(20)),
-        (1_000, currency.Currency(25)),
-        (3_000, currency.Currency(30)),
-        (4_000, currency.Currency(40)),
-        (5_000, currency.Currency(60)),
-        (8_000, currency.Currency(70)),
-        (15_000, currency.Currency(80)),
+        (InfrastructureUnit(20), currency.Currency(12)),
+        (InfrastructureUnit(100), currency.Currency(15)),
+        (InfrastructureUnit(200), currency.Currency(20)),
+        (InfrastructureUnit(1_000), currency.Currency(25)),
+        (InfrastructureUnit(3_000), currency.Currency(30)),
+        (InfrastructureUnit(4_000), currency.Currency(40)),
+        (InfrastructureUnit(5_000), currency.Currency(60)),
+        (InfrastructureUnit(8_000), currency.Currency(70)),
+        (InfrastructureUnit(15_000), currency.Currency(80)),
     ])
     BillModifier = "infrastructure_bill_modifier"
     FloorBill = currency.CurrencyRate(20)
     BillPoints = OrderedDict([
-        (100, currency.CurrencyRate(0.04)),
-        (200, currency.CurrencyRate(0.05)),
-        (300, currency.CurrencyRate(0.06)),
-        (500, currency.CurrencyRate(0.07)),
-        (700, currency.CurrencyRate(0.08)),
-        (1_000, currency.CurrencyRate(0.09)),
-        (2_000, currency.CurrencyRate(0.11)),
-        (3_000, currency.CurrencyRate(0.13)),
-        (4_000, currency.CurrencyRate(0.15)),
-        (5_000, currency.CurrencyRate(0.17)),
-        (8_000, currency.CurrencyRate(0.1725)),
-        (32_000, currency.CurrencyRate(0.175)),
-        (35_000, currency.CurrencyRate(0.15)),
-        (37_000, currency.CurrencyRate(0.14)),
-        (40_000, currency.CurrencyRate(0.13)),
+        (InfrastructureUnit(100), currency.CurrencyRate(0.04)),
+        (InfrastructureUnit(200), currency.CurrencyRate(0.05)),
+        (InfrastructureUnit(300), currency.CurrencyRate(0.06)),
+        (InfrastructureUnit(500), currency.CurrencyRate(0.07)),
+        (InfrastructureUnit(700), currency.CurrencyRate(0.08)),
+        (InfrastructureUnit(1_000), currency.CurrencyRate(0.09)),
+        (InfrastructureUnit(2_000), currency.CurrencyRate(0.11)),
+        (InfrastructureUnit(3_000), currency.CurrencyRate(0.13)),
+        (InfrastructureUnit(4_000), currency.CurrencyRate(0.15)),
+        (InfrastructureUnit(5_000), currency.CurrencyRate(0.17)),
+        (InfrastructureUnit(8_000), currency.CurrencyRate(0.1725)),
+        (InfrastructureUnit(32_000), currency.CurrencyRate(0.175)),
+        (InfrastructureUnit(35_000), currency.CurrencyRate(0.15)),
+        (InfrastructureUnit(37_000), currency.CurrencyRate(0.14)),
+        (InfrastructureUnit(40_000), currency.CurrencyRate(0.13)),
     ])
 
     @staticmethod
-    def get(interior: models.InteriorModel) -> Infrastructure:
+    def get(interior: models.InteriorModel) -> InfrastructureUnit:
         return interior.infrastructure
 
     @staticmethod
-    def set(interior: models.InteriorModel, value: Infrastructure) -> None:
+    def set(interior: models.InteriorModel, value: InfrastructureUnit) -> None:
         interior.infrastructure = value
 
 
 @calculator
-class LandCalculator(Calculator[Land]):
+class Land(Calculator[LandUnit]):
     PriceModifier = "land_cost_modifier"
     FloorPrice: currency.Currency = currency.Currency(400)
-    PricePoints: OrderedDict[Land, currency.Currency] = OrderedDict([
-        (Land(20), currency.Currency(1.5)),
-        (Land(30), currency.Currency(2)),
-        (Land(40), currency.Currency(2.5)),
-        (Land(100), currency.Currency(3)),
-        (Land(150), currency.Currency(3.5)),
-        (Land(200), currency.Currency(5)),
-        (Land(250), currency.Currency(10)),
-        (Land(300), currency.Currency(15)),
-        (Land(400), currency.Currency(20)),
-        (Land(500), currency.Currency(25)),
-        (Land(800), currency.Currency(30)),
-        (Land(1_200), currency.Currency(35)),
-        (Land(2_000), currency.Currency(40)),
-        (Land(3_000), currency.Currency(45)),
-        (Land(4_000), currency.Currency(55)),
-        (Land(8_000), currency.Currency(75))
+    PricePoints: OrderedDict[LandUnit, currency.Currency] = OrderedDict([
+        (LandUnit(20), currency.Currency(1.5)),
+        (LandUnit(30), currency.Currency(2)),
+        (LandUnit(40), currency.Currency(2.5)),
+        (LandUnit(100), currency.Currency(3)),
+        (LandUnit(150), currency.Currency(3.5)),
+        (LandUnit(200), currency.Currency(5)),
+        (LandUnit(250), currency.Currency(10)),
+        (LandUnit(300), currency.Currency(15)),
+        (LandUnit(400), currency.Currency(20)),
+        (LandUnit(500), currency.Currency(25)),
+        (LandUnit(800), currency.Currency(30)),
+        (LandUnit(1_200), currency.Currency(35)),
+        (LandUnit(2_000), currency.Currency(40)),
+        (LandUnit(3_000), currency.Currency(45)),
+        (LandUnit(4_000), currency.Currency(55)),
+        (LandUnit(8_000), currency.Currency(75))
     ])
     BillModifier = "land_bill_modifier"
     FloorBill: currency.Currency = currency.CurrencyRate(0.3)
-    BillPoints: OrderedDict[Land, currency.CurrencyRate] = OrderedDict([
-        (Land(20), currency.CurrencyRate(0.001)),
-        (Land(30), currency.CurrencyRate(0.002)),
-        (Land(40), currency.CurrencyRate(0.003)),
-        (Land(100), currency.CurrencyRate(0.004)),
-        (Land(150), currency.CurrencyRate(0.005)),
-        (Land(200), currency.CurrencyRate(0.006)),
-        (Land(250), currency.CurrencyRate(0.007)),
-        (Land(300), currency.CurrencyRate(0.008)),
-        (Land(400), currency.CurrencyRate(0.009)),
-        (Land(500), currency.CurrencyRate(0.01)),
-        (Land(800), currency.CurrencyRate(0.011)),
-        (Land(1_200), currency.CurrencyRate(0.012)),
-        (Land(2_000), currency.CurrencyRate(0.013)),
-        (Land(3_000), currency.CurrencyRate(0.014)),
-        (Land(4_000), currency.CurrencyRate(0.015)),
-        (Land(8_000), currency.CurrencyRate(0.016))
+    BillPoints: OrderedDict[LandUnit, currency.CurrencyRate] = OrderedDict([
+        (LandUnit(20), currency.CurrencyRate(0.001)),
+        (LandUnit(30), currency.CurrencyRate(0.002)),
+        (LandUnit(40), currency.CurrencyRate(0.003)),
+        (LandUnit(100), currency.CurrencyRate(0.004)),
+        (LandUnit(150), currency.CurrencyRate(0.005)),
+        (LandUnit(200), currency.CurrencyRate(0.006)),
+        (LandUnit(250), currency.CurrencyRate(0.007)),
+        (LandUnit(300), currency.CurrencyRate(0.008)),
+        (LandUnit(400), currency.CurrencyRate(0.009)),
+        (LandUnit(500), currency.CurrencyRate(0.01)),
+        (LandUnit(800), currency.CurrencyRate(0.011)),
+        (LandUnit(1_200), currency.CurrencyRate(0.012)),
+        (LandUnit(2_000), currency.CurrencyRate(0.013)),
+        (LandUnit(3_000), currency.CurrencyRate(0.014)),
+        (LandUnit(4_000), currency.CurrencyRate(0.015)),
+        (LandUnit(8_000), currency.CurrencyRate(0.016))
     ])
 
     @staticmethod
-    def get(interior: models.InteriorModel) -> Land:
+    def get(interior: models.InteriorModel) -> LandUnit:
         return interior.land
 
     @staticmethod
-    def set(interior: models.InteriorModel, value: Land) -> None:
+    def set(interior: models.InteriorModel, value: LandUnit) -> None:
         interior.land = value
 
 
 @calculator
-class TechnologyCalculator(Calculator[Technology]):
+class Technology(Calculator[TechnologyUnit]):
     PriceModifier = "technology_cost_modifier"
     FloorPrice = currency.Currency(0)
     PricePoints = OrderedDict([
-        (Technology(0), currency.Currency(4_000)),
-        (Technology(10), currency.Currency(12_000)),
-        (Technology(50), currency.Currency(16_000)),
-        (Technology(100), currency.Currency(25_000)),
-        (Technology(200), currency.Currency(30_000)),
-        (Technology(400), currency.Currency(40_000)),
-        (Technology(800), currency.Currency(60_000)),
-        (Technology(1_500), currency.Currency(70_000)),
-        (Technology(5_000), currency.Currency(80_000)),
-        (Technology(10_000), currency.Currency(90_000)),
-        (Technology(20_000), currency.Currency(100_000)),
-        (Technology(150_000), currency.Currency(120_000))
+        (TechnologyUnit(0), currency.Currency(4_000)),
+        (TechnologyUnit(10), currency.Currency(12_000)),
+        (TechnologyUnit(50), currency.Currency(16_000)),
+        (TechnologyUnit(100), currency.Currency(25_000)),
+        (TechnologyUnit(200), currency.Currency(30_000)),
+        (TechnologyUnit(400), currency.Currency(40_000)),
+        (TechnologyUnit(800), currency.Currency(60_000)),
+        (TechnologyUnit(1_500), currency.Currency(70_000)),
+        (TechnologyUnit(5_000), currency.Currency(80_000)),
+        (TechnologyUnit(10_000), currency.Currency(90_000)),
+        (TechnologyUnit(20_000), currency.Currency(100_000)),
+        (TechnologyUnit(150_000), currency.Currency(120_000))
     ])
     BillModifier = "technology_bill_modifier"
     FloorBill = currency.CurrencyRate(10)
     BillPoints = OrderedDict([
-        (Technology(0), currency.CurrencyRate(0.01)),
-        (Technology(10), currency.CurrencyRate(0.02)),
-        (Technology(50), currency.CurrencyRate(0.03)),
-        (Technology(100), currency.CurrencyRate(0.04)),
-        (Technology(200), currency.CurrencyRate(0.05)),
-        (Technology(400), currency.CurrencyRate(0.06)),
-        (Technology(800), currency.CurrencyRate(0.07)),
-        (Technology(1_500), currency.CurrencyRate(0.08)),
-        (Technology(5_000), currency.CurrencyRate(0.09)),
-        (Technology(10_000), currency.CurrencyRate(0.1)),
-        (Technology(20_000), currency.CurrencyRate(0.11)),
-        (Technology(150_000), currency.CurrencyRate(0.12))
+        (TechnologyUnit(0), currency.CurrencyRate(0.01)),
+        (TechnologyUnit(10), currency.CurrencyRate(0.02)),
+        (TechnologyUnit(50), currency.CurrencyRate(0.03)),
+        (TechnologyUnit(100), currency.CurrencyRate(0.04)),
+        (TechnologyUnit(200), currency.CurrencyRate(0.05)),
+        (TechnologyUnit(400), currency.CurrencyRate(0.06)),
+        (TechnologyUnit(800), currency.CurrencyRate(0.07)),
+        (TechnologyUnit(1_500), currency.CurrencyRate(0.08)),
+        (TechnologyUnit(5_000), currency.CurrencyRate(0.09)),
+        (TechnologyUnit(10_000), currency.CurrencyRate(0.1)),
+        (TechnologyUnit(20_000), currency.CurrencyRate(0.11)),
+        (TechnologyUnit(150_000), currency.CurrencyRate(0.12))
     ])
 
     @staticmethod
-    def get(interior: models.InteriorModel) -> Technology:
+    def get(interior: models.InteriorModel) -> TechnologyUnit:
         return interior.technology
 
     @staticmethod
-    def set(interior: models.InteriorModel, value: Technology) -> None:
+    def set(interior: models.InteriorModel, value: TechnologyUnit) -> None:
         interior.technology = value
 
 
@@ -318,17 +318,17 @@ class Interior(Ministry):
                 session.commit()
             return interior
 
-    @property
-    def infrastructure(self) -> InfrastructureCalculator:
-        return InfrastructureCalculator(self._nation, self._interior, self._engine)
+    @cached_property
+    def infrastructure(self) -> Infrastructure:
+        return Infrastructure(self._nation, self._interior, self._engine)
 
-    @property
-    def technology(self) -> TechnologyCalculator:
-        return TechnologyCalculator(self._nation, self._interior, self._engine)
+    @cached_property
+    def technology(self) -> Technology:
+        return Technology(self._nation, self._interior, self._engine)
 
-    @property
-    def land(self) -> LandCalculator:
-        return LandCalculator(self._nation, self._interior, self._engine)
+    @cached_property
+    def land(self) -> Land:
+        return Land(self._nation, self._interior, self._engine)
 
     @property
     @host.ureg.Registry.wraps(currency.CurrencyRate, None)

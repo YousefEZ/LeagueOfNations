@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 import host.currency
 import host.ureg
-from host import base_types, Defaults
+from host.defaults import defaults
 from host.nation.ministry import Ministry
 from host.nation.models import BankModel
 
@@ -50,8 +50,8 @@ class Bank(Ministry, FundReceiver, FundSender):
             if bank is None:
                 session.add(BankModel(user_id=self._identifier,
                                       name=f"Bank of {self._player.name}",
-                                      treasury=Defaults["starter_funds"],
-                                      tax_rate=Defaults["tax_rate"],
+                                      treasury=defaults["starter_funds"],
+                                      tax_rate=defaults["tax_rate"],
                                       last_accessed=datetime.now()))
                 session.commit()
                 bank = session.query(BankModel).filter_by(user_id=self._identifier).first()
@@ -77,13 +77,9 @@ class Bank(Ministry, FundReceiver, FundSender):
     @property
     @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
     def national_revenue(self) -> host.currency.CurrencyRate:
-        income_modifier = self._player.boost("income_modifier")
-        income_increase = self._player.boost("income_increase") * host.currency.CurrencyRate
+        income_modifier = 1 + self._player.boost("income_modifier")
 
-        revenue = self._player.revenue
-        revenue += sum(ministry.revenue for ministry in self._player.ministries)
-        revenue *= (1 + income_modifier / 100)
-        return revenue + income_increase
+        return self._player.revenue * income_modifier
 
     @property
     @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
@@ -109,8 +105,8 @@ class Bank(Ministry, FundReceiver, FundSender):
 
     @tax_rate.setter
     def tax_rate(self, value: float) -> None:
-        if value > Defaults["max_tax_rate"]:
-            raise ValueError(f"Tax rate cannot be more than {Defaults['max_tax_rate']}")
+        if value > defaults["max_tax_rate"]:
+            raise ValueError(f"Tax rate cannot be more than {defaults['max_tax_rate']}")
         self.model.tax_rate = value
         with Session(self._engine) as session:
             session.commit()

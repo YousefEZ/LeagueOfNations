@@ -7,7 +7,9 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
 import host.ureg
-from host import base_types, Defaults, currency
+from host import base_types, currency
+from host.defaults import defaults
+from host.gameplay_settings import GameplaySettings
 from host.nation import types, models
 from host.nation.bank import Bank
 from host.nation.foreign import Foreign
@@ -17,7 +19,7 @@ from host.nation.ministry import Ministry
 from host.nation.trade import Trade
 from host.nation.types.basic import Population
 
-POPULATION_PER_INFRASTRUCTURE = Defaults.get("population_per_infrastructure", 9)
+POPULATION_PER_INFRASTRUCTURE = defaults.get("population_per_infrastructure", 9)
 
 
 class Nation:
@@ -59,7 +61,7 @@ class Nation:
 
     @classmethod
     def start(cls, identifier: base_types.UserId, name: str, engine: Engine) -> Nation:
-        metadata = models.MetadataModel(user_id=identifier, nation=name, flag=Defaults["flag"])
+        metadata = models.MetadataModel(user_id=identifier, nation=name, flag=defaults["flag"])
 
         with Session(engine) as session:
             session.add(metadata)
@@ -78,7 +80,7 @@ class Nation:
 
     @property
     def population(self) -> Population:
-        return Population(self.interior.infrastructure.amount * POPULATION_PER_INFRASTRUCTURE)
+        return Population(self.interior.infrastructure.amount * GameplaySettings.interior.population_per_infrastructure)
 
     @property
     def happiness_modifier(self) -> float:

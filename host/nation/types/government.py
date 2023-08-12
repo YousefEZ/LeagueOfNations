@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Literal, TypedDict
+
+from pydantic import BaseModel
 
 from host.nation.types.boosts import BoostsLookup
 
 GovernmentTypes = Literal["Democracy", "Monarchy", "Dictatorship", "Communism", "Anarchy"]
 
 
-@dataclass(frozen=True, slots=True)
-class Government:
+class Government(BaseModel, frozen=True):
     name: GovernmentTypes
     emoji: str
     description: str

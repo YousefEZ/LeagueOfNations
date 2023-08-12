@@ -1,6 +1,6 @@
 import json
 from functools import cached_property
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from host.nation import Nation
 
 with open("object/governments.json", "r") as governments_file:
-    Governments = {identifier: types.government.Government(**government) for identifier, government in
+    Governments = {identifier: types.government.Government.model_validate(government) for identifier, government in
                    json.load(governments_file).items()}
 
 

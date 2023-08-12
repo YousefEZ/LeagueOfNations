@@ -1,9 +1,161 @@
 {
+  "Aluminium": {
+    "emoji": "",
+    "description": "Aluminium is a chemical element with the symbol Al and atomic number 13. Aluminium has a density lower than those of other common metals, at approximately one third that of steel.",
+    "boosts": {
+      "infrastructure_cost_modifier": 0.07
+    }
+  },
   "Cattle": {
     "emoji": "🐄",
     "description": "Cattle are the most common type of large domesticated ungulates. They are a prominent modern member of the subfamily Bovinae, are the most widespread species of the genus Bos, and are most commonly classified collectively as Bos taurus.",
     "boosts": {
-      "happiness_modifier": 0.5
+      "citizen_boost": 0.05,
+      "land_cost_modifier": 0.1
+    }
+  },
+  "Coal": {
+    "emoji": "🪨",
+    "description": "Coal is a combustible black or brownish-black sedimentary rock, formed as rock strata called coal seams. Coal is mostly carbon with variable amounts of other elements; chiefly hydrogen, sulfur, oxygen, and nitrogen.",
+    "boosts": {
+      "infrastructure_cost_modifier": 0.04,
+      "income_modifier": 0.03
+    }
+  },
+  "Fish": {
+    "emoji": "🐟",
+    "description": "Fish are gill-bearing aquatic craniate animals that lack limbs with digits. They form a sister group to the tunicates, together forming the olfactores.",
+    "boosts": {
+      "citizen_boost": 0.08,
+      "land_cost_modifier": 0.5
+    }
+  },
+  "Furs": {
+    "emoji": "🦊",
+    "description": "Fur is a thick growth of hair that covers the skin of many animals. It is a defining characteristic of mammals. It consists of a combination of oily guard hair on top and thick underfur beneath.",
+    "boosts": {
+      "income_boost": 3.5
+    }
+  },
+  "Gems": {
+    "emoji": "💎",
+    "description": "A gemstone is a piece of mineral crystal which, in cut and polished form, is used to make jewelry or other adornments.",
+    "boosts": {
+      "income_modifier": 0.05,
+      "happiness_modifier": 0.05
+    }
+  },
+  "Gold": {
+    "emoji": "🏆",
+    "description": "Gold is a chemical element with the symbol Au and atomic number 79, making it one of the higher atomic number elements that occur naturally.",
+    "boosts": {
+      "income_modifier": 0.03,
+      "technology_cost_modifier": 0.05
+    }
+  },
+  "Iron": {
+    "emoji": "🔨",
+    "description": "Iron is a chemical element with symbol Fe and atomic number 26. It is a metal that belongs to the first transition series and group 8 of the periodic table.",
+    "boosts": {
+      "infrastructure_cost_modifier": 0.05,
+      "infrastructure_bill_modifier": 0.1
+    }
+  },
+  "Lamb": {
+    "emoji": "🐑",
+    "description": "Lamb, hogget, and mutton, generically sheep meat, are the meat of domestic sheep, Ovis aries.",
+    "boosts": {
+      "citizen_boost": 0.035
+    }
+  },
+  "Lead": {
+    "emoji": "🔫",
+    "description": "Lead is a chemical element with the symbol Pb and atomic number 82. It is a heavy metal that is denser than most common materials.",
+    "boosts": {
+    }
+  },
+  "Lumber": {
+    "emoji": "🌲",
+    "description": "Lumber is wood that has been processed into beams and planks, a stage in the process of wood production.",
+    "boosts": {
+      "infrastructure_cost_modifier": 0.06,
+      "infrastructure_bill_modifier": 0.08
+    }
+  },
+  "Marble": {
+    "emoji": "🗿",
+    "description": "Marble is a metamorphic rock composed of recrystallized carbonate minerals, most commonly calcite or dolomite.",
+    "boosts": {
+      "infrastructure_cost_modifier": 0.1
+    }
+  },
+  "Oil": {
+    "emoji": "🛢️",
+    "description": "An oil is any nonpolar chemical substance that is a viscous liquid at ambient temperatures and is both hydrophobic and lipophilic.",
+    "boosts": {
+      "income_modifier": 0.07,
+      "happiness_modifier": 0.1
+    }
+  },
+  "Rubber": {
+    "emoji": "🚗",
+    "description": "Rubber is a hydrocarbon polymer occurring as a milky emulsion in the sap of several varieties of plants.",
+    "boosts": {
+      "infrastructure_cost_modifier": 0.03,
+      "happiness_modifier": 0.03
+    }
+  },
+  "Silver": {
+    "emoji": "🥈",
+    "description": "Silver is a chemical element with the symbol Ag and atomic number 47. A soft, white, lustrous transition metal, it exhibits the highest electrical conductivity, thermal conductivity, and reflectivity of any metal.",
+    "boosts": {
+      "income_modifier": 0.02,
+      "happiness_modifier": 0.02
+    }
+  },
+  "Spices": {
+    "emoji": "🌶️",
+    "description": "A spice is a seed, fruit, root, bark, or other plant substance primarily used for flavoring or coloring food.",
+    "boosts": {
+      "income_modifier": 0.02,
+      "happiness_modifier": 0.01
+    }
+  },
+  "Sugar": {
+    "emoji": "🍬",
+    "description": "Sugar is the generic name for sweet-tasting, soluble carbohydrates, many of which are used in food.",
+    "boosts": {
+      "happiness_modifier": 0.05
+    }
+  },
+  "Uranium": {
+    "emoji": "☢️",
+    "description": "Uranium is a chemical element with the symbol U and atomic number 92. It is a silvery-grey metal in the actinide series of the periodic table.",
+    "boosts": {
+      "infrastructure_bill_modifier": 0.05,
+      "technology_cost_modifier": 0.05,
+      "happiness_modifier": -0.01
+    }
+  },
+  "Wheat": {
+    "emoji": "🌾",
+    "description": "Wheat is a grass widely cultivated for its seed, a cereal grain which is a worldwide staple food.",
+    "boosts": {
+      "citizen_boost": 0.08
+    }
+  },
+  "Wine": {
+    "emoji": "🍷",
+    "description": "Wine is an alcoholic drink made from fermented grapes. Yeast consumes the sugar in the grapes and converts it to ethanol, carbon dioxide, and heat.",
+    "boosts": {
+      "happiness_modifier": 0.03
+    }
+  },
+  "Water": {
+    "emoji": "💧",
+    "description": "Water is an inorganic, transparent, tasteless, odorless, and nearly colorless chemical substance, which is the main constituent of Earth's hydrosphere and the fluids of most living organisms.",
+    "boosts": {
+      "happiness_modifier": 0.025
     }
   }
 }

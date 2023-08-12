@@ -6,3 +6,4 @@ Pint~=0.21
 babel~=2.12.1
 Jinja2~=3.1.2
 asyncio~=3.4.3
+pydantic>=2.1.0

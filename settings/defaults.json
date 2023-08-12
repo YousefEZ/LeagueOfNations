@@ -1,0 +1,11 @@
+{
+  "meta": {
+    "flag": "https://proxy.duckduckgo.com/iu/?u=https%3A%2F%2Fi.redd.it%2Fpiou3xdt6epz.png&f=1"
+  },
+  "bank": {
+    "tax_rate": 20.0
+  },
+  "government": {
+    "type": "anarchy"
+  }
+}

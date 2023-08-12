@@ -1,0 +1,11 @@
+{
+  "bank": {
+    "tax_rate_max": 28.0,
+    "starter_funds": 3000000
+  },
+  "interior": {
+    "population_per_infrastructure": 9,
+    "revenue_per_population": 0.1,
+    "cashback_modifier": 0.5
+  }
+}

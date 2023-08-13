@@ -25,9 +25,6 @@ DeclineMessages = Literal["trade_declined"]
 
 CancelMessages = Literal["trade_cancelled"]
 
-with open("objects/resources.json", "r", encoding="utf8") as resources_file:
-    Resources = resources_file.read()
-
 
 class TradeRequest:
 

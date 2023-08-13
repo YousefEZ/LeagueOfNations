@@ -40,5 +40,18 @@ class BoostsLookup(BaseModel, frozen=True):
     bill_modifier: float = Field(default=0.0)
     bill_reduction: float = Field(default=0.0)
 
+    @classmethod
+    def combine(cls, *others: BoostsLookup) -> BoostsLookup:
+        return cls(**{
+            attr: sum(getattr(other, attr) for other in others)
+            for attr in cls.model_json_schema()["properties"].keys()
+        })
+
+    def __add__(self, other: BoostsLookup) -> BoostsLookup:
+        return BoostsLookup(**{
+            attr: value + getattr(other, attr)
+            for attr, value in vars(self).items()
+        })
+
 
 default_boosts = BoostsLookup()

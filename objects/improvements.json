@@ -1,0 +1,36 @@
+{
+  "Bank": {
+    "emoji": "🏦",
+    "detail": "A Bank is a financial institution that accepts deposits from the public and creates credit. Lending activities can be performed either directly or indirectly through capital markets.",
+    "boosts": {
+      "income_modifier": 0.07
+    },
+    "dependencies": []
+  },
+  "Casino": {
+    "emoji": "🎰",
+    "detail": "A casino is a facility which houses and accommodates certain types of gambling activities. The industry that deals in casinos is called the gaming industry.",
+    "boosts": {
+      "income_modifier": -0.01,
+      "happiness_modifier": 1.5
+    },
+    "dependencies": []
+  },
+  "Church": {
+    "emoji": "⛪",
+    "detail": "A church building or church house, often simply called a church, is a building used for Christian religious activities, particularly for worship services.",
+    "boosts": {
+      "happiness_modifier": 0.01
+    },
+    "dependencies": []
+  },
+  "Clinic": {
+    "emoji": "🏥",
+    "detail": "A clinic is a healthcare facility that is primarily focused on the care of outpatients. Clinics can be privately operated or publicly managed and funded.",
+    "boosts": {
+      "happiness_modifier": 0.01
+    },
+    "dependencies": []
+  }
+
+}

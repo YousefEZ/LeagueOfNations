@@ -1,7 +1,10 @@
 import json
-from typing import Dict, Any
 
 from pydantic import BaseModel
+
+
+class Interior(BaseModel):
+    cashback_modifier: float
 
 
 class Meta(BaseModel):
@@ -13,13 +16,15 @@ class Government(BaseModel):
 
 
 class Bank(BaseModel):
+    name: str
     tax_rate: float
 
 
 class DefaultsModel(BaseModel):
-    flag: Meta
+    meta: Meta
     government: Government
-    tax_rate: Bank
+    bank: Bank
+    interior: Interior
 
 
 with open("settings/defaults.json", "r") as defaults_file:

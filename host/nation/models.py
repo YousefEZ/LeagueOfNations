@@ -86,24 +86,6 @@ class InteriorModel(Base):
     spent_technology: Mapped[int]
 
 
-class InfrastructureModel(Base):
-    __tablename__ = "Infrastructure"
-
-    user_id: Mapped[int] = mapped_column(primary_key=True)
-    building: Mapped[types.interior.BuildingTypes]
-    amount: Mapped[int]
-
-
-class BuildRequestModel(Base):
-    __tablename__ = "BuildRequests"
-
-    build_id: Mapped[str] = mapped_column(primary_key=True)
-    user_id: Mapped[int]
-    building: Mapped[types.interior.BuildingTypes]
-    amount: Mapped[int]
-    start: Mapped[datetime]
-
-
 class GovernmentModel(Base):
     __tablename__ = "Government"
 

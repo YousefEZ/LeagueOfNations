@@ -146,7 +146,7 @@ class Interior(Ministry):
 
     @property
     def population(self) -> Population:
-        return Population(self.infrastructure.amount * GameplaySettings["interior"]["population_per_infrastructure"])
+        return Population(self.infrastructure.amount * GameplaySettings.interior.population_per_infrastructure)
 
     @property
     @host.ureg.Registry.wraps(currency.CurrencyRate, None)

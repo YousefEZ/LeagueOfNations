@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 import host.currency
 import host.ureg
 from host.defaults import defaults
+from host.gameplay_settings import GameplaySettings
 from host.nation.ministry import Ministry
 from host.nation.models import BankModel
 
@@ -49,9 +50,9 @@ class Bank(Ministry, FundReceiver, FundSender):
             bank: Optional[BankModel] = session.query(BankModel).filter_by(user_id=self._identifier).first()
             if bank is None:
                 session.add(BankModel(user_id=self._identifier,
-                                      name=f"Bank of {self._player.name}",
-                                      treasury=defaults["starter_funds"],
-                                      tax_rate=defaults["tax_rate"],
+                                      name=defaults.bank.name.format(self._player.name),
+                                      treasury=GameplaySettings.bank.starter_funds,
+                                      tax_rate=defaults.bank.tax_rate,
                                       last_accessed=datetime.now()))
                 session.commit()
                 bank = session.query(BankModel).filter_by(user_id=self._identifier).first()
@@ -77,15 +78,15 @@ class Bank(Ministry, FundReceiver, FundSender):
     @property
     @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
     def national_revenue(self) -> host.currency.CurrencyRate:
-        income_modifier = 1 + self._player.boost("income_modifier")
+        income_modifier = 1 + self._player.boost.income_modifier
 
         return self._player.revenue * income_modifier
 
     @property
     @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
     def national_bill(self) -> host.currency.CurrencyRate:
-        bill_modifier = self._player.boost("bill_modifier")
-        bill_reduction = self._player.boost("bill_reduction") * host.currency.CurrencyRate
+        bill_modifier = self._player.boost.bill_modifier
+        bill_reduction = self._player.boost.bill_reduction * host.currency.CurrencyRate
 
         costs = sum(ministry.bill for ministry in self._player.ministries)
         costs = 0 * host.currency.CurrencyRate if costs < bill_reduction else costs - bill_reduction
@@ -106,7 +107,7 @@ class Bank(Ministry, FundReceiver, FundSender):
     @tax_rate.setter
     def tax_rate(self, value: float) -> None:
         if value > defaults["max_tax_rate"]:
-            raise ValueError(f"Tax rate cannot be more than {defaults['max_tax_rate']}")
+            raise ValueError(f"Tax rate cannot be more than {GameplaySettings.bank.maximum_tax_rate}")
         self.model.tax_rate = value
         with Session(self._engine) as session:
             session.commit()

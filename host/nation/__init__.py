@@ -19,8 +19,6 @@ from host.nation.ministry import Ministry
 from host.nation.trade import Trade
 from host.nation.types.basic import Population
 
-POPULATION_PER_INFRASTRUCTURE = defaults.get("population_per_infrastructure", 9)
-
 
 class Nation:
     def __init__(self, identifier: base_types.UserId, engine: Engine):
@@ -61,7 +59,7 @@ class Nation:
 
     @classmethod
     def start(cls, identifier: base_types.UserId, name: str, engine: Engine) -> Nation:
-        metadata = models.MetadataModel(user_id=identifier, nation=name, flag=defaults["flag"])
+        metadata = models.MetadataModel(user_id=identifier, nation=name, flag=defaults.meta.flag)
 
         with Session(engine) as session:
             session.add(metadata)
@@ -83,11 +81,16 @@ class Nation:
         return Population(self.interior.infrastructure.amount * GameplaySettings.interior.population_per_infrastructure)
 
     @property
-    def happiness_modifier(self) -> float:
-        return 1 + self.boost("happiness_modifier") / 100
+    def population_modifier(self) -> float:
+        return 1 + self.boost.population_modifier / 100
 
-    def boost(self, boost: types.boosts.Boosts) -> float:
-        return sum(ministry_object.boost(boost) for ministry_object in self.ministries)
+    @property
+    def happiness_modifier(self) -> float:
+        return 1 + self.boost.happiness_modifier / 100
+
+    @property
+    def boost(self) -> types.boosts.BoostsLookup:
+        return types.boosts.BoostsLookup.combine(*[ministry_object.boost() for ministry_object in self.ministries])
 
     @property
     @host.ureg.Registry.wraps(currency.CurrencyRate, None)

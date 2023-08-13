@@ -25,5 +25,5 @@ class Ministry(ABC):
         return types.basic.Happiness(0)
 
     # noinspection PyMethodMayBeStatic
-    def boost(self, boost: types.boosts.Boosts) -> float:
-        return types.boosts.default_boosts[boost]
+    def boost(self) -> types.boosts.BoostsLookup:
+        return types.boosts.BoostsLookup()

@@ -23,5 +23,5 @@ class Resource(TypedDict):
 
 
 Resources = Dict[ResourceTypes, Resource]
-with open("host/nation/resources.json", "r") as file:
+with open("objects/resources.json", "r", encoding="utf8") as file:
     resources: Resources = {resource: Resource(**data) for resource, data in json.load(file).items()}

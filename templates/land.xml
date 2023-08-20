@@ -1,4 +1,4 @@
 <discord>
-    {{ from "transactions.j2" import purchase_messages with context }}
-    {{ purchase_messages("land", ":island:", nation.interior.land.price_order(amount) ) }}
+    {% from "transactions.j2" import purchase_messages with context %}
+    {{ purchase_messages("land", ":island:", price ) }}
 </discord>

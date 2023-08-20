@@ -27,14 +27,53 @@
             <content strip="true">
                 You have purchased {{ amount }} {{ emoji }} {{ name }} for :moneybag: {{ price|currency }}.
             </content>
-            <view />
+            <view/>
         </message>
         <message key="insufficient_funds">
             <content strip="true">
                 You do not have enough funds to purchase {{ amount }} {{ emoji }} {{ name }}. Requires
                 :moneybag: {{ price|currency }} Only Have {{ nation.bank.funds | currency }}
             </content>
-            <view />
+            <view/>
+        </message>
+    {%- endmacro %}
+    {% macro sell_messages(name, emoji, cashback) %}
+        <message key="cashback">
+            <content strip="true">
+                The amount of cashback from selling {{ amount }} {{ emoji }} {{ name }} is
+                :moneybag: {{ cashback|currency }}
+            </content>
+            <view>
+                <components>
+                    <button key="confirm">
+                        <label>Buy</label>
+                        <emoji>
+                            <name>✅</name>
+                        </emoji>
+                        <style>success</style>
+                    </button>
+                    <button key="decline">
+                        <label>Decline</label>
+                        <emoji>
+                            <name>✖️</name>
+                        </emoji>
+                        <style>danger</style>
+                    </button>
+                </components>
+            </view>
+        </message>
+        <message key="success">
+            <content strip="true">
+                You have sold {{ amount }} {{ emoji }} {{ name }} for :moneybag: {{ cashback|currency }}.
+            </content>
+            <view/>
+        </message>
+        <message key="insufficient_amount">
+            <content strip="true">
+                You do not have enough units to sell {{ amount }} {{ emoji }} {{ name }}. Requires
+                {{ emoji }} {{ amount }} Only Have {{ units }}
+            </content>
+            <view/>
         </message>
     {%- endmacro %}
 </discord>

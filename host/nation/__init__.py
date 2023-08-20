@@ -3,7 +3,6 @@ from __future__ import annotations
 from functools import cached_property
 from typing import List, get_args
 
-from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
 import host.ureg
@@ -21,9 +20,9 @@ from host.nation.types.basic import Population
 
 
 class Nation:
-    def __init__(self, identifier: base_types.UserId, engine: Engine):
+    def __init__(self, identifier: base_types.UserId, session: Session):
         self._identifier: base_types.UserId = identifier
-        self._engine: Engine = engine
+        self._session: Session = session
 
     @cached_property
     def identifier(self) -> base_types.UserId:
@@ -35,30 +34,30 @@ class Nation:
 
     @cached_property
     def metadata(self) -> Meta:
-        return Meta(self._identifier, self._engine)
+        return Meta(self._identifier, self._session)
 
     @cached_property
     def bank(self) -> Bank:
-        return Bank(self, self._engine)
+        return Bank(self, self._session)
 
     @cached_property
     def trade(self) -> Trade:
-        return Trade(self, self._engine)
+        return Trade(self, self._session)
 
     @cached_property
     def interior(self) -> Interior:
-        return Interior(self, self._engine)
+        return Interior(self, self._session)
 
     @cached_property
     def foreign(self) -> Foreign:
-        return Foreign(self, self._engine)
+        return Foreign(self, self._session)
 
     @cached_property
     def ministries(self) -> List[Ministry]:
         return [getattr(self, ministry_object) for ministry_object in get_args(types.ministries.Ministries)]
 
     @classmethod
-    def start(cls, identifier: base_types.UserId, name: str, engine: Engine) -> Nation:
+    def start(cls, identifier: base_types.UserId, name: str, engine: Session) -> Nation:
         metadata = models.MetadataModel(user_id=identifier, nation=name, flag=defaults.meta.flag)
 
         with Session(engine) as session:
@@ -68,7 +67,7 @@ class Nation:
         return cls(identifier, engine)
 
     def find_player(self, identifier: base_types.UserId) -> Nation:
-        return Nation(identifier, self._engine)
+        return Nation(identifier, self._session)
 
     @property
     def happiness(self) -> types.basic.Happiness:

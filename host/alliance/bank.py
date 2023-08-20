@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Engine
+from sqlalchemy.orm import Session
 
 if TYPE_CHECKING:
     from host.alliance import Alliance
@@ -8,6 +8,6 @@ if TYPE_CHECKING:
 
 class AllianceBank:
 
-    def __init__(self, alliance: Alliance, engine: Engine):
+    def __init__(self, alliance: Alliance, session: Session):
         self._alliance: Alliance = alliance
-        self._engine: Engine = engine
+        self._engine: Session = session

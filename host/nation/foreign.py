@@ -71,18 +71,17 @@ class AidAgreement(Aid):
 
 class Foreign(Ministry):
 
-    def __init__(self, player: Nation, engine: Engine):
+    def __init__(self, player: Nation, session: Session):
         self._player = player
-        self._engine = engine
+        self._session = session
 
     @property
     def sent(self) -> List[AidRequest]:
         return []
 
     def _send(self, request: models.AidRequestModel) -> None:
-        with Session(self._engine) as session:
-            session.add(request)
-            session.commit()
+        self._session.add(request)
+        self._session.commit()
 
     @host.ureg.Registry.wraps(None, [None, None, host.currency.Currency])
     def send(self, recipient: base_types.UserId, amount: host.currency.Currency) -> AidMessages:
@@ -131,8 +130,8 @@ class Foreign(Ministry):
 
     @property
     def alliance(self) -> Optional[Alliance]:
-        with Session(self._engine) as session:
-            member = session.query(alliance.models.AllianceMemberModel).filter_by(user=self._player.identifier).first()
-            if member is None:
-                return None
-            return Alliance(alliance.types.AllianceId(member.id), self._engine)
+        member = self._session.query(alliance.models.AllianceMemberModel).filter_by(
+            user=self._player.identifier).first()
+        if member is None:
+            return None
+        return Alliance(alliance.types.AllianceId(member.id), self._session)

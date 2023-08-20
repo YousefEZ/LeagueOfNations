@@ -239,5 +239,5 @@ class Trade(ministry.Ministry):
         trade_agreement.invalidate()
         return "trade_cancelled"
 
-    def boost(self, boost: host.nation.types.boosts.Boosts) -> float:
-        return 0
+    def boost(self) -> host.nation.types.boosts.BoostsLookup:
+        return host.nation.types.boosts.BoostsLookup()

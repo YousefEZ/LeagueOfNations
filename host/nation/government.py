@@ -11,26 +11,21 @@ from host.nation.ministry import Ministry
 if TYPE_CHECKING:
     from host.nation import Nation
 
-with open("object/governments.json", "r") as governments_file:
-    Governments = {identifier: types.government.Government.model_validate(government) for identifier, government in
-                   json.load(governments_file).items()}
-
 
 class Government(Ministry):
 
-    def __init__(self, player: Nation, engine: Engine):
+    def __init__(self, player: Nation, session: Session):
         self._player = player
-        self._engine = engine
+        self._session = session
 
     @cached_property
     def model(self) -> models.GovernmentModel:
-        with Session(self._engine) as session:
-            government = session.query(models.GovernmentModel).filter_by(user_id=self._player.identifier).first()
+        government = self._session.query(models.GovernmentModel).filter_by(user_id=self._player.identifier).first()
 
-            if government is None:
-                government = models.GovernmentModel(user_id=self._player.identifier, government="monarchy")
-                session.add(government)
-                session.commit()
+        if government is None:
+            government = models.GovernmentModel(user_id=self._player.identifier, government="monarchy")
+            self._session.add(government)
+            self._session.commit()
 
         return government
 
@@ -40,9 +35,8 @@ class Government(Ministry):
 
     @government.setter
     def government(self, government_type: types.government.GovernmentTypes) -> None:
-        with Session(self._engine) as session:
-            self.model.type = government_type
-            session.commit()
+        self.model.type = government_type
+        self._session.commit()
 
-    def boost(self, boost: types.boosts.Boosts) -> float:
-        return self.government.boosts.get(boost, 0.0)
+    def boost(self) -> types.boosts.BoostsLookup:
+        return self.government.boosts

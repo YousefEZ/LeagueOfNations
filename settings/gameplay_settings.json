@@ -6,6 +6,9 @@
   "interior": {
     "population_per_infrastructure": 9,
     "revenue_per_population": 0.1,
-    "cashback_modifier": 0.5
+    "cashback_modifier": 0.5,
+    "starter_infrastructure": 100,
+    "starter_land": 50,
+    "starter_technology": 0
   }
 }

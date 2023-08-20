@@ -8,8 +8,5 @@
   },
   "government": {
     "type": "anarchy"
-  },
-  "interior": {
-    "cashback_modifier": 0.5
   }
 }

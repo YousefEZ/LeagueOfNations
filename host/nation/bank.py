@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta
+from functools import cached_property
 from typing import TYPE_CHECKING, Optional, Protocol, Literal
 
-from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
 import host.currency
@@ -37,27 +38,26 @@ class FundSender(Protocol):
 
 
 class Bank(Ministry, FundReceiver, FundSender):
-    __slots__ = "_identifier", "_player", "_engine", "_bank"
+    __slots__ = "_identifier", "_player", "_session", "_bank"
 
-    def __init__(self, player: Nation, engine: Engine):
+    def __init__(self, player: Nation, session: Session):
         self._identifier: int = player.identifier
         self._player: Nation = player
-        self._engine: Engine = engine
+        self._session: Session = session
 
-    @property
+    @cached_property
     def model(self) -> BankModel:
-        with Session(self._engine) as session:
-            bank: Optional[BankModel] = session.query(BankModel).filter_by(user_id=self._identifier).first()
-            if bank is None:
-                session.add(BankModel(user_id=self._identifier,
-                                      name=defaults.bank.name.format(self._player.name),
-                                      treasury=GameplaySettings.bank.starter_funds,
-                                      tax_rate=defaults.bank.tax_rate,
-                                      last_accessed=datetime.now()))
-                session.commit()
-                bank = session.query(BankModel).filter_by(user_id=self._identifier).first()
-            assert bank is not None, "Bank should exist"
-            return bank
+        bank: Optional[BankModel] = self._session.query(BankModel).filter_by(user_id=self._identifier).first()
+        if bank is None:
+            self._session.add(BankModel(user_id=self._identifier,
+                                        name=defaults.bank.name.format(self._player.name),
+                                        treasury=GameplaySettings.bank.starter_funds,
+                                        tax_rate=defaults.bank.tax_rate,
+                                        last_accessed=datetime.now()))
+            self._session.commit()
+            bank = self._session.query(BankModel).filter_by(user_id=self._identifier).first()
+        assert bank is not None, "Bank should exist"
+        return bank
 
     @property
     def name(self) -> str:
@@ -66,14 +66,13 @@ class Bank(Ministry, FundReceiver, FundSender):
     @name.setter
     def name(self, value: str) -> None:
         self.model.name = value
-        with Session(self._engine) as session:
-            session.commit()
+        self._session.commit()
 
     @property
     @host.ureg.Registry.wraps(host.currency.Currency, None)
     def funds(self) -> host.currency.Currency:
         self._update_treasury()
-        return self.model.treasury
+        return host.currency.lnd(self.model.treasury)
 
     @property
     @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
@@ -109,8 +108,7 @@ class Bank(Ministry, FundReceiver, FundSender):
         if value > defaults["max_tax_rate"]:
             raise ValueError(f"Tax rate cannot be more than {GameplaySettings.bank.maximum_tax_rate}")
         self.model.tax_rate = value
-        with Session(self._engine) as session:
-            session.commit()
+        self._session.commit()
 
     @property
     def last_accessed(self) -> datetime:
@@ -120,8 +118,7 @@ class Bank(Ministry, FundReceiver, FundSender):
         current_time = datetime.now()
         self.model.treasury += int(self._retrieve_profit(current_time).magnitude)
         self.model.last_accessed = current_time
-        with Session(self._engine) as session:
-            session.commit()
+        self._session.commit()
 
     @host.ureg.Registry.wraps(host.currency.Currency, [None, None])
     def _retrieve_revenue(self, timestamp: datetime) -> host.currency.Currency:
@@ -145,22 +142,23 @@ class Bank(Ministry, FundReceiver, FundSender):
     def add(self, amount: host.currency.Currency) -> None:
         if amount < 0 * host.currency.Currency:
             raise ValueError("Cannot add negative funds")
+        logging.debug(f"Adding {amount} to {self._player.name}'s treasury, Previous: {self.funds}")
         self.model.treasury = self.funds + amount
-        with Session(self._engine) as session:
-            session.commit()
+        self._session.add(self.model)
+        self._session.commit()
 
-    @host.ureg.Registry.wraps(None, [None, host.currency.Currency])
+    @host.ureg.Registry.check(None, host.currency.Currency)
     def enough_funds(self, amount: host.currency.Currency) -> bool:
         return self.funds >= amount
 
-    @host.ureg.Registry.wraps(None, [None, host.currency.Currency, None])
+    @host.ureg.Registry.check(None, host.currency.Currency, None)
     def deduct(self, amount: host.currency.Currency, force: bool = True) -> None:
-        if self.model < amount and not force:
+        if self.funds < amount and not force:
             raise ValueError("Insufficient funds")
         new_funds: host.currency.Currency = self.funds - amount
         self.model.treasury = int(new_funds.magnitude)
-        with Session(self._engine) as session:
-            session.commit()
+        self._session.add(self.model)
+        self._session.commit()
 
     @host.ureg.Registry.wraps(None, [None, host.currency.Currency, None])
     def send(self, amount: host.currency.Currency, target: FundReceiver) -> SendingResponses:

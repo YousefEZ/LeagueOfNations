@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from enum import Enum, auto
-from typing import Protocol, TypeVar, TYPE_CHECKING
+from typing import Protocol, TypeVar
 
 from host import currency
 from host.nation import models
@@ -114,7 +114,7 @@ class LandPoints(Data[LandUnit]):
 
     @staticmethod
     def get(interior: models.InteriorModel) -> LandUnit:
-        return interior.land
+        return land(interior.land)
 
     @staticmethod
     def set(interior: models.InteriorModel, value: LandUnit) -> None:
@@ -167,10 +167,8 @@ class TechnologyPoints(Data[TechnologyUnit]):
 class PurchaseResult(Enum):
     SUCCESS = auto()
     INSUFFICIENT_FUNDS = auto()
-    NEGATIVE_AMOUNT = auto()
 
 
 class SellResult(Enum):
     SUCCESS = auto()
-    NEGATIVE_AMOUNT = auto()
     INSUFFICIENT_AMOUNT = auto()

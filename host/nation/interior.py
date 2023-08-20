@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import logging
 from functools import cached_property
-from typing import TYPE_CHECKING, Literal, TypeVar, Protocol, Type
+from typing import TYPE_CHECKING, Literal, TypeVar, Protocol, Type, Generic
 
+from pint.facets.plain import PlainQuantity
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
@@ -33,9 +35,6 @@ K = TypeVar("K")
 
 class UnitExchangeProtocol(Protocol[K]):
 
-    def __init__(self, nation: Nation, interior: models.InteriorModel, engine: Engine):
-        ...
-
     @property
     def amount(self) -> K:
         raise NotImplementedError
@@ -60,16 +59,24 @@ class UnitExchangeProtocol(Protocol[K]):
     def sell(self, amount: K) -> SellResult:
         raise NotImplementedError
 
+    @classmethod
+    def load_player(cls, nation: Nation, interior: models.InteriorModel, session: Session) -> UnitExchangeProtocol[K]:
+        raise NotImplementedError
+
 
 def unit_exchange(cls: Type[Data[K]]) -> Type[UnitExchangeProtocol[K]]:
-    class UnitExchange(UnitExchangeProtocol[K]):
-        __slots__ = "_singleton", "_interior", "_nation", "_engine"
+    class UnitExchange(Generic[K]):
+        __slots__ = "_singleton", "_interior", "_nation", "_session"
         unit: Type[Data[K]] = cls
 
-        def __init__(self, nation: Nation, interior: models.InteriorModel, engine: Engine):
+        def __init__(self, nation: Nation, interior: models.InteriorModel, session: Session):
             self._nation = nation
             self._interior = interior
-            self._engine = engine
+            self._session = session
+
+        @classmethod
+        def load_player(cls, nation: Nation, interior: models.InteriorModel, session: Session) -> UnitExchange[K]:
+            return cls(nation, interior, session)
 
         @host.ureg.Registry.wraps(currency.Currency, [None, None, None])
         def _get_unit_price_at(self, point: K, level: K) -> currency.Currency:
@@ -77,40 +84,37 @@ def unit_exchange(cls: Type[Data[K]]) -> Type[UnitExchangeProtocol[K]]:
 
         @host.ureg.Registry.wraps(currency.Currency, [None, None])
         def price_at(self, level: K) -> currency.Currency:
-            previous_point = 0
-            for point, price in self.unit.PricePoints.items():
+            point = 0
+            for point in self.unit.PricePoints:
                 if level <= point:
-                    return self._get_unit_price_at(previous_point, level) * self.price_modifier
-                previous_point = point
-            return self._get_unit_price_at(previous_point, level) * self.price_modifier
+                    return self._get_unit_price_at(point, level) * self.price_modifier
+            return self._get_unit_price_at(point, level) * self.price_modifier
 
         @host.ureg.Registry.wraps(currency.Currency, [None, None])
         def price_order(self, amount: K) -> currency.Currency:
-            return sum((self.price_at(self.amount + i) for i in range(amount)),
-                       currency.Currency(0)) * self.price_modifier
+            return sum((self.price_at(self.amount + i) for i in range(1, amount + 1)), currency.lnd(0))
 
         @host.ureg.Registry.wraps(currency.CurrencyRate, [None, None, None])
         def _get_unit_bill_at(self, point: K, level: K) -> currency.CurrencyRate:
-            return self.unit.BillPoints[point] * level
+            return self.unit.BillPoints[point] * level.magnitude if isinstance(level, PlainQuantity) else level
 
         @host.ureg.Registry.wraps(currency.CurrencyRate, [None, None])
         def bill_at(self, level: K) -> currency.CurrencyRate:
-            previous_point = 0
-            for point, price in self.unit.PricePoints.items():
+            point = 0
+            for point in self.unit.BillPoints:
                 if level <= point:
-                    return self._get_unit_bill_at(previous_point, level)
-                previous_point = point
-            return self._get_unit_bill_at(previous_point, level)
+                    return self._get_unit_bill_at(point, level)
+            return self._get_unit_bill_at(point, level)
 
         @property
         def amount(self) -> K:
             return self.unit.get(self._interior)
 
         def _set_amount(self, value: K) -> None:
-            with Session(self._engine) as session:
-                self.unit.set(self._interior, value)
-                session.add(self._interior)
-                session.commit()
+            logging.debug("Setting %s to %s", self.unit.__name__, value)
+            self.unit.set(self._interior, value)
+            self._session.commit()
+            logging.debug("Set %s to %s", self.unit.__name__, value)
 
         @property
         def price_modifier(self) -> float:
@@ -121,21 +125,19 @@ def unit_exchange(cls: Type[Data[K]]) -> Type[UnitExchangeProtocol[K]]:
             return 1 - getattr(self._nation.boost, self.unit.BillModifier)
 
         def buy(self, amount: K) -> PurchaseResult:
-            if amount <= 0:
-                return PurchaseResult.NEGATIVE_AMOUNT
-            price = self.price_order(amount)
-            if self._nation.bank.enough_funds(price):
+            assert amount > 0, "Amount must be positive"
+            price: currency.Currency = self.price_order(amount)
+            if not self._nation.bank.enough_funds(price):
                 return PurchaseResult.INSUFFICIENT_FUNDS
             self._nation.bank.deduct(price)
             self._set_amount(self.amount + amount)
             return PurchaseResult.SUCCESS
 
         def sell(self, amount: K) -> SellResult:
-            if amount <= 0:
-                return SellResult.NEGATIVE_AMOUNT
+            assert amount > 0, "Amount must be positive"
             if self.amount < amount:
                 return SellResult.INSUFFICIENT_AMOUNT
-            self._nation.bank.add(self.price_order(amount) * defaults.interior.cashback_modifier)
+            self._nation.bank.add(self.price_order(amount) * GameplaySettings.interior.cashback_modifier)
             self._set_amount(self.amount - amount)
             return SellResult.SUCCESS
 
@@ -153,21 +155,24 @@ Land = unit_exchange(LandPoints)
 
 
 class Interior(Ministry):
-    __slots__ = "_player", "_engine"
+    __slots__ = "_player", "_session"
 
-    def __init__(self, nation: Nation, engine: Engine):
+    def __init__(self, nation: Nation, session: Session):
         self._player = nation
-        self._engine = engine
+        self._session = session
 
-    @cached_property
+    @property
     def _interior(self) -> models.InteriorModel:
-        with Session(self._engine) as session:
-            interior = session.query(models.InteriorModel).filter_by(user_id=self._player.identifier).first()
-            if interior is None:
-                interior = models.InteriorModel(user_id=self._player.identifier, land=0)
-                session.add(interior)
-                session.commit()
-            return interior
+        interior = self._session.query(models.InteriorModel).filter_by(user_id=self._player.identifier).first()
+        if interior is None:
+            interior = models.InteriorModel(user_id=self._player.identifier,
+                                            land=GameplaySettings.interior.starter_land,
+                                            infrastructure=GameplaySettings.interior.starter_infrastructure,
+                                            technology=GameplaySettings.interior.starter_technology,
+                                            spent_technology=0)
+            self._session.add(interior)
+            self._session.commit()
+        return interior
 
     @property
     def population(self) -> Population:
@@ -182,15 +187,15 @@ class Interior(Ministry):
 
     @cached_property
     def infrastructure(self) -> Infrastructure:
-        return Infrastructure(self._player, self._interior, self._engine)
+        return Infrastructure.load_player(self._player, self._interior, self._session)
 
     @cached_property
     def technology(self) -> Technology:
-        return Technology(self._player, self._interior, self._engine)
+        return Technology.load_player(self._player, self._interior, self._session)
 
     @cached_property
     def land(self) -> Land:
-        return Land(self._player, self._interior, self._engine)
+        return Land.load_player(self._player, self._interior, self._session)
 
     @property
     @host.ureg.Registry.wraps(currency.CurrencyRate, None)

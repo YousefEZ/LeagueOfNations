@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Literal, TypedDict
+import json
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -14,3 +15,8 @@ class Government(BaseModel, frozen=True):
     emoji: str
     description: str
     boosts: BoostsLookup
+
+
+with open("object/governments.json", "r") as governments_file:
+    Governments = {identifier: Government.model_validate(government) for identifier, government in
+                   json.load(governments_file).items()}

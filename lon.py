@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import os
+import logging
 
 import discord
-import sqlalchemy.engine
 from discord.ext import commands
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 
 import host.base_models
-from host.nation import Nation
 from host.base_types import UserId
+from host.nation import Nation
 from view.notifications import NotificationRenderer
 
 cogs = "start", "economy"
@@ -19,7 +20,7 @@ connect_to_db = False
 
 
 class LeagueOfNations(commands.AutoShardedBot):
-    def __init__(self, url: str):
+    def __init__(self, engine: Engine, session: Session):
         super().__init__(
             command_prefix="-",
             owner_id=251351879408287744,
@@ -27,7 +28,8 @@ class LeagueOfNations(commands.AutoShardedBot):
             case_insensitive=True,
             intents=discord.Intents.all()
         )
-        self.engine: Engine = create_engine(url, echo=True)
+        self.engine: Engine = engine
+        self.session: Session = session
         host.base_models.Base.metadata.create_all(self.engine)
         self.notification_renderer = NotificationRenderer(self)
 
@@ -42,15 +44,7 @@ class LeagueOfNations(commands.AutoShardedBot):
 
         Returns (discord.User): The user
         """
-        return Nation(UserId(user_id), self.engine)
-
-    @property
-    def connection(self) -> sqlalchemy.engine.Connection:
-        """Get an active connection to the database, or if one does not exist, then establish a connection
-
-        Returns (sqlalchemy.engine.Connection): An active connection to the database
-        """
-        return self.engine.connect()
+        return Nation(UserId(user_id), self.session)
 
     async def ready(self):
         await self.wait_until_ready()
@@ -69,6 +63,7 @@ class LeagueOfNations(commands.AutoShardedBot):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     load_dotenv()
 
     TOKEN = os.getenv("DISCORD_TOKEN")
@@ -76,4 +71,6 @@ if __name__ == "__main__":
     assert TOKEN is not None, "MISSING TOKEN IN .env FILE"
     assert URL is not None, "MISSING DATABASE_URL IN .env FILE"
 
-    LeagueOfNations(URL).run(token=TOKEN)
+    engine = create_engine(URL, echo=False)
+    with Session(engine) as session:
+        LeagueOfNations(engine, session).run(token=TOKEN)

@@ -2,14 +2,14 @@
   "anarchy": {
     "name": "Anarchy",
     "emoji": "🏴‍☠️",
-    "details": "a form of government in which there is no authority or control",
+    "description": "a form of government in which there is no authority or control",
     "boosts": {
     }
   },
   "monarchy": {
     "name": "Monarchy",
     "emoji": "👑",
-    "details": "a form of government with a monarch at the head",
+    "description": "a form of government with a monarch at the head",
     "boosts": {
       "infrastructure_cost_modifier": 0.05
     }
@@ -17,7 +17,7 @@
   "democracy": {
     "name": "Democracy",
     "emoji": "🗳️",
-    "details": "a system of government by the whole population or all the eligible members of a state, typically through elected representatives",
+    "description": "a system of government by the whole population or all the eligible members of a state, typically through elected representatives",
     "boosts": {
       "happiness_modifier": 0.01
     }
@@ -25,7 +25,7 @@
   "dictatorship": {
     "name": "Dictatorship",
     "emoji": "👨‍⚖️",
-    "details": "a form of government in which a person or a small group rules with almost unlimited power",
+    "description": "a form of government in which a person or a small group rules with almost unlimited power",
     "boosts": {
       "infrastructure_cost_modifier": 0.05
     }
@@ -33,7 +33,7 @@
   "republic": {
     "name": "Republic",
     "emoji": "🗽",
-    "details": "a state in which supreme power is held by the people and their elected representatives",
+    "description": "a state in which supreme power is held by the people and their elected representatives",
     "boosts": {
       "land_cost_modifier": 0.05
     }
@@ -41,7 +41,7 @@
   "theocracy": {
     "name": "Theocracy",
     "emoji": "📿",
-    "details": "a system of government in which individuals rule in the name of God or a god",
+    "description": "a system of government in which individuals rule in the name of God or a god",
     "boosts": {
       "infrastructure_cost_modifier": 0.05
     }
@@ -49,7 +49,7 @@
   "fascism": {
     "name": "Fascism",
     "emoji": ":swastika:",
-    "details": "a form of far-right, authoritarian ultranationalism characterized by dictatorial power, forcible suppression of opposition, and strong regimentation of society and of the economy",
+    "description": "a form of far-right, authoritarian ultranationalism characterized by dictatorial power, forcible suppression of opposition, and strong regimentation of society and of the economy",
     "boosts": {
       "land_cost_modifier": 0.06
     }
@@ -57,7 +57,7 @@
   "communism": {
     "name": "Communism",
     "emoji": "☭",
-    "details": "a political and economic ideology that seeks to establish a classless society in which the major means of production, such as mines and factories, are owned and controlled by the public",
+    "description": "a political and economic ideology that seeks to establish a classless society in which the major means of production, such as mines and factories, are owned and controlled by the public",
     "boosts": {
       "economy": 1.5
     }
@@ -65,7 +65,7 @@
   "revolutionary": {
     "name": "Revolutionary",
     "emoji": "🔥",
-    "details": "a form of government in which the population or a large part of the population rises up in revolt against the current authorities, typically in a violent manner",
+    "description": "a form of government in which the population or a large part of the population rises up in revolt against the current authorities, typically in a violent manner",
     "boosts": {
       "military": 1.5
     }

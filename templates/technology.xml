@@ -1,0 +1,4 @@
+<discord>
+    {{ from "transactions.j2" import purchase_messages with context }}
+    {{ purchase_messages("technology", ":test_tube:", nation.interior.technology.price_order(amount) ) }}
+</discord>

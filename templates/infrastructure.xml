@@ -1,0 +1,4 @@
+<discord>
+    {% from "transactions.j2" import purchase_messages with context %}
+    {{ purchase_messages("infrastructure", ":homes:", price) }}
+</discord>

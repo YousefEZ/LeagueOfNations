@@ -1,0 +1,40 @@
+<discord>
+    {% macro purchase_messages(name, emoji, price) -%}
+        <message key="cost">
+            <content>
+                Cost of purchasing {{ amount }} {{ emoji }} {{ name }} is :moneybag: {{ price|currency }}
+            </content>
+            <view>
+                <components>
+                    <button key="confirm">
+                        <label>Buy</label>
+                        <emoji>
+                            <name>✅</name>
+                        </emoji>
+                        <style>success</style>
+                    </button>
+                    <button key="decline">
+                        <label>Decline</label>
+                        <emoji>
+                            <name>✖️</name>
+                        </emoji>
+                        <style>danger</style>
+                    </button>
+                </components>
+            </view>
+        </message>
+        <message key="success">
+            <content strip="true">
+                You have purchased {{ amount }} {{ emoji }} {{ name }} for :moneybag: {{ price|currency }}.
+            </content>
+            <view />
+        </message>
+        <message key="insufficient_funds">
+            <content strip="true">
+                You do not have enough funds to purchase {{ amount }} {{ emoji }} {{ name }}. Requires
+                :moneybag: {{ price|currency }} Only Have {{ nation.bank.funds | currency }}
+            </content>
+            <view />
+        </message>
+    {%- endmacro %}
+</discord>

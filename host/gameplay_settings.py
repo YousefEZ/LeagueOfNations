@@ -12,6 +12,9 @@ class InteriorGameplaySettings(BaseModel):
     population_per_infrastructure: int
     revenue_per_population: float
     cashback_modifier: float
+    starter_infrastructure: float
+    starter_land: float
+    starter_technology: float
 
 
 class GameplaySettingsModel(BaseModel):

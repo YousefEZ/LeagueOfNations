@@ -7,7 +7,9 @@ from pydantic import BaseModel
 
 from host.nation.types.boosts import BoostsLookup
 
-GovernmentTypes = Literal["Democracy", "Monarchy", "Dictatorship", "Communism", "Anarchy"]
+GovernmentTypes = Literal[
+    'Anarchy', 'Monarchy', 'Democracy', 'Dictatorship', 'Republic', 'Theocracy', 'Fascism', 'Communism', 'Revolutionary'
+]
 
 
 class Government(BaseModel, frozen=True):
@@ -17,6 +19,6 @@ class Government(BaseModel, frozen=True):
     boosts: BoostsLookup
 
 
-with open("object/governments.json", "r") as governments_file:
+with open("objects/governments.json", encoding="utf8", mode="r") as governments_file:
     Governments = {identifier: Government.model_validate(government) for identifier, government in
                    json.load(governments_file).items()}

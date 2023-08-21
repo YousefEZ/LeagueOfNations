@@ -4,7 +4,7 @@ from typing import Protocol, TypeVar
 
 from host import currency
 from host.nation import models
-from host.nation.types.basic import InfrastructureUnit, LandUnit, TechnologyUnit, land
+from host.nation.types.basic import InfrastructureUnit, LandUnit, TechnologyUnit
 from host.nation.types.boosts import PriceModifierBoosts, BillModifierBoosts
 
 K = TypeVar("K")
@@ -74,47 +74,47 @@ class LandPoints(Data[LandUnit]):
     PriceModifier: PriceModifierBoosts = "land_cost_modifier"
     FloorPrice: currency.Currency = currency.lnd(400)
     PricePoints: OrderedDict[LandUnit, currency.Currency] = OrderedDict([
-        (land(20), currency.lnd(1.5)),
-        (land(30), currency.lnd(2)),
-        (land(40), currency.lnd(2.5)),
-        (land(100), currency.lnd(3)),
-        (land(150), currency.lnd(3.5)),
-        (land(200), currency.lnd(5)),
-        (land(250), currency.lnd(10)),
-        (land(300), currency.lnd(15)),
-        (land(400), currency.lnd(20)),
-        (land(500), currency.lnd(25)),
-        (land(800), currency.lnd(30)),
-        (land(1_200), currency.lnd(35)),
-        (land(2_000), currency.lnd(40)),
-        (land(3_000), currency.lnd(45)),
-        (land(4_000), currency.lnd(55)),
-        (land(8_000), currency.lnd(75))
+        (LandUnit(20), currency.lnd(1.5)),
+        (LandUnit(30), currency.lnd(2)),
+        (LandUnit(40), currency.lnd(2.5)),
+        (LandUnit(100), currency.lnd(3)),
+        (LandUnit(150), currency.lnd(3.5)),
+        (LandUnit(200), currency.lnd(5)),
+        (LandUnit(250), currency.lnd(10)),
+        (LandUnit(300), currency.lnd(15)),
+        (LandUnit(400), currency.lnd(20)),
+        (LandUnit(500), currency.lnd(25)),
+        (LandUnit(800), currency.lnd(30)),
+        (LandUnit(1_200), currency.lnd(35)),
+        (LandUnit(2_000), currency.lnd(40)),
+        (LandUnit(3_000), currency.lnd(45)),
+        (LandUnit(4_000), currency.lnd(55)),
+        (LandUnit(8_000), currency.lnd(75))
     ])
     BillModifier: BillModifierBoosts = "land_bill_modifier"
     FloorBill: currency.Currency = currency.lnd_rate(0.3)
     BillPoints: OrderedDict[LandUnit, currency.CurrencyRate] = OrderedDict([
-        (land(20), currency.lnd_rate(0.001)),
-        (land(30), currency.lnd_rate(0.002)),
-        (land(40), currency.lnd_rate(0.003)),
-        (land(100), currency.lnd_rate(0.004)),
-        (land(150), currency.lnd_rate(0.005)),
-        (land(200), currency.lnd_rate(0.006)),
-        (land(250), currency.lnd_rate(0.007)),
-        (land(300), currency.lnd_rate(0.008)),
-        (land(400), currency.lnd_rate(0.009)),
-        (land(500), currency.lnd_rate(0.01)),
-        (land(800), currency.lnd_rate(0.011)),
-        (land(1_200), currency.lnd_rate(0.012)),
-        (land(2_000), currency.lnd_rate(0.013)),
-        (land(3_000), currency.lnd_rate(0.014)),
-        (land(4_000), currency.lnd_rate(0.015)),
-        (land(8_000), currency.lnd_rate(0.016))
+        (LandUnit(20), currency.lnd_rate(0.001)),
+        (LandUnit(30), currency.lnd_rate(0.002)),
+        (LandUnit(40), currency.lnd_rate(0.003)),
+        (LandUnit(100), currency.lnd_rate(0.004)),
+        (LandUnit(150), currency.lnd_rate(0.005)),
+        (LandUnit(200), currency.lnd_rate(0.006)),
+        (LandUnit(250), currency.lnd_rate(0.007)),
+        (LandUnit(300), currency.lnd_rate(0.008)),
+        (LandUnit(400), currency.lnd_rate(0.009)),
+        (LandUnit(500), currency.lnd_rate(0.01)),
+        (LandUnit(800), currency.lnd_rate(0.011)),
+        (LandUnit(1_200), currency.lnd_rate(0.012)),
+        (LandUnit(2_000), currency.lnd_rate(0.013)),
+        (LandUnit(3_000), currency.lnd_rate(0.014)),
+        (LandUnit(4_000), currency.lnd_rate(0.015)),
+        (LandUnit(8_000), currency.lnd_rate(0.016))
     ])
 
     @staticmethod
     def get(interior: models.InteriorModel) -> LandUnit:
-        return land(interior.land)
+        return LandUnit(interior.land)
 
     @staticmethod
     def set(interior: models.InteriorModel, value: LandUnit) -> None:

@@ -1,0 +1,93 @@
+<discord>
+    <message key="display">
+        <embed>
+            <title>Displaying Improvement</title>
+            <colour>magenta</colour>
+            <fields>
+                <field>
+                    <name>{{improvement.emoji}} {{improvement.name}}</name>
+                    <value>
+                        limit: {{improvement.limit}}
+                        cost: $ {{improvement.cost | currency}}
+                        dependencies:
+                        {% for dependency in improvement.dependencies %}
+                        {{improvements[dependency].emoji}} {{improvements[dependency].name}}
+                        {% endfor %}
+
+                        {{improvement.description}}
+                    </value>
+                </field>
+            </fields>
+        </embed>
+    </message>
+    <message key="buy">
+        <embed>
+            <title>Buying Improvement</title>
+            <colour>magenta</colour>
+            <fields>
+                <field>
+                    <name>{{improvement.emoji}} {{improvement.name}}</name>
+                    <value>
+                        cost of purchasing {{ amount }} x {{ improvement.emoji }} {{ improvement.name }} = $ {{ price |
+                        currency }}
+
+                        please click the :white_check_mark: Confirm button below to confirm your purchase
+                    </value>
+                </field>
+            </fields>
+        </embed>
+        <view>
+            <components>
+                <button key="confirm">
+                    <label>Confirm</label>
+                    <emoji>
+                        <name>✅</name>
+                    </emoji>
+                    <style>success</style>
+                </button>
+                <button key="cancel">
+                    <label>Cancel</label>
+                    <emoji>
+                        <name>❌</name>
+                    </emoji>
+                    <style>danger</style>
+                </button>
+            </components>
+        </view>
+    </message>
+    <message key="sell">
+        <embed>
+            <title>Selling Improvement</title>
+            <colour>magenta</colour>
+            <fields>
+                <field>
+                    <name>{{improvement.emoji}} {{improvement.name}}</name>
+                    <value>
+                        cost of selling {{ amount }} x {{ improvement.emoji }} {{ improvement.name }} = $ {{ cashback |
+                        currency }}
+
+                        please click the :white_check_mark: Confirm button below to confirm your sale
+                    </value>
+                </field>
+            </fields>
+        </embed>
+        <view>
+            <components>
+                <button key="confirm">
+                    <label>Confirm</label>
+                    <emoji>
+                        <name>✅</name>
+                    </emoji>
+                    <style>success</style>
+                </button>
+                <button key="cancel">
+                    <label>Cancel</label>
+                    <emoji>
+                        <name>❌</name>
+                    </emoji>
+                    <style>danger</style>
+                </button>
+            </components>
+        </view>
+    </message>
+</discord>

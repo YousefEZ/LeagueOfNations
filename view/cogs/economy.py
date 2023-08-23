@@ -194,11 +194,7 @@ class Economy(commands.Cog):
             ctx (qalib.QalibInteraction[ImprovementMessages]): The context of the interaction
             improvement (Choice[str]): The improvement to buy
         """
-        try:
-            await ctx.display("display", keywords={"improvement": (Improvements[improvement.value])})
-        except Exception as e:
-            print(e)
-            print(traceback.format_tb(e.__traceback__))
+        await ctx.display("display", keywords={"improvement": (Improvements[improvement.value])})
 
 
 async def setup(bot: LeagueOfNations) -> None:

@@ -8,11 +8,13 @@
                     <name>{{improvement.emoji}} {{improvement.name}}</name>
                     <value>
                         limit: {{improvement.limit}}
-                        cost: $ {{improvement.cost | currency}}
-                        dependencies:
-                        {% for dependency in improvement.dependencies %}
-                        {{improvements[dependency].emoji}} {{improvements[dependency].name}}
-                        {% endfor %}
+                        price: {{improvement.price | currency}} LND
+                        {% if improvement.dependencies | length > 0 %}
+                            dependencies:
+                                {% for dependency in improvement.dependencies %}
+                                - {{improvements[dependency].emoji}} {{improvements[dependency].name}}
+                                {% endfor %}
+                        {% endif %}
 
                         {{improvement.description}}
                     </value>

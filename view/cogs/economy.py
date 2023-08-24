@@ -10,8 +10,8 @@ from qalib.template_engines.jinja2 import Jinja2
 
 from host.nation import Nation
 from host.nation.interior import UnitExchangeProtocol, K
-from host.nation.types.improvements import Improvements, Improvement
-from host.nation.types.interior import PurchaseResult, SellResult
+from host.nation.types.improvements import Improvements, ImprovementSchema
+from host.nation.types.transactions import PurchaseResult, SellResult
 from lon import LeagueOfNations
 from view.cogs.custom_jinja2 import ENVIRONMENT
 
@@ -195,6 +195,32 @@ class Economy(commands.Cog):
             improvement (Choice[str]): The improvement to buy
         """
         await ctx.display("display", keywords={"improvement": (Improvements[improvement.value])})
+
+    @improvement_group.command(name="buy", description="Buying an improvement")
+    @app_commands.choices(
+        improvement=[Choice(name=f"{improvement.emoji} {name}", value=improvement.name) for name, improvement in
+                     Improvements.items()])
+    @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/improvement.xml")
+    async def improvement_buy(
+            self,
+            ctx: qalib.QalibInteraction[ImprovementMessages],
+            improvement: Choice[str],
+            amount: PositiveInteger
+    ) -> None:
+        """Improvement command that shows the improvements of the nation
+
+        Args:
+            ctx (qalib.QalibInteraction[ImprovementMessages]): The context of the interaction
+            improvement (Choice[str]): The improvement to buy
+            amount (PositiveInteger): The amount to buy
+        """
+        nation = self.bot.get_nation(ctx.user.id)
+        improvement = Improvements[improvement.value]
+        if nation.interior.improvements.can_buy(improvement):
+            nation.interior.improvements.buy(improvement)
+            await ctx.display("buy", keywords={"improvement": improvement})
+        else:
+            await ctx.display("cant_buy", keywords={"improvement": improvement})
 
 
 async def setup(bot: LeagueOfNations) -> None:

@@ -1,27 +1,24 @@
 from __future__ import annotations
 
 import json
-from typing import Literal, NamedTuple, TypedDict, Dict
+from typing import NamedTuple, Dict
+
+from pydantic import BaseModel
 
 from host.nation.types.boosts import BoostsLookup
 
-ResourceTypes = Literal[
-    "Cattle", "Fish", "Fruit", "Pigs", "Wheat", "Aluminum", "Coal", "Iron", "Lead", "Oil", "Uranium", "Bread", "Cheese",
-    "Fruit Juice", "Meat", "Milk"
-]
-
 
 class ResourcePair(NamedTuple):
-    primary: ResourceTypes
-    secondary: ResourceTypes
+    primary: str
+    secondary: str
 
 
-class Resource(TypedDict):
+class Resource(BaseModel, frozen=True):
     emoji: str
     description: str
     boosts: BoostsLookup
 
 
-Resources = Dict[ResourceTypes, Resource]
-with open("objects/resources.json", "r", encoding="utf8") as file:
-    resources: Resources = {resource: Resource(**data) for resource, data in json.load(file).items()}
+with open("objects/resources.json", "r", encoding="utf8") as resources_file:
+    Resources: Dict[str, Resource] = {identifier: Resource.model_validate(resource) for identifier, resource in
+                                      json.load(resources_file).items()}

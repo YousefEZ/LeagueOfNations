@@ -40,6 +40,12 @@ class BoostsLookup(BaseModel, frozen=True):
     bill_modifier: float = Field(default=0.0)
     bill_reduction: float = Field(default=0.0)
 
+    def multiply(self, multiplier: float) -> BoostsLookup:
+        return BoostsLookup(**{
+            attr: value * multiplier
+            for attr, value in vars(self).items()
+        })
+
     @classmethod
     def combine(cls, *others: BoostsLookup) -> BoostsLookup:
         return cls(**{

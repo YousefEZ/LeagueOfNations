@@ -12,6 +12,7 @@ from host.gameplay_settings import GameplaySettings
 from host.nation import types, models
 from host.nation.bank import Bank
 from host.nation.foreign import Foreign
+from host.nation.improvements import Improvements
 from host.nation.interior import Interior
 from host.nation.meta import Meta
 from host.nation.ministry import Ministry
@@ -47,6 +48,10 @@ class Nation:
     @cached_property
     def interior(self) -> Interior:
         return Interior(self, self._session)
+
+    @cached_property
+    def improvements(self) -> Improvements:
+        return Improvements(self, self._session)
 
     @cached_property
     def foreign(self) -> Foreign:

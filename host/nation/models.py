@@ -6,7 +6,6 @@ from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from host.base_models import Base
-from host.nation import types
 
 
 class TradeRequestModel(Base):
@@ -54,8 +53,8 @@ class ResourcesModel(Base):
     __tablename__ = "Resources"
 
     user_id: Mapped[int] = mapped_column(primary_key=True)
-    primary: Mapped[types.resources.ResourceTypes]
-    secondary: Mapped[types.resources.ResourceTypes]
+    primary: Mapped[str]
+    secondary: Mapped[str]
 
 
 class MetadataModel(Base):
@@ -90,4 +89,12 @@ class GovernmentModel(Base):
     __tablename__ = "Government"
 
     user_id: Mapped[int] = mapped_column(primary_key=True)
-    type: Mapped[types.government.GovernmentTypes]
+    type: Mapped[str]
+
+
+class ImprovementModel(Base):
+    __tablename__ = "Improvements"
+
+    user_id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str]
+    amount: Mapped[int]

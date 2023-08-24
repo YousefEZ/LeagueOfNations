@@ -15,8 +15,8 @@ from host.gameplay_settings import GameplaySettings
 from host.nation import models
 from host.nation.ministry import Ministry
 from host.nation.types.basic import Population
-from host.nation.types.interior import Data, InfrastructurePoints, TechnologyPoints, LandPoints, PurchaseResult, \
-    SellResult
+from host.nation.types.interior import Data, InfrastructurePoints, TechnologyPoints, LandPoints
+from host.nation.types.transactions import PurchaseResult, SellResult
 
 if TYPE_CHECKING:
     from host.nation import Nation

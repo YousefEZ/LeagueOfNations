@@ -1,14 +1,20 @@
+from __future__ import annotations
+
 import dataclasses
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING, Any
 
 from sqlalchemy.orm import Session
 
 from host.gameplay_settings import GameplaySettings
-from host.nation import Ministry, Nation, types
+from host.nation.ministry import Ministry
+from host.nation import types
 from host.nation.models import ImprovementModel
 from host.nation.types.boosts import BoostsLookup
 from host.nation.types.improvements import ImprovementSchema
 from host.nation.types.transactions import PurchaseResult, SellResult
+
+if TYPE_CHECKING:
+    from host.nation import Nation
 
 
 @dataclasses.dataclass(frozen=True)
@@ -33,9 +39,9 @@ class Improvements(Ministry):
 
     def _get_model(self, improvement: str) -> Optional[ImprovementModel]:
         return self._session.query(ImprovementModel).filter_by(user_id=self._nation.identifier,
-                                                               improvement=improvement).first()
+                                                               name=improvement).first()
 
-    def purchase_improvement(self, improvement: ImprovementSchema, amount: int) -> PurchaseResult:
+    def buy(self, improvement: ImprovementSchema, amount: int) -> PurchaseResult:
         model = self._get_model(improvement.name)
         price = improvement.price * amount
         if not self._nation.bank.enough_funds(price):
@@ -44,14 +50,14 @@ class Improvements(Ministry):
         self._nation.bank.deduct(price)
 
         if model is None:
-            model = ImprovementModel(user_id=self._nation.identifier, improvement=improvement.name, amount=amount)
+            model = ImprovementModel(user_id=self._nation.identifier, name=improvement.name, amount=amount)
             self._session.add(model)
         else:
             model.amount += amount
         self._session.commit()
         return PurchaseResult.SUCCESS
 
-    def sell_improvement(self, improvement: ImprovementSchema, amount: int) -> SellResult:
+    def sell(self, improvement: ImprovementSchema, amount: int) -> SellResult:
         model = self._get_model(improvement.name)
         if model is None:
             return SellResult.INSUFFICIENT_AMOUNT

@@ -7,89 +7,33 @@
                 <field>
                     <name>{{improvement.emoji}} {{improvement.name}}</name>
                     <value>
-                        limit: {{improvement.limit}}
-                        price: {{improvement.price | currency}} LND
+                        __Details__:
+                        - price: {{improvement.price | currency}} LND
+                        - limit: {{improvement.limit}}
+                        {% set boosts = improvement.boosts.pretty_print() -%}
+                        {% if boosts | length > 0 %}
+
+                            :rocket: boosts:
+                                - {{ boosts | join("\n- ") }}
+
+                        {% endif -%}
                         {% if improvement.dependencies | length > 0 %}
                             dependencies:
-                                {% for dependency in improvement.dependencies %}
-                                - {{improvements[dependency].emoji}} {{improvements[dependency].name}}
-                                {% endfor %}
-                        {% endif %}
+                            {% for dependency in improvement.dependencies -%}
+                                - {{improvements[dependency].emoji}} {{improvements[dependency].name}} x {{
+                            improvement.dependencies[dependency] }}
+                            {%- endfor %}
 
+                        {% endif -%}
                         {{improvement.description}}
                     </value>
                 </field>
             </fields>
+            <image>{{ improvement.url }}</image>
         </embed>
     </message>
-    <message key="buy">
-        <embed>
-            <title>Buying Improvement</title>
-            <colour>magenta</colour>
-            <fields>
-                <field>
-                    <name>{{improvement.emoji}} {{improvement.name}}</name>
-                    <value>
-                        cost of purchasing {{ amount }} x {{ improvement.emoji }} {{ improvement.name }} = $ {{ price |
-                        currency }}
-
-                        please click the :white_check_mark: Confirm button below to confirm your purchase
-                    </value>
-                </field>
-            </fields>
-        </embed>
-        <view>
-            <components>
-                <button key="confirm">
-                    <label>Confirm</label>
-                    <emoji>
-                        <name>✅</name>
-                    </emoji>
-                    <style>success</style>
-                </button>
-                <button key="cancel">
-                    <label>Cancel</label>
-                    <emoji>
-                        <name>❌</name>
-                    </emoji>
-                    <style>danger</style>
-                </button>
-            </components>
-        </view>
-    </message>
-    <message key="sell">
-        <embed>
-            <title>Selling Improvement</title>
-            <colour>magenta</colour>
-            <fields>
-                <field>
-                    <name>{{improvement.emoji}} {{improvement.name}}</name>
-                    <value>
-                        cost of selling {{ amount }} x {{ improvement.emoji }} {{ improvement.name }} = $ {{ cashback |
-                        currency }}
-
-                        please click the :white_check_mark: Confirm button below to confirm your sale
-                    </value>
-                </field>
-            </fields>
-        </embed>
-        <view>
-            <components>
-                <button key="confirm">
-                    <label>Confirm</label>
-                    <emoji>
-                        <name>✅</name>
-                    </emoji>
-                    <style>success</style>
-                </button>
-                <button key="cancel">
-                    <label>Cancel</label>
-                    <emoji>
-                        <name>❌</name>
-                    </emoji>
-                    <style>danger</style>
-                </button>
-            </components>
-        </view>
-    </message>
+    {% if amount is defined %}
+    {% from "transactions.j2" import purchase_messages with context %}
+    {{ purchase_messages(improvement.name, improvement.emoji, improvement.price * amount) }}
+    {% endif %}
 </discord>

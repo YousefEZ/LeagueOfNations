@@ -3,45 +3,178 @@
     "name": "Bank",
     "emoji": "🏦",
     "description": "A Bank is a financial institution that accepts deposits from the public and creates credit. Lending activities can be performed either directly or indirectly through capital markets.",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/6/6e/Main_Bank_of_Egypt.jpg",
     "boosts": {
       "income_modifier": 0.07
     },
     "limit": 5,
     "price": 100000,
-    "dependencies": []
+    "dependencies": {}
   },
   "Casino": {
     "name": "Casino",
     "emoji": "🎰",
     "description": "A casino is a facility which houses and accommodates certain types of gambling activities. The industry that deals in casinos is called the gaming industry.",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/2/25/Treasure_Valley_Casino_3.jpg",
     "boosts": {
-      "income_modifier": -0.01,
-      "happiness_modifier": 1.5
+      "income_modifier": -0.025,
+      "happiness_modifier": 0.015
     },
     "limit": 2,
     "price": 100000,
-    "dependencies": []
+    "dependencies": {}
   },
   "Church": {
     "name": "Church",
     "emoji": "⛪",
     "description": "A church building or church house, often simply called a church, is a building used for Christian religious activities, particularly for worship services.",
+    "url": "https://commons.wikimedia.org/wiki/File:Church_of_the_Holy_Sepulchre_by_Gerd_Eichmann_(cropped).jpg",
     "boosts": {
       "happiness_modifier": 0.01
     },
     "limit": 5,
     "price": 40000,
-    "dependencies": []
+    "dependencies": {}
   },
   "Clinic": {
     "name": "Clinic",
     "emoji": "🏥",
     "description": "A clinic is a healthcare facility that is primarily focused on the care of outpatients. Clinics can be privately operated or publicly managed and funded.",
+    "url": "https://c.pxhere.com/photos/ae/58/hospital_bed_doctor_surgery-340641.jpg!d",
     "boosts": {
+      "income_modifier": -0.01,
       "happiness_modifier": 0.01
     },
     "limit": 5,
     "price": 50000,
-    "dependencies": []
+    "dependencies": {}
+  },
+  "Mosque": {
+    "name": "Mosque",
+    "emoji": "🕌",
+    "description": "A mosque is a place of worship for followers of Islam. There are strict and detailed requirements in Sunni jurisprudence for a place of worship to be considered a mosque, with places that do not meet these requirements regarded as musallas.",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/32/Umayyad_Mosque_%282020-01-07%29.jpg",
+    "boosts": {
+      "happiness_modifier": 0.01
+    },
+    "limit": 5,
+    "price": 20000,
+    "dependencies": {}
+  },
+  "Factory": {
+    "name": "Factory",
+    "emoji": "🏭",
+    "description": "A factory, manufacturing plant or a production plant is an industrial site, usually a complex consisting of several buildings filled with machinery, where workers manufacture items or operate machines which process each item into another.",
+    "url": "https://images.pexels.com/photos/247763/pexels-photo-247763.jpeg",
+    "boosts": {
+      "infrastructure_cost_modifier": 0.08
+    },
+    "limit": 5,
+    "price": 150000,
+    "dependencies": {}
+  },
+  "Marketplace": {
+    "name": "Marketplace",
+    "emoji": "🛒",
+    "description": "A marketplace is a location where people regularly gather for the purchase and sale of provisions, livestock, and other goods. In different parts of the world, a market place may be described as a souk, bazaar, a fixed mercado (Spanish), or itinerant tianguis (Mexico), or palengke (Philippines).",
+    "url": "https://res-4.cloudinary.com/the-university-of-melbourne/image/upload/s--B_5ikC-U--/c_limit,f_auto,q_75,w_892/v1/pursuit-uploads/593/e10/779/593e107792c15395a9d1f7616b60c75c00235487d31592e0be3a78306886.jpg",
+    "boosts": {
+      "income_modifier": 0.01
+    },
+    "limit": 5,
+    "price": 50000,
+    "dependencies": {}
+  },
+  "Supermarket": {
+    "name": "Supermarket",
+    "emoji": "🏪",
+    "description": "A supermarket is a self-service shop offering a wide variety of food, beverages and household products, organized into sections. It is larger and has a wider selection than earlier grocery stores, but is smaller and more limited in the range of merchandise than a hypermarket or big-box market.",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/8/8a/LIDL_-_pokladny.jpg",
+    "boosts": {
+      "income_modifier": 0.02
+    },
+    "limit": 1,
+    "price": 100000,
+    "dependencies": {
+      "Marketplace": 2
+    }
+  },
+  "Port": {
+    "name": "Port",
+    "emoji": "⚓",
+    "description": "A port is a maritime facility which may comprise one or more wharves where ships may dock to load and discharge passengers and cargo. Although usually situated on a sea coast or estuary, some ports, such as Hamburg, Manchester and Duluth, are many miles inland, with access from the sea via river or canal.",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/f/fb/Jebel_Ali_Port_2_Imresolt.jpg",
+    "boosts": {
+      "income_modifier": 0.01
+    },
+    "limit": 1,
+    "price": 200000,
+    "dependencies": {}
+  },
+  "Hospital": {
+    "name": "Hospital",
+    "emoji": "🏥",
+    "description": "A hospital is a health care institution providing patient treatment with specialized medical and nursing staff and medical equipment. The best-known type of hospital is the general hospital, which typically has an emergency department to treat urgent health problems ranging from fire and accident victims to a sudden illness.",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/40/Dr._Sulaiman_Al_Habib_Hospital_in_Qassim.jpg",
+    "boosts": {
+      "citizen_modifier": 0.05,
+      "happiness_modifier": 0.01
+    },
+    "limit": 1,
+    "price": 50000,
+    "dependencies": {
+      "Clinic": 2
+    }
+  },
+  "Police Station": {
+    "name": "Police Station",
+    "emoji": "🚨",
+    "description": "A police station is a building which serves to accommodate police officers and other members of staff. These buildings often contain offices and accommodation for personnel and vehicles, along with locker rooms, temporary holding cells and interview/interrogation rooms.",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/d/de/Mapo-gu_police_station_at_Hangang.jpg",
+    "boosts": {
+      "happiness_modifier": 0.02
+    },
+    "limit": 1,
+    "price": 50000,
+    "dependencies": {}
+  },
+  "School": {
+    "name": "School",
+    "emoji": "🏫",
+    "description": "A school is an educational institution designed to provide learning spaces and learning environments for the teaching of students under the direction of teachers. Most countries have systems of formal education, which is sometimes compulsory.",
+    "url": "https://fastly.4sqi.net/img/general/600x600/48984368_JNSpG2yQGoSjMUTgPIr8440XkySqnQxWChigspgj614.jpg",
+    "boosts": {
+      "income_modifier": 0.05,
+      "happiness_modifier": 0.01
+    },
+    "limit": 5,
+    "price": 50000,
+    "dependencies": {}
+  },
+  "University": {
+    "name": "University",
+    "emoji": "🎓",
+    "description": "A university is an institution of higher education and research which awards academic degrees in various academic disciplines. Universities typically provide undergraduate education and postgraduate education.",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/e/e5/Cairo_University-3.JPG",
+    "boosts": {
+      "income_modifier": 0.1
+    },
+    "limit": 1,
+    "price": 50000,
+    "dependencies": {
+      "School": 3
+    }
+  },
+  "Stadium": {
+    "name": "Stadium",
+    "emoji": "🏟️",
+    "description": "A stadium is a place or venue for (mostly) outdoor sports, concerts, or other events and consists of a field or stage either partly or completely surrounded by a tiered structure designed to allow spectators to stand or sit and view the event.",
+    "url": "https://upload.wikimedia.org/wikipedia/en/d/d6/Al_Thumama_Stadium_%282%29.jpg",
+    "boosts": {
+      "happiness_modifier": 0.1
+    },
+    "limit": 1,
+    "price": 50000,
+    "dependencies": {}
   }
 }

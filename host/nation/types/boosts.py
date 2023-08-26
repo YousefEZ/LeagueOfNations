@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Dict, Tuple, List
 
 from pydantic import BaseModel, Field
 
@@ -28,17 +28,17 @@ Boosts = Literal[
 
 
 class BoostsLookup(BaseModel, frozen=True):
-    happiness_modifier: float = Field(default=0.0)
-    income_increase: float = Field(default=0.0)
-    income_modifier: float = Field(default=0.0)
-    infrastructure_cost_modifier: float = Field(default=0.0)
-    infrastructure_bill_modifier: float = Field(default=0.0)
-    technology_cost_modifier: float = Field(default=0.0)
-    technology_bill_modifier: float = Field(default=0.0)
-    land_cost_modifier: float = Field(default=0.0)
-    land_bill_modifier: float = Field(default=0.0)
-    bill_modifier: float = Field(default=0.0)
-    bill_reduction: float = Field(default=0.0)
+    happiness_modifier: float = Field(default=0.0, title="Happiness Modifier")
+    income_increase: float = Field(default=0.0, title="Income Increase")
+    income_modifier: float = Field(default=0.0, title="Income Modifier")
+    infrastructure_cost_modifier: float = Field(default=0.0, title="Infrastructure Cost Modifier")
+    infrastructure_bill_modifier: float = Field(default=0.0, title="Infrastructure Bill Modifier")
+    technology_cost_modifier: float = Field(default=0.0, title="Technology Cost Modifier")
+    technology_bill_modifier: float = Field(default=0.0, title="Technology Bill Modifier")
+    land_cost_modifier: float = Field(default=0.0, title="Land Cost Modifier")
+    land_bill_modifier: float = Field(default=0.0, title="Land Bill Modifier")
+    bill_modifier: float = Field(default=0.0, title="Bill Modifier")
+    bill_reduction: float = Field(default=0.0, title="Bill Reduction")
 
     def multiply(self, multiplier: float) -> BoostsLookup:
         return BoostsLookup(**{
@@ -52,6 +52,10 @@ class BoostsLookup(BaseModel, frozen=True):
             attr: sum(getattr(other, attr) for other in others)
             for attr in cls.model_json_schema()["properties"].keys()
         })
+
+    def pretty_print(self) -> List[str]:
+        return [f"{value.title}: {'+' if boost > 0 else ''}{round(boost * 100, 2)}" for key, value in
+                self.model_fields.items() if (boost := getattr(self, key))]
 
     def __add__(self, other: BoostsLookup) -> BoostsLookup:
         return BoostsLookup(**{

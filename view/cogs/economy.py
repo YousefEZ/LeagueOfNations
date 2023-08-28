@@ -1,3 +1,4 @@
+import traceback
 from typing import Literal, Dict, Callable, Coroutine
 
 import discord
@@ -25,12 +26,12 @@ SellMessages = Literal["cashback", "insufficient_amount", "success"]
 
 purchase_mappings: Dict[PurchaseResult, PurchaseMessages] = {
     PurchaseResult.INSUFFICIENT_FUNDS: "insufficient_funds",
-    PurchaseResult.SUCCESS: "success",
+    PurchaseResult.SUCCESS: "buy_success",
 }
 
 sell_mappings: Dict[SellResult, PurchaseMessages] = {
     SellResult.INSUFFICIENT_AMOUNT: "insufficient_amount",
-    SellResult.SUCCESS: "success",
+    SellResult.SUCCESS: "sell_success",
 }
 
 UnitTypes = Literal["infrastructure", "land", "technology"]
@@ -231,6 +232,41 @@ class Economy(commands.Cog):
 
         await ctx.display("cost", keywords={"improvement": improvement_class, "amount": amount,
                                             "nation": nation}, callables={"confirm": confirm, "decline": delete})
+
+    @improvement_group.command(name="sell", description="Selling an improvement")
+    @app_commands.choices(
+        improvement=[Choice(name=f"{improvement.emoji} {name}", value=improvement.name) for name, improvement in
+                     Improvements.items()])
+    @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/improvement.xml")
+    async def improvement_sell(
+            self,
+            ctx: qalib.QalibInteraction[ImprovementMessages],
+            improvement: Choice[str],
+            amount: PositiveInteger
+    ) -> None:
+        """Improvement command that shows the improvements of the nation
+
+        Args:
+            ctx (qalib.QalibInteraction[ImprovementMessages]): The context of the interaction
+            improvement (Choice[str]): The improvement to sell
+            amount (PositiveInteger): The amount to sell
+        """
+        nation = self.bot.get_nation(ctx.user.id)
+        improvement_class = Improvements[improvement.value]
+
+        async def confirm(interaction: discord.Interaction) -> None:
+            await interaction.response.defer()
+            try:
+                result = nation.improvements.sell(improvement_class, amount)
+                await ctx.display(sell_mappings[result],
+                                  keywords={"improvement": improvement_class, "amount": amount,
+                                            "nation": nation})
+            except Exception as e:
+                print(e)
+                traceback.print_tb(e.__traceback__)
+
+        await ctx.display("cashback", keywords={"improvement": improvement_class, "amount": amount,
+                                                "nation": nation}, callables={"confirm": confirm, "decline": delete})
 
 
 async def setup(bot: LeagueOfNations) -> None:

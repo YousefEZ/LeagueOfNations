@@ -33,7 +33,8 @@
         </embed>
     </message>
     {% if amount is defined %}
-    {% from "transactions.j2" import purchase_messages with context %}
+    {% from "transactions.j2" import purchase_messages, sell_messages with context %}
     {{ purchase_messages(improvement.name, improvement.emoji, improvement.price * amount) }}
+    {{ sell_messages(improvement.name, improvement.emoji, improvement.cashback * amount) }}
     {% endif %}
 </discord>

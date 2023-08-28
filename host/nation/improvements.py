@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Optional, List, TYPE_CHECKING, Any
+from typing import Optional, List, TYPE_CHECKING, Any, Dict
 
 from sqlalchemy.orm import Session
 
@@ -70,6 +70,15 @@ class Improvements(Ministry):
             model.amount -= amount
         self._session.commit()
         return SellResult.SUCCESS
+
+    @property
+    def owned(self) -> Dict[str, ImprovementCollection]:
+        return {improvement.name: ImprovementCollection(types.improvements.Improvements[improvement.name],
+                                                        improvement.amount) for
+                improvement in self.models}
+
+    def __getitem__(self, item: str) -> ImprovementCollection:
+        return self.owned[item]
 
     def boost(self) -> BoostsLookup:
         return sum(

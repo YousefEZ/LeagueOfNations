@@ -42,7 +42,7 @@ unit_exchange_mappings: Dict[UnitTypes, Callable[[Nation], UnitExchangeProtocol]
 }
 
 ExchangeMessages = Literal[PurchaseMessages, SellMessages]
-ImprovementMessages = Literal["display", PurchaseMessages, SellMessages]
+ImprovementMessages = Literal["owned", "display", PurchaseMessages, SellMessages]
 
 
 async def delete(interaction: discord.Interaction) -> None:
@@ -201,6 +201,21 @@ class Economy(commands.Cog):
         """
         await ctx.display("display",
                           keywords={"improvement": Improvements[improvement.value], "improvements": Improvements})
+
+    @improvement_group.command(name="owned", description="Displaying the owned improvements")
+    @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/improvement.xml")
+    async def improvement_owned(
+            self,
+            ctx: qalib.QalibInteraction[ImprovementMessages],
+    ) -> None:
+        """Improvement command that shows the improvements of the nation
+
+        Args:
+            ctx (qalib.QalibInteraction[ImprovementMessages]): The context of the interaction
+        """
+        nation = self.bot.get_nation(ctx.user.id)
+        await ctx.display("owned",
+                          keywords={"nation_name": nation.metadata.nation_name, "improvements": nation.improvements})
 
     @improvement_group.command(name="buy", description="Buying an improvement")
     @app_commands.choices(

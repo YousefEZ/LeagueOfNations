@@ -23,7 +23,7 @@
                 </components>
             </view>
         </message>
-        <message key="success">
+        <message key="buy_success">
             <content strip="true">
                 You have purchased {{ amount }} {{ emoji }} {{ name }} for :moneybag: {{ price|currency }}.
             </content>
@@ -62,7 +62,7 @@
                 </components>
             </view>
         </message>
-        <message key="success">
+        <message key="sell_success">
             <content strip="true">
                 You have sold {{ amount }} {{ emoji }} {{ name }} for :moneybag: {{ cashback|currency }}.
             </content>
@@ -70,8 +70,8 @@
         </message>
         <message key="insufficient_amount">
             <content strip="true">
-                You do not have enough units to sell {{ amount }} {{ emoji }} {{ name }}. Requires
-                {{ emoji }} {{ amount }} Only Have {{ units }}
+                You do not have enough units to sell {{ amount }} {{ emoji }} {{ name }}.
+                Requires {{ emoji }} {{ amount }} Only Have {{ units }}
             </content>
             <view/>
         </message>

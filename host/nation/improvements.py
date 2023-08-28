@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Optional, List, TYPE_CHECKING, Any
+from typing import Optional, List, TYPE_CHECKING, Any, Dict
 
 from sqlalchemy.orm import Session
 
@@ -59,12 +59,10 @@ class Improvements(Ministry):
 
     def sell(self, improvement: ImprovementSchema, amount: int) -> SellResult:
         model = self._get_model(improvement.name)
-        if model is None:
-            return SellResult.INSUFFICIENT_AMOUNT
-        if model.amount < amount:
+        if model is None or model.amount < amount:
             return SellResult.INSUFFICIENT_AMOUNT
 
-        cashback = improvement.price * amount * GameplaySettings.interior.cashback_modifier
+        cashback = improvement.cashback * amount
         self._nation.bank.add(cashback)
         if model.amount == amount:
             self._session.delete(model)
@@ -72,6 +70,15 @@ class Improvements(Ministry):
             model.amount -= amount
         self._session.commit()
         return SellResult.SUCCESS
+
+    @property
+    def owned(self) -> Dict[str, ImprovementCollection]:
+        return {improvement.name: ImprovementCollection(types.improvements.Improvements[improvement.name],
+                                                        improvement.amount) for
+                improvement in self.models}
+
+    def __getitem__(self, item: str) -> ImprovementCollection:
+        return self.owned[item]
 
     def boost(self) -> BoostsLookup:
         return sum(

@@ -59,12 +59,10 @@ class Improvements(Ministry):
 
     def sell(self, improvement: ImprovementSchema, amount: int) -> SellResult:
         model = self._get_model(improvement.name)
-        if model is None:
-            return SellResult.INSUFFICIENT_AMOUNT
-        if model.amount < amount:
+        if model is None or model.amount < amount:
             return SellResult.INSUFFICIENT_AMOUNT
 
-        cashback = improvement.price * amount * GameplaySettings.interior.cashback_modifier
+        cashback = improvement.cashback * amount
         self._nation.bank.add(cashback)
         if model.amount == amount:
             self._session.delete(model)

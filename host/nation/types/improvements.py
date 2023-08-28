@@ -4,9 +4,10 @@ import json
 from typing import List, Dict
 
 import pydantic
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 from host import currency
+from host.gameplay_settings import GameplaySettings
 from host.nation.types.boosts import BoostsLookup
 
 
@@ -23,6 +24,10 @@ class ImprovementSchema(BaseModel, frozen=True):
     @property
     def price(self) -> currency.Currency:
         return currency.lnd(self.raw_price)
+
+    @property
+    def cashback(self) -> currency.Currency:
+        return currency.lnd(self.raw_price * GameplaySettings.interior.cashback_modifier)
 
 
 with open("objects/improvements.json", encoding="utf8", mode="r") as improvements_file:

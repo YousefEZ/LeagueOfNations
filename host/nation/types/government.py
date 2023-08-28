@@ -12,7 +12,7 @@ GovernmentTypes = Literal[
 ]
 
 
-class Government(BaseModel, frozen=True):
+class GovernmentSchema(BaseModel, frozen=True):
     name: GovernmentTypes
     emoji: str
     description: str
@@ -20,5 +20,5 @@ class Government(BaseModel, frozen=True):
 
 
 with open("objects/governments.json", encoding="utf8", mode="r") as governments_file:
-    Governments = {identifier: Government.model_validate(government) for identifier, government in
+    Governments = {identifier: GovernmentSchema.model_validate(government) for identifier, government in
                    json.load(governments_file).items()}

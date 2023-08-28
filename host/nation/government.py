@@ -1,8 +1,6 @@
-import json
 from functools import cached_property
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
 from host.nation import models, types
@@ -30,8 +28,8 @@ class Government(Ministry):
         return government
 
     @property
-    def government(self) -> types.government.Government:
-        return Governments[self.model.type]
+    def government(self) -> types.government.GovernmentSchema:
+        return types.government.Governments[self.model.type]
 
     @government.setter
     def government(self, government_type: types.government.GovernmentTypes) -> None:

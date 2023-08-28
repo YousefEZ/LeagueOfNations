@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from enum import Enum, auto
 from typing import Protocol, TypeVar
 
 from host import currency
@@ -162,13 +161,3 @@ class TechnologyPoints(Data[TechnologyUnit]):
     @staticmethod
     def set(interior: models.InteriorModel, value: TechnologyUnit) -> None:
         interior.technology = value
-
-
-class PurchaseResult(Enum):
-    SUCCESS = auto()
-    INSUFFICIENT_FUNDS = auto()
-
-
-class SellResult(Enum):
-    SUCCESS = auto()
-    INSUFFICIENT_AMOUNT = auto()

@@ -138,12 +138,13 @@ class Bank(Ministry, FundReceiver, FundSender):
         expenses: host.currency.Currency = self._retrieve_bill(timestamp)
         return revenue - expenses
 
-    @host.ureg.Registry.wraps(None, [None, host.currency.Currency])
+    @host.ureg.Registry.check(None, host.currency.Currency)
     def add(self, amount: host.currency.Currency) -> None:
-        if amount < 0 * host.currency.Currency:
+        if amount < host.currency.lnd(0):
             raise ValueError("Cannot add negative funds")
         logging.debug(f"Adding {amount} to {self._player.name}'s treasury, Previous: {self.funds}")
-        self.model.treasury = self.funds + amount
+        new_funds: host.currency.Currency = self.funds + amount
+        self.model.treasury = int(new_funds.magnitude)
         self._session.add(self.model)
         self._session.commit()
 

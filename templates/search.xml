@@ -1,0 +1,22 @@
+<discord>
+    <message key="invalid_name">
+        <content strip="true">The Nation "{{ name }}" is invalid ❌. Must be Alphabetical</content>
+    </message>
+    {% if nations is defined %}
+    <expansive page_number_key="%s" key="search_results">
+        <timeout/>
+        <embed>
+            <title>Search Results, Page %s</title>
+            <colour>teal</colour>
+            <expansive_field>
+                <name>Page Number %s for {{ name }}</name>
+                <value>
+                    {% for index in range(nations|length) %}
+                        {{index + 1 }}. {{ nations[index].metadata.emoji }} {{nations[index].metadata.nation_name}}
+                    {% endfor %}
+                </value>
+            </expansive_field>
+        </embed>
+    </expansive>
+    {% endif %}
+</discord>

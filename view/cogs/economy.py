@@ -29,7 +29,7 @@ purchase_mappings: Dict[PurchaseResult, PurchaseMessages] = {
     PurchaseResult.SUCCESS: "buy_success",
 }
 
-sell_mappings: Dict[SellResult, PurchaseMessages] = {
+sell_mappings: Dict[SellResult, SellMessages] = {
     SellResult.INSUFFICIENT_AMOUNT: "insufficient_amount",
     SellResult.SUCCESS: "sell_success",
 }

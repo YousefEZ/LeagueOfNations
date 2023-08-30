@@ -63,7 +63,7 @@ class Nation:
 
     @classmethod
     def start(cls, identifier: base_types.UserId, name: str, engine: Session) -> Nation:
-        metadata = models.MetadataModel(user_id=identifier, nation=name, flag=defaults.meta.flag)
+        metadata = models.MetadataModel(user_id=identifier, nation=name, emoji=defaults.meta.emoji, flag=defaults.meta.flag)
 
         with Session(engine) as session:
             session.add(metadata)

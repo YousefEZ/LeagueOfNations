@@ -24,3 +24,11 @@ class Meta:
     @property
     def nation_name(self) -> str:
         return self.metadata.nation
+
+    @property
+    def flag(self) -> str:
+        return self.metadata.flag
+
+    @property
+    def emoji(self) -> str:
+        return self.metadata.emoji

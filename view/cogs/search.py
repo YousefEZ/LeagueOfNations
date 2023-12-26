@@ -14,7 +14,6 @@ SearchMessages = Literal["invalid_name", "search_results"]
 
 
 class Search(commands.Cog):
-
     def __init__(self, bot: LeagueOfNations):
         self.bot = bot
 
@@ -28,10 +27,12 @@ class Search(commands.Cog):
             raise BadArgument("Name must be ASCII")
 
     @search_group.command(name="nation", description="Search for an improvement")
-    @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/search.xml", )
+    @qalib.qalib_interaction(
+        Jinja2(ENVIRONMENT),
+        "templates/search.xml",
+    )
     async def search(self, ctx: qalib.QalibInteraction[SearchMessages], name: str) -> None:
-
-        if not all(c == " " or 65 <= ord(c) <= 122 for c in name):
+        if not name.isascii():
             await ctx.rendered_send("invalid_name", keywords={"name": name})
             return
 

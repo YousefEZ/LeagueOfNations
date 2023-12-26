@@ -25,6 +25,12 @@ class Nation:
         self._identifier: base_types.UserId = identifier
         self._session: Session = session
 
+    @staticmethod
+    def search_nation(name: str, session: Session, with_like: bool = False) -> List[models.MetadataModel]:
+        if with_like:
+            return session.query(models.MetadataModel).filter(models.MetadataModel.nation.like(name)).all()
+        return session.query(models.MetadataModel).filter(models.MetadataModel.nation == name).all()
+
     @cached_property
     def identifier(self) -> base_types.UserId:
         return self._identifier
@@ -63,7 +69,12 @@ class Nation:
 
     @classmethod
     def start(cls, identifier: base_types.UserId, name: str, engine: Session) -> Nation:
-        metadata = models.MetadataModel(user_id=identifier, nation=name, emoji=defaults.meta.emoji, flag=defaults.meta.flag)
+        metadata = models.MetadataModel(
+            user_id=identifier,
+            nation=name,
+            emoji=defaults.meta.emoji,
+            flag=defaults.meta.flag,
+        )
 
         with Session(engine) as session:
             session.add(metadata)
@@ -76,8 +87,10 @@ class Nation:
 
     @property
     def happiness(self) -> types.basic.Happiness:
-        happiness: types.basic.Happiness = sum((ministry_object.happiness for ministry_object in self.ministries),
-                                               types.basic.Happiness(0))
+        happiness: types.basic.Happiness = sum(
+            (ministry_object.happiness for ministry_object in self.ministries),
+            types.basic.Happiness(0),
+        )
         return types.basic.Happiness(happiness * self.happiness_modifier)
 
     @property

@@ -92,4 +92,16 @@
             </fields>
         </embed>
     </message>
+    <message key="NonAscii">
+   	<embed>
+	    <title>Invalid Name</title>
+	    <colour>magenta</colour>
+	    <fields>
+		<field>
+		    <name>Please use a different name</name>
+		    <value>{{name}} contains non-ascii characters, please select a different name.</value>
+		</field>
+	    </fields>
+	</embed>
+    </message>
 </discord>

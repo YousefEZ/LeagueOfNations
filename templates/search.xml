@@ -8,14 +8,14 @@
         <embed>
             <title>Search Results, Page %s</title>
             <colour>teal</colour>
-            <expansive_field>
+            <field>
                 <name>Page Number %s for {{ name }}</name>
                 <value>
                     {% for index in range(nations|length) %}
                         {{index + 1 }}. {{ nations[index].metadata.emoji }} {{nations[index].metadata.nation_name}}
                     {% endfor %}
                 </value>
-            </expansive_field>
+            </field>
         </embed>
     </expansive>
     {% endif %}

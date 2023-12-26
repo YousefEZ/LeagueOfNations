@@ -22,7 +22,7 @@ class Search(commands.Cog):
 
     class NameTransformer(app_commands.Transformer):
         async def transform(self, interaction: discord.Interaction, value: str) -> str:
-            if all(ord(c) < 128 for c in value):
+            if value.isascii(): 
                 return value
 
             raise BadArgument("Name must be ASCII")
@@ -37,7 +37,7 @@ class Search(commands.Cog):
             await ctx.rendered_send("invalid_name", keywords={"name": name})
             return
 
-        nations = Nation.search_nation(name, self.bot.session, with_like=True)
+        nations = Nation.search_for_nations(name, self.bot.session, with_like=True)
         await ctx.rendered_send("search_results", keywords={"name": name, "nations": nations})
 
 

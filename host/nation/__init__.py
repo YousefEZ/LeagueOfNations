@@ -26,7 +26,7 @@ class Nation:
         self._session: Session = session
 
     @staticmethod
-    def search_nation(name: str, session: Session, with_like: bool = False) -> List[models.MetadataModel]:
+    def search_for_nations(name: str, session: Session, with_like: bool = False) -> List[models.MetadataModel]:
         if with_like:
             return session.query(models.MetadataModel).filter(models.MetadataModel.nation.like(f"%{name}%")).all()
         return session.query(models.MetadataModel).filter(models.MetadataModel.nation == name).all()

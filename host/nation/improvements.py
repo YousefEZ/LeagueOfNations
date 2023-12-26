@@ -28,7 +28,6 @@ class ImprovementCollection:
 
 
 class Improvements(Ministry):
-
     def __init__(self, nation: Nation, session: Session):
         self._nation = nation
         self._session = session
@@ -38,8 +37,9 @@ class Improvements(Ministry):
         return self._session.query(ImprovementModel).filter_by(user_id=self._nation.identifier).all()
 
     def _get_model(self, improvement: str) -> Optional[ImprovementModel]:
-        return self._session.query(ImprovementModel).filter_by(user_id=self._nation.identifier,
-                                                               name=improvement).first()
+        return (
+            self._session.query(ImprovementModel).filter_by(user_id=self._nation.identifier, name=improvement).first()
+        )
 
     def buy(self, improvement: ImprovementSchema, amount: int) -> PurchaseResult:
         model = self._get_model(improvement.name)
@@ -73,15 +73,24 @@ class Improvements(Ministry):
 
     @property
     def owned(self) -> Dict[str, ImprovementCollection]:
-        return {improvement.name: ImprovementCollection(types.improvements.Improvements[improvement.name],
-                                                        improvement.amount) for
-                improvement in self.models}
+        return {
+            improvement.name: ImprovementCollection(
+                types.improvements.Improvements[improvement.name], improvement.amount
+            )
+            for improvement in self.models
+        }
 
     def __getitem__(self, item: str) -> ImprovementCollection:
         return self.owned[item]
 
     def boost(self) -> BoostsLookup:
         return sum(
-            (ImprovementCollection(types.improvements.Improvements[improvement.name], improvement.amount).boosts for
-             improvement in
-             self.models), BoostsLookup())
+            (
+                ImprovementCollection(
+                    types.improvements.Improvements[improvement.name],
+                    improvement.amount,
+                ).boosts
+                for improvement in self.models
+            ),
+            BoostsLookup(),
+        )

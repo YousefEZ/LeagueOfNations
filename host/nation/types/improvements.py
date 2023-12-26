@@ -31,5 +31,7 @@ class ImprovementSchema(BaseModel, frozen=True):
 
 
 with open("objects/improvements.json", encoding="utf8", mode="r") as improvements_file:
-    Improvements = {identifier: ImprovementSchema.model_validate(improvement) for identifier, improvement in
-                    json.load(improvements_file).items()}
+    Improvements = {
+        identifier: ImprovementSchema.model_validate(improvement)
+        for identifier, improvement in json.load(improvements_file).items()
+    }

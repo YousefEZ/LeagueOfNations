@@ -18,7 +18,11 @@ if TYPE_CHECKING:
 AcceptMessages = Literal["trade_accepted", "too_many_active_agreements", "trade_partner_full"]
 
 SendMessages = Literal[
-    "trade_sent", "partner_not_found", "cannot_trade_with_self", "too_many_active_agreements", "trade_partner_full"
+    "trade_sent",
+    "partner_not_found",
+    "cannot_trade_with_self",
+    "too_many_active_agreements",
+    "trade_partner_full",
 ]
 
 DeclineMessages = Literal["trade_declined"]
@@ -27,7 +31,6 @@ CancelMessages = Literal["trade_cancelled"]
 
 
 class TradeRequest:
-
     def __init__(self, trade: models.TradeRequestModel):
         self._trade: Optional[models.TradeRequestModel] = trade
 
@@ -66,7 +69,6 @@ class TradeRequest:
 
 
 class TradeAgreement:
-
     def __init__(self, trade: models.TradeModel):
         self._trade: Optional[models.TradeModel] = trade
 
@@ -109,7 +111,6 @@ class TradeError(Exception):
 
 
 class Trade(ministry.Ministry):
-
     def __init__(self, player: Nation, engine: Engine):
         self._identifier: base_types.UserId = player.identifier
         self._player: Nation = player
@@ -128,9 +129,11 @@ class Trade(ministry.Ministry):
     @resources.setter
     def resources(self, resources: host.nation.types.resources.ResourcePair) -> None:
         with Session(self._engine) as session:
-            resource_model = models.ResourcesModel(user_id=self._identifier,
-                                                   primary=resources.primary,
-                                                   secondary=resources.secondary)
+            resource_model = models.ResourcesModel(
+                user_id=self._identifier,
+                primary=resources.primary,
+                secondary=resources.secondary,
+            )
             session.add(resource_model)
             session.commit()
 
@@ -173,11 +176,13 @@ class Trade(ministry.Ministry):
 
     def _send(self, recipient: base_types.UserId) -> None:
         date = datetime.now()
-        trade_request = models.TradeRequestModel(trade_id=str(int(uuid4())),
-                                                 date=date,
-                                                 expires=date + timedelta(days=1),
-                                                 sponsor=self._identifier,
-                                                 recipient=recipient)
+        trade_request = models.TradeRequestModel(
+            trade_id=str(int(uuid4())),
+            date=date,
+            expires=date + timedelta(days=1),
+            sponsor=self._identifier,
+            recipient=recipient,
+        )
         with Session(self._engine) as session:
             session.add(trade_request)
             session.commit()
@@ -197,10 +202,12 @@ class Trade(ministry.Ministry):
         return "trade_sent"
 
     def _accept(self, trade_request: TradeRequest) -> None:
-        trade_agreement = models.TradeModel(trade_id=trade_request.id,
-                                            date=trade_request.date,
-                                            sponsor=trade_request.sponsor,
-                                            recipient=trade_request.recipient)
+        trade_agreement = models.TradeModel(
+            trade_id=trade_request.id,
+            date=trade_request.date,
+            sponsor=trade_request.sponsor,
+            recipient=trade_request.recipient,
+        )
         with Session(self._engine) as session:
             session.delete(trade_request)
             session.add(trade_agreement)

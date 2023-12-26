@@ -24,14 +24,12 @@ REVENUE_PER_HAPPINESS = 3 * 86400
 
 
 class FundReceiver(Protocol):
-
     @host.ureg.Registry.wraps(None, [None, host.currency.Currency])
     def receive(self, funds: host.currency.Currency) -> None:
         raise NotImplementedError
 
 
 class FundSender(Protocol):
-
     @host.ureg.Registry.wraps(None, [None, host.currency.Currency, None])
     def send(self, funds: host.currency.Currency, target: FundReceiver) -> SendingResponses:
         raise NotImplementedError
@@ -49,11 +47,15 @@ class Bank(Ministry, FundReceiver, FundSender):
     def model(self) -> BankModel:
         bank: Optional[BankModel] = self._session.query(BankModel).filter_by(user_id=self._identifier).first()
         if bank is None:
-            self._session.add(BankModel(user_id=self._identifier,
-                                        name=defaults.bank.name.format(self._player.name),
-                                        treasury=GameplaySettings.bank.starter_funds,
-                                        tax_rate=defaults.bank.tax_rate,
-                                        last_accessed=datetime.now()))
+            self._session.add(
+                BankModel(
+                    user_id=self._identifier,
+                    name=defaults.bank.name.format(self._player.name),
+                    treasury=GameplaySettings.bank.starter_funds,
+                    tax_rate=defaults.bank.tax_rate,
+                    last_accessed=datetime.now(),
+                )
+            )
             self._session.commit()
             bank = self._session.query(BankModel).filter_by(user_id=self._identifier).first()
         assert bank is not None, "Bank should exist"

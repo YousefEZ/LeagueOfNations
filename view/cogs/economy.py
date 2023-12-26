@@ -51,15 +51,20 @@ async def delete(interaction: discord.Interaction) -> None:
 
 
 class Economy(commands.Cog):
-
     def __init__(self, bot: LeagueOfNations):
         self.bot = bot
-        self._unit_actions_mapping: Dict[UnitActions, Callable[
-            [qalib.QalibInteraction[ExchangeMessages], Nation, UnitExchangeProtocol[K], PositiveInteger], Coroutine[
-                None, None, None]]] = {
-            "buy": self.buy,
-            "sell": self.sell
-        }
+        self._unit_actions_mapping: Dict[
+            UnitActions,
+            Callable[
+                [
+                    qalib.QalibInteraction[ExchangeMessages],
+                    Nation,
+                    UnitExchangeProtocol[K],
+                    PositiveInteger,
+                ],
+                Coroutine[None, None, None],
+            ],
+        ] = {"buy": self.buy, "sell": self.sell}
 
     @app_commands.command(name="balance", description="Check the balance of you Nation")
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/economy.xml")
@@ -74,10 +79,10 @@ class Economy(commands.Cog):
 
     @staticmethod
     async def buy(
-            ctx: qalib.QalibInteraction[PurchaseMessages],
-            nation: Nation,
-            unit: UnitExchangeProtocol[K],
-            amount: PositiveInteger
+        ctx: qalib.QalibInteraction[PurchaseMessages],
+        nation: Nation,
+        unit: UnitExchangeProtocol[K],
+        amount: PositiveInteger,
     ) -> None:
         """Buy command that buys an item
 
@@ -92,19 +97,23 @@ class Economy(commands.Cog):
 
         async def buy_confirmation(interaction: discord.Interaction) -> None:
             await interaction.response.defer()
-            await ctx.display(purchase_mappings[unit.buy(amount)],
-                              keywords={"nation": nation, "amount": amount, "price": price})
+            await ctx.display(
+                purchase_mappings[unit.buy(amount)],
+                keywords={"nation": nation, "amount": amount, "price": price},
+            )
 
-        await ctx.display("cost",
-                          keywords={"nation": nation, 'amount': amount, 'price': price},
-                          callables={"confirm": buy_confirmation, "decline": delete})
+        await ctx.display(
+            "cost",
+            keywords={"nation": nation, "amount": amount, "price": price},
+            callables={"confirm": buy_confirmation, "decline": delete},
+        )
 
     @staticmethod
     async def sell(
-            ctx: qalib.QalibInteraction[SellMessages],
-            nation: Nation,
-            unit: UnitExchangeProtocol,
-            amount: PositiveInteger
+        ctx: qalib.QalibInteraction[SellMessages],
+        nation: Nation,
+        unit: UnitExchangeProtocol,
+        amount: PositiveInteger,
     ) -> None:
         """Sell command that sells an item
 
@@ -120,20 +129,29 @@ class Economy(commands.Cog):
 
         async def sell_confirmation(interaction: discord.Interaction) -> None:
             await interaction.response.defer()
-            await ctx.display(sell_mappings[unit.sell(amount)],
-                              keywords={"nation": nation, "amount": amount, "cashback": cashback, "units": units})
+            await ctx.display(
+                sell_mappings[unit.sell(amount)],
+                keywords={
+                    "nation": nation,
+                    "amount": amount,
+                    "cashback": cashback,
+                    "units": units,
+                },
+            )
 
-        await ctx.display("cashback",
-                          keywords={"nation": nation, 'amount': amount, 'cashback': cashback},
-                          callables={"confirm": sell_confirmation, "decline": delete})
+        await ctx.display(
+            "cashback",
+            keywords={"nation": nation, "amount": amount, "cashback": cashback},
+            callables={"confirm": sell_confirmation, "decline": delete},
+        )
 
     @app_commands.command(name="infrastructure", description="handling infrastructure of the nation")
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/infrastructure.xml")
     async def infrastructure(
-            self,
-            ctx: qalib.QalibInteraction[ExchangeMessages],
-            action: UnitActions,
-            amount: PositiveInteger
+        self,
+        ctx: qalib.QalibInteraction[ExchangeMessages],
+        action: UnitActions,
+        amount: PositiveInteger,
     ) -> None:
         """Infrastructure command that shows the infrastructure of the nation
 
@@ -148,10 +166,10 @@ class Economy(commands.Cog):
     @app_commands.command(name="technology", description="handling technology of the nation")
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/technology.xml")
     async def technology(
-            self,
-            ctx: qalib.QalibInteraction[ExchangeMessages],
-            action: UnitActions,
-            amount: PositiveInteger
+        self,
+        ctx: qalib.QalibInteraction[ExchangeMessages],
+        action: UnitActions,
+        amount: PositiveInteger,
     ) -> None:
         """Technology command that shows the technology of the nation
 
@@ -166,10 +184,10 @@ class Economy(commands.Cog):
     @app_commands.command(name="land", description="handling land of the nation")
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/land.xml")
     async def land(
-            self,
-            ctx: qalib.QalibInteraction[ExchangeMessages],
-            action: UnitActions,
-            amount: PositiveInteger
+        self,
+        ctx: qalib.QalibInteraction[ExchangeMessages],
+        action: UnitActions,
+        amount: PositiveInteger,
     ) -> None:
         """Land command that shows the land of the nation
 
@@ -185,13 +203,15 @@ class Economy(commands.Cog):
 
     @improvement_group.command(name="display", description="Displaying the possible improvements")
     @app_commands.choices(
-        improvement=[Choice(name=f"{improvement.emoji} {name}", value=name) for name, improvement in
-                     Improvements.items()])
+        improvement=[
+            Choice(name=f"{improvement.emoji} {name}", value=name) for name, improvement in Improvements.items()
+        ]
+    )
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/improvement.xml")
     async def improvement(
-            self,
-            ctx: qalib.QalibInteraction[ImprovementMessages],
-            improvement: Choice[str],
+        self,
+        ctx: qalib.QalibInteraction[ImprovementMessages],
+        improvement: Choice[str],
     ) -> None:
         """Improvement command that shows the improvements of the nation
 
@@ -199,14 +219,19 @@ class Economy(commands.Cog):
             ctx (qalib.QalibInteraction[ImprovementMessages]): The context of the interaction
             improvement (Choice[str]): The improvement to buy
         """
-        await ctx.display("display",
-                          keywords={"improvement": Improvements[improvement.value], "improvements": Improvements})
+        await ctx.display(
+            "display",
+            keywords={
+                "improvement": Improvements[improvement.value],
+                "improvements": Improvements,
+            },
+        )
 
     @improvement_group.command(name="owned", description="Displaying the owned improvements")
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/improvement.xml")
     async def improvement_owned(
-            self,
-            ctx: qalib.QalibInteraction[ImprovementMessages],
+        self,
+        ctx: qalib.QalibInteraction[ImprovementMessages],
     ) -> None:
         """Improvement command that shows the improvements of the nation
 
@@ -214,19 +239,27 @@ class Economy(commands.Cog):
             ctx (qalib.QalibInteraction[ImprovementMessages]): The context of the interaction
         """
         nation = self.bot.get_nation(ctx.user.id)
-        await ctx.display("owned",
-                          keywords={"nation_name": nation.metadata.nation_name, "improvements": nation.improvements})
+        await ctx.display(
+            "owned",
+            keywords={
+                "nation_name": nation.metadata.nation_name,
+                "improvements": nation.improvements,
+            },
+        )
 
     @improvement_group.command(name="buy", description="Buying an improvement")
     @app_commands.choices(
-        improvement=[Choice(name=f"{improvement.emoji} {name}", value=improvement.name) for name, improvement in
-                     Improvements.items()])
+        improvement=[
+            Choice(name=f"{improvement.emoji} {name}", value=improvement.name)
+            for name, improvement in Improvements.items()
+        ]
+    )
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/improvement.xml")
     async def improvement_buy(
-            self,
-            ctx: qalib.QalibInteraction[ImprovementMessages],
-            improvement: Choice[str],
-            amount: PositiveInteger
+        self,
+        ctx: qalib.QalibInteraction[ImprovementMessages],
+        improvement: Choice[str],
+        amount: PositiveInteger,
     ) -> None:
         """Improvement command that shows the improvements of the nation
 
@@ -241,23 +274,38 @@ class Economy(commands.Cog):
         async def confirm(interaction: discord.Interaction) -> None:
             await interaction.response.defer()
             result = nation.improvements.buy(improvement_class, amount)
-            await ctx.display(purchase_mappings[result],
-                              keywords={"improvement": improvement_class, "amount": amount,
-                                        "nation": nation})
+            await ctx.display(
+                purchase_mappings[result],
+                keywords={
+                    "improvement": improvement_class,
+                    "amount": amount,
+                    "nation": nation,
+                },
+            )
 
-        await ctx.display("cost", keywords={"improvement": improvement_class, "amount": amount,
-                                            "nation": nation}, callables={"confirm": confirm, "decline": delete})
+        await ctx.display(
+            "cost",
+            keywords={
+                "improvement": improvement_class,
+                "amount": amount,
+                "nation": nation,
+            },
+            callables={"confirm": confirm, "decline": delete},
+        )
 
     @improvement_group.command(name="sell", description="Selling an improvement")
     @app_commands.choices(
-        improvement=[Choice(name=f"{improvement.emoji} {name}", value=improvement.name) for name, improvement in
-                     Improvements.items()])
+        improvement=[
+            Choice(name=f"{improvement.emoji} {name}", value=improvement.name)
+            for name, improvement in Improvements.items()
+        ]
+    )
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/improvement.xml")
     async def improvement_sell(
-            self,
-            ctx: qalib.QalibInteraction[ImprovementMessages],
-            improvement: Choice[str],
-            amount: PositiveInteger
+        self,
+        ctx: qalib.QalibInteraction[ImprovementMessages],
+        improvement: Choice[str],
+        amount: PositiveInteger,
     ) -> None:
         """Improvement command that shows the improvements of the nation
 
@@ -273,15 +321,27 @@ class Economy(commands.Cog):
             await interaction.response.defer()
             try:
                 result = nation.improvements.sell(improvement_class, amount)
-                await ctx.display(sell_mappings[result],
-                                  keywords={"improvement": improvement_class, "amount": amount,
-                                            "nation": nation})
+                await ctx.display(
+                    sell_mappings[result],
+                    keywords={
+                        "improvement": improvement_class,
+                        "amount": amount,
+                        "nation": nation,
+                    },
+                )
             except Exception as e:
                 print(e)
                 traceback.print_tb(e.__traceback__)
 
-        await ctx.display("cashback", keywords={"improvement": improvement_class, "amount": amount,
-                                                "nation": nation}, callables={"confirm": confirm, "decline": delete})
+        await ctx.display(
+            "cashback",
+            keywords={
+                "improvement": improvement_class,
+                "amount": amount,
+                "nation": nation,
+            },
+            callables={"confirm": confirm, "decline": delete},
+        )
 
 
 async def setup(bot: LeagueOfNations) -> None:

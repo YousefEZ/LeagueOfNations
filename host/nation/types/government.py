@@ -8,7 +8,15 @@ from pydantic import BaseModel
 from host.nation.types.boosts import BoostsLookup
 
 GovernmentTypes = Literal[
-    'Anarchy', 'Monarchy', 'Democracy', 'Dictatorship', 'Republic', 'Theocracy', 'Fascism', 'Communism', 'Revolutionary'
+    "Anarchy",
+    "Monarchy",
+    "Democracy",
+    "Dictatorship",
+    "Republic",
+    "Theocracy",
+    "Fascism",
+    "Communism",
+    "Revolutionary",
 ]
 
 
@@ -20,5 +28,7 @@ class GovernmentSchema(BaseModel, frozen=True):
 
 
 with open("objects/governments.json", encoding="utf8", mode="r") as governments_file:
-    Governments = {identifier: GovernmentSchema.model_validate(government) for identifier, government in
-                   json.load(governments_file).items()}
+    Governments = {
+        identifier: GovernmentSchema.model_validate(government)
+        for identifier, government in json.load(governments_file).items()
+    }

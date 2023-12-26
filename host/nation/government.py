@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 
 
 class Government(Ministry):
-
     def __init__(self, player: Nation, session: Session):
         self._player = player
         self._session = session

@@ -17,7 +17,6 @@ StartMessages = Literal["start"]
 
 
 class Start(commands.Cog):
-
     def __init__(self, bot: LeagueOfNations):
         self.bot = bot
 
@@ -38,11 +37,16 @@ class Start(commands.Cog):
             ctx (qalib.QalibInteraction[StartMessages]): The context of the interaction
             nation_name (str): The name of the nation
         """
+        if not nation_name.isascii():
+            await ctx.rendered_send("NonAscii")
+            return
         Nation.start(UserId(ctx.user.id), nation_name, self.bot.engine)
 
-        await ctx.rendered_send("start",
-                                callables={"confirm": self.confirm_start, "decline": self.decline_start},
-                                keywords={"nation_name": nation_name})
+        await ctx.rendered_send(
+            "start",
+            callables={"confirm": self.confirm_start, "decline": self.decline_start},
+            keywords={"nation_name": nation_name},
+        )
 
 
 async def setup(bot: LeagueOfNations) -> None:

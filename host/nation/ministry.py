@@ -9,7 +9,6 @@ from host.nation import types
 
 
 class Ministry(ABC):
-
     @property
     @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
     def bill(self) -> host.currency.CurrencyRate:

@@ -26,7 +26,7 @@ class LeagueOfNations(commands.AutoShardedBot):
             owner_id=251351879408287744,
             reconnect=True,
             case_insensitive=True,
-            intents=discord.Intents.all()
+            intents=discord.Intents.all(),
         )
         self.engine: Engine = engine
         self.session: Session = session
@@ -53,9 +53,9 @@ class LeagueOfNations(commands.AutoShardedBot):
             for cog in cogs:
                 await self.load_extension(f"view.cogs.{cog}")
         except Exception as e:
-            print('*[CLIENT][LOADING_EXTENSION][STATUS] ERROR ', e)
+            print("*[CLIENT][LOADING_EXTENSION][STATUS] ERROR ", e)
         else:
-            print('*[CLIENT][LOADING_EXTENSION][STATUS] SUCCESS')
+            print("*[CLIENT][LOADING_EXTENSION][STATUS] SUCCESS")
 
         await self.tree.sync()
         self.notification_renderer.start()

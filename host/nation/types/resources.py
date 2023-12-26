@@ -20,5 +20,6 @@ class Resource(BaseModel, frozen=True):
 
 
 with open("objects/resources.json", "r", encoding="utf8") as resources_file:
-    Resources: Dict[str, Resource] = {identifier: Resource.model_validate(resource) for identifier, resource in
-                                      json.load(resources_file).items()}
+    Resources: Dict[str, Resource] = {
+        identifier: Resource.model_validate(resource) for identifier, resource in json.load(resources_file).items()
+    }

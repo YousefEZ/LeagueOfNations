@@ -1,6 +1,7 @@
 from typing import Literal
 
 import discord
+from host.nation import Nation
 import qalib
 from discord import app_commands
 from discord.ext import commands
@@ -36,7 +37,7 @@ class Search(commands.Cog):
             await ctx.rendered_send("invalid_name", keywords={"name": name})
             return
 
-        nations = [self.bot.get_nation(ctx.user.id)]
+        nations = Nation.search_nation(name, self.bot.session, with_like=True)
         await ctx.rendered_send("search_results", keywords={"name": name, "nations": nations})
 
 

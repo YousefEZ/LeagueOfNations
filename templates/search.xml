@@ -12,7 +12,7 @@
                 <name>Page Number %s for {{ name }}</name>
                 <value>
                     {% for index in range(nations|length) %}
-                        {{index + 1 }}. {{ nations[index].metadata.emoji }} {{nations[index].metadata.nation_name}}
+                        {{index + 1 }}. {{ nations[index].emoji }} {{nations[index].nation}}
                     {% endfor %}
                 </value>
             </field>

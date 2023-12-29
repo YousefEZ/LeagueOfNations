@@ -11,7 +11,7 @@ from qalib.template_engines.jinja2 import Jinja2
 from lon import LeagueOfNations
 from view.cogs.custom_jinja2 import ENVIRONMENT
 
-SearchMessages = Literal["invalid_name", "search_results"]
+SearchMessages = Literal["invalid_name", "search_results", "unrecognized", "statistics", "unrecognized_identifier"]
 
 
 class Search(commands.Cog):
@@ -22,7 +22,7 @@ class Search(commands.Cog):
 
     class NameTransformer(app_commands.Transformer):
         async def transform(self, interaction: discord.Interaction, value: str) -> str:
-            if value.isascii(): 
+            if value.isascii():
                 return value
 
             raise BadArgument("Name must be ASCII")
@@ -39,6 +39,35 @@ class Search(commands.Cog):
 
         nations = Nation.search_for_nations(name, self.bot.session, with_like=True)
         await ctx.rendered_send("search_results", keywords={"name": name, "nations": nations})
+
+    @search_group.command(name="user", description="Search for a user")
+    @qalib.qalib_interaction(
+        Jinja2(ENVIRONMENT),
+        "templates/search.xml",
+    )
+    async def search_user(self, ctx: qalib.QalibInteraction[SearchMessages], user: discord.User) -> None:
+        nation = self.bot.get_nation(user.id)
+        if not nation.exists:
+            await ctx.rendered_send("unrecognized", keywords={"user": user})
+            return
+        await ctx.rendered_send("statistics", keywords={"nation": nation, "user": user.name})
+
+    @search_group.command(name="id", description="Search for a user")
+    @qalib.qalib_interaction(
+        Jinja2(ENVIRONMENT),
+        "templates/search.xml",
+    )
+    async def search_id(self, ctx: qalib.QalibInteraction[SearchMessages], identifier: int) -> None:
+        nation = self.bot.get_nation(identifier)
+        if not nation.exists:
+            await ctx.rendered_send("unrecognized_identifier", keywords={"identifier": identifier})
+            return
+        user = self.bot.get_user(identifier)
+        if user is None:
+            await ctx.rendered_send("unknown_player", keywords={"nation": nation})
+            return
+
+        await ctx.rendered_send("statistics", keywords={"nation": nation, "user": user.name})
 
 
 async def setup(bot: LeagueOfNations) -> None:

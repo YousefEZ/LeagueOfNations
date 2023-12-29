@@ -64,7 +64,7 @@ class MetadataModel(Base):
     nation: Mapped[str] = mapped_column(primary_key=True)
     flag: Mapped[str]
     emoji: Mapped[str]
-
+    created: Mapped[datetime]
 
 class BankModel(Base):
     __tablename__ = "Bank"

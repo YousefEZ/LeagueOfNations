@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import datetime
 
 from functools import cached_property
 
@@ -32,3 +33,8 @@ class Meta:
     @property
     def emoji(self) -> str:
         return self.metadata.emoji
+
+    @property
+    def created(self) -> datetime:
+        return self.metadata.created
+

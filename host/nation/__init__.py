@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from functools import cached_property
 from typing import List, get_args
 
@@ -11,6 +12,7 @@ from host.defaults import defaults
 from host.gameplay_settings import GameplaySettings
 from host.nation import types, models
 from host.nation.bank import Bank
+from host.nation.government import Government
 from host.nation.foreign import Foreign
 from host.nation.improvements import Improvements
 from host.nation.interior import Interior
@@ -24,6 +26,11 @@ class Nation:
     def __init__(self, identifier: base_types.UserId, session: Session):
         self._identifier: base_types.UserId = identifier
         self._session: Session = session
+
+    @property
+    def exists(self) -> bool:
+        metadata = self._session.query(models.MetadataModel).filter_by(user_id=self._identifier).first()
+        return metadata is not None
 
     @staticmethod
     def search_for_nations(name: str, session: Session, with_like: bool = False) -> List[models.MetadataModel]:
@@ -46,6 +53,10 @@ class Nation:
     @cached_property
     def bank(self) -> Bank:
         return Bank(self, self._session)
+    
+    @cached_property
+    def government(self) -> Government:
+        return Government(self, self._session)
 
     @cached_property
     def trade(self) -> Trade:
@@ -74,6 +85,7 @@ class Nation:
             nation=name,
             emoji=defaults.meta.emoji,
             flag=defaults.meta.flag,
+            created=datetime.utcnow(), 
         )
 
         with Session(engine) as session:
@@ -92,6 +104,10 @@ class Nation:
             types.basic.Happiness(0),
         )
         return types.basic.Happiness(happiness * self.happiness_modifier)
+
+    @property
+    def strength(self) -> float:
+        return 0.0
 
     @property
     def population(self) -> Population:

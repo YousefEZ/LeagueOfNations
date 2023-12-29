@@ -11,7 +11,7 @@ import host.currency
 import host.ureg
 from host import alliance, base_types
 from host.alliance import Alliance
-import host.alliance.models
+import host.alliance.models as alliance_models
 from host.nation.ministry import Ministry
 from host.nation import models
 
@@ -134,7 +134,7 @@ class Foreign(Ministry):
     @property
     def alliance(self) -> Optional[Alliance]:
         member = (
-            self._session.query(alliance.models.AllianceMemberModel).filter_by(user=self._player.identifier).first()
+            self._session.query(alliance_models.AllianceMemberModel).filter_by(user_id=self._player.identifier).first()
         )
         if member is None:
             return None

@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class NotificationRenderer:
-
     def __init__(self, bot: LeagueOfNations):
         self.bot = bot
         self.notifier = Notifier(self.bot.engine)

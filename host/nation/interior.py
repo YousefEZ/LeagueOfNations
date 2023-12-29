@@ -15,26 +15,38 @@ from host.gameplay_settings import GameplaySettings
 from host.nation import models
 from host.nation.ministry import Ministry
 from host.nation.types.basic import Population
-from host.nation.types.interior import Data, InfrastructurePoints, TechnologyPoints, LandPoints
+from host.nation.types.interior import (
+    Data,
+    InfrastructurePoints,
+    TechnologyPoints,
+    LandPoints,
+)
 from host.nation.types.transactions import PurchaseResult, SellResult
 
 if TYPE_CHECKING:
     from host.nation import Nation
 
 InfrastructureMessages = Literal[
-    "infrastructure_cost", "buy_infrastructure_success", "buy_infrastructure_failure", "infrastructure_cashback",
-    "insufficient_cashback", "insufficient_infrastructure", "sell_infrastructure_success"
+    "infrastructure_cost",
+    "buy_infrastructure_success",
+    "buy_infrastructure_failure",
+    "infrastructure_cashback",
+    "insufficient_cashback",
+    "insufficient_infrastructure",
+    "sell_infrastructure_success",
 ]
 
 BuyMessages = Literal[
-    "infrastructure_buy_success", "insufficient_funds", "infrastructure_cashback_success", "insufficient_"
+    "infrastructure_buy_success",
+    "insufficient_funds",
+    "infrastructure_cashback_success",
+    "insufficient_",
 ]
 
 K = TypeVar("K")
 
 
 class UnitExchangeProtocol(Protocol[K]):
-
     @property
     def amount(self) -> K:
         raise NotImplementedError
@@ -92,7 +104,10 @@ def unit_exchange(cls: Type[Data[K]]) -> Type[UnitExchangeProtocol[K]]:
 
         @host.ureg.Registry.wraps(currency.Currency, [None, None])
         def price_order(self, amount: K) -> currency.Currency:
-            return sum((self.price_at(self.amount + i) for i in range(1, amount + 1)), currency.lnd(0))
+            return sum(
+                (self.price_at(self.amount + i) for i in range(1, amount + 1)),
+                currency.lnd(0),
+            )
 
         @host.ureg.Registry.wraps(currency.CurrencyRate, [None, None, None])
         def _get_unit_bill_at(self, point: K, level: K) -> currency.CurrencyRate:
@@ -165,11 +180,13 @@ class Interior(Ministry):
     def _interior(self) -> models.InteriorModel:
         interior = self._session.query(models.InteriorModel).filter_by(user_id=self._player.identifier).first()
         if interior is None:
-            interior = models.InteriorModel(user_id=self._player.identifier,
-                                            land=GameplaySettings.interior.starter_land,
-                                            infrastructure=GameplaySettings.interior.starter_infrastructure,
-                                            technology=GameplaySettings.interior.starter_technology,
-                                            spent_technology=0)
+            interior = models.InteriorModel(
+                user_id=self._player.identifier,
+                land=GameplaySettings.interior.starter_land,
+                infrastructure=GameplaySettings.interior.starter_infrastructure,
+                technology=GameplaySettings.interior.starter_technology,
+                spent_technology=0,
+            )
             self._session.add(interior)
             self._session.commit()
         return interior

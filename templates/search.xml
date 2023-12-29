@@ -1,0 +1,77 @@
+<!DOCTYPE xml>
+<discord>
+    <message key="invalid_name">
+        <content strip="true">The Nation "{{ name }}" is invalid ❌. Must be Alphabetical</content>
+    </message>
+    <message key="unrecognized">
+        <content strip="true">The Nation with the ruler "{{ user.name }}" is unrecognized ❌. Please try again</content>
+    </message>
+    <message key="unrecognized_identifier">
+        <content strip="true">The Nation with the identifier "{{ identifier }}" is unrecognized ❌. Please try again</content>
+    </message>
+    <message key="unknown_player">
+        <content strip="true">Nation with the identifier "{{ identifier }}" no longer exists is unrecognized ❌. Please try again</content>
+    </message> <expansive page_number_key="%s" key="search_results">
+        <timeout/>
+        <embed>
+            <title>Search Results, Page %s</title>
+            <colour>teal</colour>
+            <field>
+                <name>Page Number %s for {{ name }}</name>
+                <value>
+                    {% for index in range(nations|length) %}
+                        {{index + 1 }}. {{ nations[index].emoji }} {{nations[index].nation}}
+                    {% endfor %}
+                </value>
+            </field>
+        </embed>
+    </expansive>
+    <menu key="statistics">
+        <timeout>60</timeout>
+        <pages>
+            <message key="1"> 
+                <embed> 
+                    <title>Statistics for {{ nation.name }}</title>
+                    <colour>teal</colour>
+                    <fields> 
+                        <field>
+                            <name>Statistics</name>
+                            <value>
+                                {{ nation.metadata.emoji }} __Nation__: {{ nation.name }} 
+                                
+                                :star2: __Ruler__: **{{ user }}** 
+                                
+                                {{ nation.government.type.emoji }} __Government__: {{ nation.government.type.name }} 
+                                
+                                :scroll: __Created At__: {{ nation.metadata.created.strftime("%d-%m-%Y %H:%M") }} 
+
+                                :earth_africa: __Land Size__: {{ nation.interior.land.amount }} km²
+
+                                :muscle::skin-tone-3: __Total Strength__: {{ nation.strength }} 
+
+                                {% if nation.foreign.alliance is not none %}
+                                :shield: __Alliance__: {{ nation.alliance.name }}
+                                {% endif %} 
+                            </value>
+                        </field>
+                    </fields> 
+                    <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+                </embed> 
+            </message> 
+            <message key="2"> 
+                <embed> 
+                    <title>Statistics for {{ nation.name }}</title>
+                    <colour>teal</colour>
+                    <fields> 
+                        <field>
+                            <name>Statistics</name>
+                            <value>
+                                {{ nation.bank.funds }}
+                            </value>
+                        </field>
+                    </fields> 
+                </embed> 
+            </message>
+        </pages>
+    </menu>
+</discord>

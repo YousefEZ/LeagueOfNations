@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import datetime
 
 from functools import cached_property
 
@@ -24,3 +25,15 @@ class Meta:
     @property
     def nation_name(self) -> str:
         return self.metadata.nation
+
+    @property
+    def flag(self) -> str:
+        return self.metadata.flag
+
+    @property
+    def emoji(self) -> str:
+        return self.metadata.emoji
+
+    @property
+    def created(self) -> datetime:
+        return self.metadata.created

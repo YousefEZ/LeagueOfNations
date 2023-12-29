@@ -32,6 +32,7 @@ class NotifierError(Exception):
 
 class Notifier:
     """Singleton class that handles the tracking and consumption of Notifications"""
+
     _instance: Optional[Notifier] = None
     _scheduler: scheduler = scheduler()
     _hooks: List[Callable[[Notification], Any]] = []
@@ -73,7 +74,7 @@ class Notifier:
                 time=result.date,
                 message=result.message,
                 data=result.data,
-                notification_id=result.notification_id
+                notification_id=result.notification_id,
             )
 
             for hook in self._hooks:
@@ -85,18 +86,19 @@ class Notifier:
     def _add_notification_to_db(self, notification: Notification) -> None:
         """Private method that stores the notification in the database"""
         with Session(self._engine) as session:
-            session.add(NotificationModel(
-                notification_id=notification.notification_id,
-                user_id=notification.user_id,
-                date=notification.time,
-                message=notification.message,
-                keywords=notification.data
-            ))
+            session.add(
+                NotificationModel(
+                    notification_id=notification.notification_id,
+                    user_id=notification.user_id,
+                    date=notification.time,
+                    message=notification.message,
+                    keywords=notification.data,
+                )
+            )
             session.commit()
 
     @staticmethod
     def hook(hook: Callable[[Notification], Any]) -> None:
-
         """Method that adds a hook to the notifier
 
         Args:

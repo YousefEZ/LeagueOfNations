@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "leagueofnations"
+version = "0.1.0"
+description = "Nation Simulator game"
+authors = ["YousefEZ <45167695+YousefEZ@users.noreply.github.com>"]
+license = "AGPL-3.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+discord-qalib = "^2.5.0"
+Babel = "pint"
+Pint = "^0.23"
+SQLAlchemy = "^2.0.23"
+python-dotenv = "^1.0.0"
+pydantic = "^2.5.3"
+asyncio = "^3.4.3"
+Jinja2 = "^3.1.2"
+
+[tool.black]
+line-length = 120
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

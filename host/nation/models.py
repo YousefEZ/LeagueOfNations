@@ -63,6 +63,8 @@ class MetadataModel(Base):
     user_id: Mapped[int] = mapped_column(primary_key=True)
     nation: Mapped[str] = mapped_column(primary_key=True)
     flag: Mapped[str]
+    emoji: Mapped[str]
+    created: Mapped[datetime]
 
 
 class BankModel(Base):

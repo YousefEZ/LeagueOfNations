@@ -6,9 +6,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedAsDatac
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
-    type_annotation_map = {
-        Dict[str, Any]: JSON
-    }
+    type_annotation_map = {Dict[str, Any]: JSON}
 
 
 class NotificationModel(Base):

@@ -11,7 +11,7 @@ import host.currency
 import host.ureg
 from host import alliance, base_types
 from host.alliance import Alliance
-import host.alliance.models
+import host.alliance.models as alliance_models
 from host.nation.ministry import Ministry
 from host.nation import models
 
@@ -22,12 +22,16 @@ AidAcceptMessages = Literal["not_a_recipient", "insufficient_funds", "expired", 
 
 AidMessages = Literal[
     AidAcceptMessages,
-    "cannot_be_sponsor", 'success', 'insufficient_funds', 'invalid_recipient', 'invalid_amount', 'invalid_sponsor'
+    "cannot_be_sponsor",
+    "success",
+    "insufficient_funds",
+    "invalid_recipient",
+    "invalid_amount",
+    "invalid_sponsor",
 ]
 
 
 class Aid:
-
     def __init__(self, model: Union[models.AidModel, models.AidRequestModel]):
         self._model = model
 
@@ -58,19 +62,16 @@ class Aid:
 
 
 class AidRequest(Aid):
-
     def __init__(self, model: models.AidRequestModel):
         super().__init__(model)
 
 
 class AidAgreement(Aid):
-
     def __init__(self, model: models.AidModel):
         super().__init__(model)
 
 
 class Foreign(Ministry):
-
     def __init__(self, player: Nation, session: Session):
         self._player = player
         self._session = session
@@ -94,11 +95,13 @@ class Foreign(Ministry):
         if not self._player.bank.enough_funds(amount):
             return "insufficient_funds"
 
-        request = models.AidRequestModel(aid_id=str(uuid.uuid4()),
-                                         sponsor=self._player.identifier,
-                                         recipient=recipient,
-                                         amount=int(amount.magnitude),
-                                         date=datetime.now())
+        request = models.AidRequestModel(
+            aid_id=str(uuid.uuid4()),
+            sponsor=self._player.identifier,
+            recipient=recipient,
+            amount=int(amount.magnitude),
+            date=datetime.now(),
+        )
         self._send(request)
         return "success"
 
@@ -130,8 +133,9 @@ class Foreign(Ministry):
 
     @property
     def alliance(self) -> Optional[Alliance]:
-        member = self._session.query(alliance.models.AllianceMemberModel).filter_by(
-            user=self._player.identifier).first()
+        member = (
+            self._session.query(alliance_models.AllianceMemberModel).filter_by(user_id=self._player.identifier).first()
+        )
         if member is None:
             return None
         return Alliance(alliance.types.AllianceId(member.id), self._session)

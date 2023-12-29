@@ -1,4 +1,4 @@
 <discord>
     {% from "transactions.j2" import purchase_messages with context %}
-    {{ purchase_messages("land", ":island:", price ) }}
+    {{ purchase_messages("land", ":earth_africa:", price ) }}
 </discord>

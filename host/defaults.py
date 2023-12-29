@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class Meta(BaseModel):
     flag: str
+    emoji: str
 
 
 class Government(BaseModel):

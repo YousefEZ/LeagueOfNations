@@ -5,7 +5,7 @@
             <colour>teal</colour>
             <fields>
                 <field>
-                    <name>:white_check_mark: {nation_name} Entered the League of Nations</name>
+                    <name>:white_check_mark: {{nation_name}} Entered the League of Nations</name>
                     <value>
                         :sparkles: On welcome, the body hereby grants you £**`3,000,000`**
                         We suggest joining the official server to receive updates, chat with the community, post
@@ -60,7 +60,7 @@
             <fields>
                 <field>
                     <name>Please use a shorter name</name>
-                    <value>{name} is too long, please select a shorter name (less than 75 characters).</value>
+                    <value>{{name}} is too long, please select a shorter name (less than 75 characters).</value>
                 </field>
             </fields>
         </embed>
@@ -72,7 +72,7 @@
             <fields>
                 <field>
                     <name>Please use a longer name</name>
-                    <value>{name} is too short, please select a longer name (more than 3 characters).</value>
+                    <value>{{name}} is too short, please select a longer name (more than 3 characters).</value>
                 </field>
             </fields>
         </embed>
@@ -91,5 +91,17 @@
                 </field>
             </fields>
         </embed>
+    </message>
+    <message key="NonAscii">
+   	<embed>
+	    <title>Invalid Name</title>
+	    <colour>magenta</colour>
+	    <fields>
+		<field>
+		    <name>Please use a different name</name>
+		    <value>{{name}} contains non-ascii characters, please select a different name.</value>
+		</field>
+	    </fields>
+	</embed>
     </message>
 </discord>

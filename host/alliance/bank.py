@@ -7,7 +7,6 @@ if TYPE_CHECKING:
 
 
 class AllianceBank:
-
     def __init__(self, alliance: Alliance, session: Session):
         self._alliance: Alliance = alliance
         self._engine: Session = session

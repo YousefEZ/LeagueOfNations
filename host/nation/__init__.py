@@ -53,7 +53,7 @@ class Nation:
     @cached_property
     def bank(self) -> Bank:
         return Bank(self, self._session)
-    
+
     @cached_property
     def government(self) -> Government:
         return Government(self, self._session)
@@ -85,7 +85,7 @@ class Nation:
             nation=name,
             emoji=defaults.meta.emoji,
             flag=defaults.meta.flag,
-            created=datetime.utcnow(), 
+            created=datetime.utcnow(),
         )
 
         with Session(engine) as session:

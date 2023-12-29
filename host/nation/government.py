@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from host.nation.ministry import Ministry
 from host.nation.models import GovernmentModel
 from host.nation.types.government import Governments, GovernmentSchema, GovernmentTypes
-from host.nation.types.boosts import BoostsLookup 
+from host.nation.types.boosts import BoostsLookup
 
 if TYPE_CHECKING:
     from host.nation import Nation
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class Government(Ministry):
     __slots__ = "_player", "_session"
-    
+
     def __init__(self, player: Nation, session: Session):
         self._player: Nation = player
         self._session: Session = session

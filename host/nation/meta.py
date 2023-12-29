@@ -37,4 +37,3 @@ class Meta:
     @property
     def created(self) -> datetime:
         return self.metadata.created
-

@@ -66,6 +66,7 @@ class MetadataModel(Base):
     emoji: Mapped[str]
     created: Mapped[datetime]
 
+
 class BankModel(Base):
     __tablename__ = "Bank"
 

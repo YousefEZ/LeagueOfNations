@@ -1,0 +1,33 @@
+<!DOCTYPE xml>
+<discord>
+    <expansive page_number_key="%s" key="list">
+        <embed>
+            <title>Government Types</title>
+            <colour>magenta</colour>
+            <field>
+                <name>List of All Governments (%s)</name> 
+                <value>
+                    {% if governments is defined %}  
+                        {% for government in governments.values()%}
+                            {{ government.emoji }} {{ government.name }}: {{ government.description }} 
+                        {% endfor %} 
+                    {% endif %}  
+                </value>
+            </field>
+        </embed>
+    </expansive>
+    <message key="display">
+        <embed>
+            <title>{{ government.name }}</title>
+            <colour>magenta</colour>
+            <fields> 
+                <field>
+                    <name>{{ government.name }}</name>
+                    <value>
+                        {{ government.emoji }} {{ government.name }}: {{ government.boosts.pretty_print() | join("\n")}}
+                    </value>
+                </field>
+            </fields>     
+        </embed>
+    </message>
+</discord>

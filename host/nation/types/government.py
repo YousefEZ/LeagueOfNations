@@ -4,6 +4,7 @@ import json
 from typing import Literal
 
 from pydantic import BaseModel
+from qalib.translators.element.types.embed import Colour
 
 from host.nation.types.boosts import BoostsLookup
 
@@ -25,7 +26,7 @@ class GovernmentSchema(BaseModel, frozen=True):
     emoji: str
     description: str
     boosts: BoostsLookup
-
+    colour: Colour
 
 with open("objects/governments.json", encoding="utf8", mode="r") as governments_file:
     Governments = {

@@ -1,0 +1,94 @@
+<!DOCTYPE xml>
+<discord>
+    <expansive page_number_key="%s" key="list">
+        <embed>
+            <title>:classical_building: Displaying Government Types</title>
+            <colour>magenta</colour>
+            <field>
+                <name>List of All Governments (%s)</name> 
+                <value>
+                    {% if governments is defined %}  
+                        {% for government in governments.values()%}
+                            {{ government.emoji }} {{ government.name }}: {{ government.description }} 
+                        {% endfor %} 
+                    {% endif %}  
+                </value>
+            </field>
+        </embed>
+    </expansive>
+    <message key="display">
+        <embed>
+            <title>:classical_building: Displaying Government Information</title>
+            <colour>magenta</colour>
+            <fields> 
+                <field>
+                    <name>{{government.emoji}} {{ government.name }}</name>
+                    <value>
+                        {{ government.description }}
+
+                        __Boosts__: 
+                        {{ government.boosts.pretty_print() | join("\n")}}
+                    </value>
+                </field>
+            </fields>     
+        </embed>
+    </message>
+    <message key="set">
+        <embed>
+            <title>:classical_building: Government Action</title>
+            <colour>{{ government.colour }}</colour>
+            <fields> 
+                <field>
+                    <name>Transitioning to {{government.emoji}} {{government.name}}</name>
+                    <value>
+                        Would you like to transition the government of {{ nation.metadata.emoji }} {{ nation.name }} to {{ government.emoji }} {{ government.name }}?
+                    
+                        These actions will cause the following to {{ nation.name}}:
+                        {% if government is defined and nation.government.type.name != government.name %} 
+                        {{ government.boosts.pretty_print() | join("\n")}}
+                        {% endif %}
+                    </value>
+                </field>
+            </fields>
+            <thumbnail>{{ nation.meta.flag }}</thumbnail> 
+        </embed>
+        <view>
+            <components>
+                <button key="confirm">
+                    <label>Confirm</label>
+                    <emoji>
+                        <name>✔️</name>
+                    </emoji>
+                    <style>success</style> 
+                </button>
+                <button key="decline">
+                    <label>Decline</label> 
+                    <emoji>
+                        <name>✖️</name>
+                    </emoji>
+                    <style>danger</style>
+                </button>
+            </components> 
+        </view>
+    </message>
+    <message key="new_government">
+        <embed>
+            <title>:classical_building: Government Action</title>
+            <colour>{{ government.colour }}</colour>
+            <fields> 
+                <field>
+                    <name>Transitioned to {{government.emoji}} {{government.name}}</name>
+                    <value>
+                        The government of {{ nation.metadata.emoji }} {{ nation.name }} has been transitioned to {{ government.emoji }} {{ government.name }}. 
+                        These actions have caused the following to {{ nation.name}}:
+                        {% if difference is defined %} 
+                        {{ difference.pretty_print() | join("\n")}}
+                        {% endif %} 
+                    </value>
+                </field>
+            </fields>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail> 
+        </embed>     
+        <view></view> 
+    </message>
+</discord>

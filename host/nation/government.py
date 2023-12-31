@@ -10,6 +10,7 @@ from host.nation.models import GovernmentModel
 from host.nation.types.government import Governments, GovernmentSchema, GovernmentTypes
 from host.nation.types.boosts import BoostsLookup
 
+
 if TYPE_CHECKING:
     from host.nation import Nation
 
@@ -20,6 +21,10 @@ class Government(Ministry):
     def __init__(self, player: Nation, session: Session):
         self._player: Nation = player
         self._session: Session = session
+
+    def set(self, government: GovernmentTypes) -> None:
+        self.model.type = government
+        self._session.commit()
 
     @cached_property
     def model(self) -> GovernmentModel:

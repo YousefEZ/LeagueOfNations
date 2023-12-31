@@ -1,10 +1,10 @@
 {
   "anarchy": {
     "name": "Anarchy",
-    "emoji": "🏴‍☠️",
+    "emoji": "🏴",
     "description": "a form of government in which there is no authority or control",
-    "boosts": {
-    }
+    "boosts": {},
+    "colour": "dark_red"
   },
   "monarchy": {
     "name": "Monarchy",
@@ -12,23 +12,26 @@
     "description": "a form of government with a monarch at the head",
     "boosts": {
       "infrastructure_cost_modifier": 0.05
-    }
+    },
+    "colour": "gold"
   },
   "democracy": {
     "name": "Democracy",
-    "emoji": "🗳️",
+    "emoji": "🗳️", 
     "description": "a system of government by the whole population or all the eligible members of a state, typically through elected representatives",
     "boosts": {
       "happiness_modifier": 0.01
-    }
+    },
+    "colour": "blue"
   },
   "dictatorship": {
     "name": "Dictatorship",
-    "emoji": "👨‍⚖️",
+    "emoji": "💂",
     "description": "a form of government in which a person or a small group rules with almost unlimited power",
     "boosts": {
       "infrastructure_cost_modifier": 0.05
-    }
+    },
+    "colour": "dark_grey"
   },
   "republic": {
     "name": "Republic",
@@ -36,7 +39,8 @@
     "description": "a state in which supreme power is held by the people and their elected representatives",
     "boosts": {
       "land_cost_modifier": 0.05
-    }
+    },
+    "colour": "green"
   },
   "theocracy": {
     "name": "Theocracy",
@@ -44,30 +48,35 @@
     "description": "a system of government in which individuals rule in the name of God or a god",
     "boosts": {
       "infrastructure_cost_modifier": 0.05
-    }
+    },
+    "colour": "purple"
   },
   "fascism": {
     "name": "Fascism",
-    "emoji": ":swastika:",
+    "emoji": "🦅",
     "description": "a form of far-right, authoritarian ultranationalism characterized by dictatorial power, forcible suppression of opposition, and strong regimentation of society and of the economy",
     "boosts": {
       "land_cost_modifier": 0.06
-    }
+    },
+    "colour": "dark_orange"
   },
   "communism": {
     "name": "Communism",
     "emoji": "☭",
     "description": "a political and economic ideology that seeks to establish a classless society in which the major means of production, such as mines and factories, are owned and controlled by the public",
     "boosts": {
-      "economy": 1.5
-    }
+      "happiness_modifier": 0.01
+    },
+    "colour": "red"
   },
   "revolutionary": {
     "name": "Revolutionary",
     "emoji": "🔥",
     "description": "a form of government in which the population or a large part of the population rises up in revolt against the current authorities, typically in a violent manner",
     "boosts": {
-      "military": 1.5
-    }
+      "happiness_modifier": 0.01
+    },
+    "colour": "magenta"
   }
 }
+

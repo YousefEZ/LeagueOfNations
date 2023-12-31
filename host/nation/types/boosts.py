@@ -43,6 +43,9 @@ class BoostsLookup(BaseModel, frozen=True):
     def multiply(self, multiplier: float) -> BoostsLookup:
         return BoostsLookup(**{attr: value * multiplier for attr, value in vars(self).items()})
 
+    def inverse(self) -> BoostsLookup:
+        return BoostsLookup(**{attr: value * -1 for attr, value in vars(self).items()})
+
     @classmethod
     def combine(cls, *others: BoostsLookup) -> BoostsLookup:
         return cls(

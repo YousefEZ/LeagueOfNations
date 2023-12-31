@@ -32,7 +32,7 @@
             <message key="1"> 
                 <embed> 
                     <title>Statistics for {{ nation.name }}</title>
-                    <colour>teal</colour>
+                    <colour>{{ nation.government.type.colour }}</colour>
                     <fields> 
                         <field>
                             <name>Statistics</name>

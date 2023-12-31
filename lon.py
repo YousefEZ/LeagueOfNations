@@ -15,7 +15,7 @@ from host.base_types import UserId
 from host.nation import Nation
 from view.notifications import NotificationRenderer
 
-cogs = "start", "economy", "search"
+cogs = "start", "economy", "search", "government"
 connect_to_db = False
 
 

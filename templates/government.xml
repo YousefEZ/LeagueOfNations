@@ -64,7 +64,7 @@
                 <button key="decline">
                     <label>Decline</label> 
                     <emoji>
-                        <name>❌</name>
+                        <name>✖️</name>
                     </emoji>
                     <style>danger</style>
                 </button>

@@ -17,7 +17,7 @@ from view.cogs.custom_jinja2 import ENVIRONMENT
 UnitActions = Literal["buy", "sell"]
 PositiveInteger = discord.app_commands.Range[int, 1]
 
-GovernmentMessages = Literal["list", "display", "set", "error"]
+GovernmentMessages = Literal["list", "display", "set", "error", "new_government"]
 
 
 async def delete(interaction: discord.Interaction) -> None:

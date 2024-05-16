@@ -43,7 +43,7 @@ class AidModel(Base):
 
     aid_id: Mapped[str] = mapped_column(primary_key=True)
     date: Mapped[datetime]
-    expires: Mapped[datetime]
+    accepted: Mapped[datetime]
     sponsor: Mapped[int]
     recipient: Mapped[int]
     amount: Mapped[int]

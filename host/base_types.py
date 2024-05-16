@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import NewType
 
 import jinja2.runtime
@@ -31,3 +32,8 @@ def render_currency(value: Currency) -> str:
 def render_currency_rate(value: Currency) -> str:
     magnitude = numbers.format_compact_currency(value, currency="USD", locale="en_US", fraction_digits=3)
     return f"{magnitude} / day"
+
+
+@variable_guard
+def render_date(value: datetime) -> str:
+    return value.strftime("%d/%m/%Y %H:%M")

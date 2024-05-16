@@ -20,12 +20,12 @@
                 <name>Page Number %s for {{ name }}</name>
                 <value>
                     {% for index in range(nations|length) %}
-                        {{index + 1 }}. {{ nations[index].emoji }} {{nations[index].nation}}
-                    {% endfor %}
+                    {{index + 1 }}. {{ nations[index].emoji }} {{nations[index].nation}}{% endfor %}
                 </value>
             </field>
         </embed>
     </expansive>
+    {% if nation is defined %} 
     <menu key="statistics">
         <timeout>60</timeout>
         <pages>
@@ -42,7 +42,7 @@
                                 :star2: __Ruler__: **{{ user }}** 
                                 
                                 {{ nation.government.type.emoji }} __Government__: {{ nation.government.type.name }} 
-                                
+
                                 :scroll: __Created At__: {{ nation.metadata.created.strftime("%d-%m-%Y %H:%M") }} 
 
                                 :earth_africa: __Land Size__: {{ nation.interior.land.amount }} km²
@@ -74,4 +74,5 @@
             </message>
         </pages>
     </menu>
+    {% endif %}
 </discord>

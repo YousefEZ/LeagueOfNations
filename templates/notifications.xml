@@ -1,3 +1,9 @@
 <discord>
-
+    <message key="notification">
+        <embed>
+            <title>League Of Nations Notification</title>
+            <description>{{ notification.message }}</description>
+            <color>teal</color>
+        </embed>
+    </message>
 </discord>

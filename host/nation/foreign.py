@@ -40,7 +40,6 @@ class AidRequestCode(IntEnum):
     INVALID_RECIPIENT = auto()
     INVALID_AMOUNT = auto()
     ABOVE_LIMIT = auto()
-    INVALID_SPONSOR = auto()
     REASON_NOT_ASCII = auto()
     REASON_TOO_LONG = auto()
 

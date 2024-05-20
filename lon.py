@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Optional
 
 import discord
 from discord.ext import commands
@@ -45,6 +46,9 @@ class LeagueOfNations(commands.AutoShardedBot):
         Returns (discord.User): The user
         """
         return Nation(UserId(user_id), self.session)
+
+    def get_nation_from_name(self, nation_name: str) -> Optional[Nation]:
+        return Nation.fetch_from_name(nation_name, self.session)
 
     async def ready(self):
         await self.wait_until_ready()

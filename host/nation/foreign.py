@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 SLOT_EXPIRY_TIME = timedelta(days=gameplay_settings.GameplaySettings.foreign.aid_slot_expire_days)
 
+
 class AidRejectCode(IntEnum):
     SUCCESS = auto()
     NOT_THE_RECIPIENT = auto()
@@ -120,8 +121,6 @@ class AidAgreement(Aid):
         return cls(model)
 
 
-
-
 class Foreign(Ministry):
     def __init__(self, player: Nation, session: Session):
         self._player = player
@@ -139,7 +138,7 @@ class Foreign(Ministry):
 
     @property
     def sponsored_agreements(self) -> List[AidAgreement]:
-        self._remove_expired_agreements() 
+        self._remove_expired_agreements()
         return [
             AidAgreement(agreement)
             for agreement in self._session.query(models.AidModel).filter_by(sponsor=self._player.identifier).all()
@@ -147,7 +146,7 @@ class Foreign(Ministry):
 
     @property
     def recipient_agreements(self) -> List[AidAgreement]:
-        self._remove_expired_agreements() 
+        self._remove_expired_agreements()
         return [
             AidAgreement(agreement)
             for agreement in self._session.query(models.AidModel).filter_by(recipient=self._player.identifier).all()
@@ -184,7 +183,7 @@ class Foreign(Ministry):
             amount=int(amount.magnitude),
             date=datetime.now(),
             expires=datetime.now() + timedelta(days=3),
-            reason=reason
+            reason=reason,
         )
         self._player.bank.deduct(amount)
         self._session.add(request)
@@ -270,7 +269,7 @@ class Foreign(Ministry):
             amount=int(request.amount.magnitude),
             date=request.date,
             accepted=datetime.now(),
-            reason=request.reason
+            reason=request.reason,
         )
         self._session.delete(request.model)
         self._session.add(agreement)

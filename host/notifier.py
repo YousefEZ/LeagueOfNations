@@ -15,7 +15,6 @@ from host.base_models import NotificationModel
 from host.base_types import UserId
 
 
-
 @dataclass(frozen=True)
 class Notification:
     user_id: UserId
@@ -62,7 +61,7 @@ class Notifier:
             self._display(notification_id)
             return
         delay = int((date - now).total_seconds())
-        with self._condition: 
+        with self._condition:
             self._scheduler.enter(delay, 0, self._display, argument=(notification_id,))
             self._condition.notify()
 
@@ -122,6 +121,6 @@ class Notifier:
                     now = time.time()
                     deadline = self._scheduler.run(blocking=False)
                     sleep_time = deadline - now if deadline is not None else None
-                    self._condition.wait(sleep_time if sleep_time is not None and sleep_time > 0 else None) 
-                
+                    self._condition.wait(sleep_time if sleep_time is not None and sleep_time > 0 else None)
+
         threading.Thread(target=run).start()

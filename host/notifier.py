@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from sched import scheduler
 from typing import Optional, Callable, Any, List
 from uuid import uuid4
@@ -14,7 +14,6 @@ from sqlalchemy.orm import Session
 from host.base_models import NotificationModel
 from host.base_types import UserId
 
-NOTIFIER_RESOLUTION: timedelta = timedelta(seconds=5)
 
 
 @dataclass(frozen=True)
@@ -38,6 +37,7 @@ class Notifier:
     _hooks: List[Callable[[Notification], Any]] = []
     _loaded: bool = False
     _lock: threading.Lock = threading.Lock()
+    _condition: threading.Condition = threading.Condition()
 
     def __init__(self, engine: Engine):
         self._engine = engine
@@ -63,6 +63,7 @@ class Notifier:
             return
         delay = int((date - now).total_seconds())
         self._scheduler.enter(delay, 0, self._display, argument=(notification_id,))
+        self._condition.notify()
 
     def _display(self, notification_id: str) -> None:
         print("Displaying notification", notification_id)
@@ -117,7 +118,8 @@ class Notifier:
 
         def run():
             while True:
-                self._scheduler.run(blocking=False)
-                time.sleep(NOTIFIER_RESOLUTION.total_seconds())
-
+                now = time.time()
+                deadline = self._scheduler.run(blocking=False)
+                self._condition.wait(timeout=deadline - now if deadline is not None else None) 
+                
         threading.Thread(target=run, daemon=True).start()

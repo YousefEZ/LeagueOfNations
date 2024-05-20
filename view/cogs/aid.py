@@ -164,6 +164,23 @@ class Aid(commands.Cog):
                 else:
                     await interaction.response.send_message("Amount is not valid")
 
+        async def on_nation_submit(modal, interaction: discord.Interaction) -> None:
+            nation_name = cast(TextInput, modal.children[0]).value
+            assert nation_name is not None
+            await interaction.response.defer()
+            nation = self.bot.get_nation_from_name(nation_name)
+            
+            if nation is None:
+                await interaction.response.send_message(f"Nation: {nation_name} does not exist")
+                return
+
+            funds = extract_funds(cast(TextInput, modal.children[1]).value)
+            if funds is not None:
+                await self.send_aid(ctx, str(nation.identifier), funds)
+            else:
+                await interaction.response.send_message("Amount is not valid")
+
+
         @interaction_button
         @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
         async def open_id_modal(interaction: qalib.QalibInteraction[AidSelectionMessages]) -> None:
@@ -193,19 +210,12 @@ class Aid(commands.Cog):
                 return
             await interaction.response.defer()
 
-            @interaction_button
-            async def on_accept(interaction: qalib.QalibInteraction[AidSelectionMessages]) -> None:
-                try:
-                    result, agreement = nation.foreign.accept(aid_request)
-                except Exception as e:
-                    print(e)
-                print(result, agreement)
+            async def on_accept(_: discord.ui.Item, interaction: qalib.QalibInteraction[AidSelectionMessages]) -> None:
+                result, agreement = nation.foreign.accept(aid_request)
                 await interaction.response.defer()
                 await ctx.display(aid_accept_code_mapping[result], keywords={"nation": nation, "aid": agreement})
 
-            @interaction_button
-            @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
-            async def on_reject(interaction: qalib.QalibInteraction[AidSelectionMessages]) -> None:
+            async def on_reject(_: discord.ui.Item, interaction: qalib.QalibInteraction[AidSelectionMessages]) -> None:
                 await interaction.response.defer()
                 result = nation.foreign.reject(aid_request)
                 await ctx.display(aid_reject_code_mapping[result], keywords={"nation": nation, "aid": aid_request})
@@ -230,9 +240,7 @@ class Aid(commands.Cog):
                 return
             await interaction.response.defer()
 
-            @interaction_button
-            @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
-            async def on_cancel(interaction: qalib.QalibInteraction[AidSelectionMessages]) -> None:
+            async def on_cancel(_: discord.ui.Item, interaction: qalib.QalibInteraction[AidSelectionMessages]) -> None:
                 await interaction.response.defer()
                 result = nation.foreign.cancel(package)
                 await ctx.display(aid_cancel_code_mapping[result], keywords={"nation": nation, "aid": package})
@@ -243,6 +251,17 @@ class Aid(commands.Cog):
 
         await ctx.display("sponsorships", keywords={"nation": nation}, callables={"select-aid": on_view})
 
+
+    @aid_group.command(name="slots", description="list aid slots")
+    @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
+    async def slots(self, ctx: qalib.QalibInteraction[AidSelectionMessages]) -> None:
+        nation = self.bot.get_nation(ctx.user.id)
+        
+        async def on_aid_select(item: discord.ui.Select, interaction: discord.Interaction) -> None:
+            await interaction.response.defer()
+            await ctx.display("aid_slot", keywords={"nation": nation, "aid": host.nation.foreign.AidAgreement.from_id(item.values[0], self.bot.session)})
+
+        await ctx.display("aid-slots", keywords={"nation": nation}, callables={"select-aid": on_aid_select})
 
 async def setup(bot: LeagueOfNations) -> None:
     await bot.add_cog(Aid(bot))

@@ -62,8 +62,9 @@ class Notifier:
             self._display(notification_id)
             return
         delay = int((date - now).total_seconds())
-        self._scheduler.enter(delay, 0, self._display, argument=(notification_id,))
-        self._condition.notify()
+        with self._condition: 
+            self._scheduler.enter(delay, 0, self._display, argument=(notification_id,))
+            self._condition.notify()
 
     def _display(self, notification_id: str) -> None:
         print("Displaying notification", notification_id)
@@ -93,7 +94,7 @@ class Notifier:
                     user_id=notification.user_id,
                     date=notification.time,
                     message=notification.message,
-                    keywords=notification.data,
+                    data=notification.data,
                 )
             )
             session.commit()
@@ -109,7 +110,6 @@ class Notifier:
 
     def schedule(self, notification: Notification) -> None:
         """Method that schedules a notification for consumption by the view"""
-
         self._add_notification_to_db(notification)
         self._schedule(notification.notification_id, notification.time)
 
@@ -117,9 +117,11 @@ class Notifier:
         """This method is start when the view is ready, so it begins consuming updates"""
 
         def run():
-            while True:
-                now = time.time()
-                deadline = self._scheduler.run(blocking=False)
-                self._condition.wait(timeout=deadline - now if deadline is not None else None) 
+            with self._condition:
+                while True:
+                    now = time.time()
+                    deadline = self._scheduler.run(blocking=False)
+                    sleep_time = deadline - now if deadline is not None else None
+                    self._condition.wait(sleep_time if sleep_time is not None and sleep_time > 0 else None) 
                 
-        threading.Thread(target=run, daemon=True).start()
+        threading.Thread(target=run).start()

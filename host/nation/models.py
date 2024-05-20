@@ -36,7 +36,7 @@ class AidRequestModel(Base):
     sponsor: Mapped[int]
     recipient: Mapped[int]
     amount: Mapped[int]
-
+    reason: Mapped[str] = mapped_column(String(250))
 
 class AidModel(Base):
     __tablename__ = "Aid"
@@ -47,7 +47,7 @@ class AidModel(Base):
     sponsor: Mapped[int]
     recipient: Mapped[int]
     amount: Mapped[int]
-
+    reason: Mapped[str] = mapped_column(String(250))
 
 class ResourcesModel(Base):
     __tablename__ = "Resources"

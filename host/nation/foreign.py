@@ -18,6 +18,7 @@ from host.nation import models
 if TYPE_CHECKING:
     from host.nation import Nation
 
+SLOT_EXPIRY_TIME = timedelta(days=gameplay_settings.GameplaySettings.foreign.aid_slot_expire_days)
 
 class AidRejectCode(IntEnum):
     SUCCESS = auto()
@@ -79,6 +80,10 @@ class Aid:
     def amount(self) -> host.currency.Currency:
         return self._model.amount
 
+    @property
+    def reason(self) -> str:
+        return self._model.reason
+
 
 class AidRequest(Aid):
     def __init__(self, model: models.AidRequestModel):
@@ -104,6 +109,10 @@ class AidAgreement(Aid):
     def accepted(self) -> datetime:
         return self._model.accepted
 
+    @property
+    def expires(self) -> datetime:
+        return self._model.accepted + SLOT_EXPIRY_TIME
+
     @classmethod
     def from_id(cls, aid_id: str, session: Session) -> Optional[AidAgreement]:
         model = session.query(models.AidModel).filter_by(aid_id=aid_id).first()
@@ -112,7 +121,6 @@ class AidAgreement(Aid):
         return cls(model)
 
 
-SLOT_EXPIRY_TIME = timedelta(days=gameplay_settings.GameplaySettings.foreign.aid_slot_expire_days)
 
 
 class Foreign(Ministry):
@@ -124,11 +132,15 @@ class Foreign(Ministry):
     def free_slots(self) -> int:
         return gameplay_settings.GameplaySettings.foreign.maximum_aid_slots - len(self.recipient_agreements)
 
-    @property
-    def sponsored_agreemenets(self) -> List[AidAgreement]:
+    def _remove_expired_agreements(self) -> None:
         self._session.query(models.AidModel).filter(
-            models.AidModel.accepted + SLOT_EXPIRY_TIME < datetime.now()
+            models.AidModel.accepted + SLOT_EXPIRY_TIME >= datetime.now()
         ).delete()
+        self._session.commit()
+
+    @property
+    def sponsored_agreements(self) -> List[AidAgreement]:
+        self._remove_expired_agreements() 
         return [
             AidAgreement(agreement)
             for agreement in self._session.query(models.AidModel).filter_by(sponsor=self._player.identifier).all()
@@ -136,9 +148,7 @@ class Foreign(Ministry):
 
     @property
     def recipient_agreements(self) -> List[AidAgreement]:
-        self._session.query(models.AidModel).filter(
-            models.AidModel.accepted + SLOT_EXPIRY_TIME < datetime.now()
-        ).delete()
+        self._remove_expired_agreements() 
         return [
             AidAgreement(agreement)
             for agreement in self._session.query(models.AidModel).filter_by(recipient=self._player.identifier).all()
@@ -175,6 +185,7 @@ class Foreign(Ministry):
             amount=int(amount.magnitude),
             date=datetime.now(),
             expires=datetime.now() + timedelta(days=3),
+            reason=reason
         )
         self._player.bank.deduct(amount)
         self._session.add(request)
@@ -260,6 +271,7 @@ class Foreign(Ministry):
             amount=int(request.amount.magnitude),
             date=request.date,
             accepted=datetime.now(),
+            reason=request.reason
         )
         self._session.delete(request.model)
         self._session.add(agreement)

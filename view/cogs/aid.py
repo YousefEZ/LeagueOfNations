@@ -1,13 +1,16 @@
+import datetime
 from typing import Callable, Coroutine, Literal, Optional, cast
 import discord
 from discord.components import TextInput
 from functools import wraps
 
 from host import currency
+from host import base_types
 from host.base_types import UserId
 from host.nation import Nation
 import host.nation.foreign
 from host.nation.foreign import AidAcceptCode, AidCancelCode, AidRejectCode, AidRequestCode
+from host.notifier import Notification
 import qalib
 from discord import app_commands
 from discord.ext import commands
@@ -63,9 +66,15 @@ def interaction_button(
 
 aid_request_code_mapping = {
     AidRequestCode.SUCCESS: "escrow",
+    AidRequestCode.PLAYER_NOT_EXISTS: "player_not_exist",
     AidRequestCode.SAME_AS_SPONSOR: "same_as_sponsor",
     AidRequestCode.INSUFFICIENT_FUNDS: "insufficient_funds",
-    AidRequestCode.INVALID_RECIPIENT: "invalid_recipient",
+    AidRequestCode.INVALID_RECIPIENT: "target_not_exist",
+
+    AidRequestCode.INVALID_AMOUNT: "invalid_amount",
+    AidRequestCode.ABOVE_LIMIT: "above_limit",
+    AidRequestCode.REASON_NOT_ASCII: "reason_not_ascii", 
+    AidRequestCode.REASON_TOO_LONG: "reason_too_long",
 }
 
 aid_accept_code_mapping = {
@@ -96,9 +105,12 @@ class Aid(commands.Cog):
             await interaction.response.defer()
 
             result, request = nation.foreign.send(UserId(target.identifier), currency.lnd(amount), reason)
-            await ctx.display(
-                aid_request_code_mapping[result], keywords={"nation": nation, "target": target, "aid": request}
-            )
+            if result == AidRequestCode.SUCCESS:
+                await ctx.display(
+                        aid_request_code_mapping[result], keywords={"nation": nation, "target": target, "aid": request}
+                )
+                return
+            await ctx.display(aid_request_code_mapping[result], keywords={"nation": nation, "target": target, "amount": currency.lnd(amount)}, view=None)
 
         @interaction_button
         @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
@@ -130,7 +142,13 @@ class Aid(commands.Cog):
             else:
                 await funds_interaction.response.defer()
                 await self.send_aid(ctx, target_id, amount)
-
+        
+        target = self.bot.get_nation(base_types.UserId(int(target_id)))
+        if not target.exists:
+            await interaction.response.defer()
+            await ctx.display(aid_request_code_mapping[AidRequestCode.INVALID_RECIPIENT])
+            return 
+        
         await interaction.rendered_send("funds", events={ModalEvents.ON_SUBMIT: on_submit})
 
     @aid_group.command(name="send", description="Send aid to another nation")
@@ -213,11 +231,16 @@ class Aid(commands.Cog):
             async def on_accept(_: discord.ui.Item, interaction: qalib.QalibInteraction[AidSelectionMessages]) -> None:
                 result, agreement = nation.foreign.accept(aid_request)
                 await interaction.response.defer()
+                if result == AidAcceptCode.SUCCESS and agreement is not None:
+                    notification = Notification(agreement.sponsor, datetime.datetime.now(), f"Aid package of {aid_request.amount} sent to {nation.name} has been accepted")
+                    self.bot.notification_renderer.notifier.schedule(notification)
                 await ctx.display(aid_accept_code_mapping[result], keywords={"nation": nation, "aid": agreement})
 
             async def on_reject(_: discord.ui.Item, interaction: qalib.QalibInteraction[AidSelectionMessages]) -> None:
                 await interaction.response.defer()
                 result = nation.foreign.reject(aid_request)
+                notification = Notification(aid_request.sponsor, datetime.datetime.now(), f"Aid package of {aid_request.amount} sent to {nation.name} has been rejected")
+                self.bot.notification_renderer.notifier.schedule(notification)
                 await ctx.display(aid_reject_code_mapping[result], keywords={"nation": nation, "aid": aid_request})
 
             await ctx.display(

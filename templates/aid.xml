@@ -1,5 +1,52 @@
 <!DOCTYPE xml>
 <discord>
+    {% from "errors.j2" import generic_errors, insufficient_funds with context %}
+    {{ generic_errors() }}
+    {% if amount is defined %}
+        {{ insufficient_funds(nation, amount) }}
+    {% endif %}
+    <message key="above_limit">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The amount of funds you are sending is above the limit</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+    </message>
+    <message key="reason_not_ascii">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The reason for the aid request must be in ASCII format.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+    </message>
+    <message key="reason_too_long">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The reason for the aid request is too long. It must be less than 200 characters.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+    </message>
+    <message key="same_as_sponsor">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>You cannot send aid to yourself.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <message key="invalid_recipient">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>You cannot send aid to the same recipient as the previous agreement.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
     <modal key="funds" title="Ministry of Foreign Affairs">
         <components>
             <text_input key="funds">
@@ -142,6 +189,17 @@
     </message>
     <menu key="requests">
         <pages>
+            {% if nation.foreign.received_requests|length == 0 %}
+            <message key="no-requests">
+                <embed>
+                    <title>Ministry of Foreign Affairs</title>
+                    <description>You do not have any active aid requests.</description>
+                    <colour>teal</colour>
+                    <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+                </embed>
+                <view></view>
+            </message>
+            {% endif %}
             {% set step = 5 %}
             {% for request_number in range(0, nation.foreign.received_requests|length, step) %}
             <message key="{{ request_number }}">
@@ -189,6 +247,17 @@
     
     <menu key="sponsorships">
         <pages>
+            {% if nation.foreign.sponsorships|length == 0 %}
+            <message key="no-sponsorships">
+                <embed>
+                    <title>Ministry of Foreign Affairs</title>
+                    <description>You do not have any active aid sponsorships.</description>
+                    <colour>teal</colour>
+                    <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+                </embed>
+                <view></view>
+            </message>
+            {% endif %}
             {% for request_number in range(0, nation.foreign.sponsorships|length, step) %}
             <message key="{{ request_number }}">
                 <embed>
@@ -235,6 +304,17 @@
 
     <menu key="aid-slots">
         <pages>
+            {% if nation.foreign.recipient_agreements|length == 0 %} 
+            <message key="no-aid-slots">
+                <embed>
+                    <title>Ministry of Foreign Affairs</title>
+                    <description>You do not have any active aid agreements.</description>
+                    <colour>teal</colour>
+                    <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+                </embed>
+                <view></view>
+            </message>
+            {% endif %}
             {% for request_number in range(0, nation.foreign.recipient_agreements|length, step) %}
             <message key="{{ request_number }}">
                 <embed>

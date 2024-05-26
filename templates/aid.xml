@@ -1,10 +1,57 @@
 <!DOCTYPE xml>
 <discord>
+    {% from "mechanisms.j2" import mechanisms with context %}
+    {{ mechanisms(require_mechanisms) }}
     {% from "errors.j2" import generic_errors, insufficient_funds with context %}
     {{ generic_errors() }}
     {% if amount is defined %}
         {{ insufficient_funds(nation, amount) }}
     {% endif %}
+    <message key="zero_slots">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>You do not have any available aid slots to send aid.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <message key="aid_not_exist">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The aid request does not exist.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <message key="not_a_sponsor">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>You are not a sponsor of this aid request.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <message key="not_a_recipient">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>You are not a recipient of any aid agreements.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <message key="expired">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The aid agreement has expired and the funds have been returned to the sponsor's treasury.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
     <message key="above_limit">
         <embed>
             <title>Ministry of Foreign Affairs</title>

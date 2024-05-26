@@ -23,6 +23,7 @@ SLOT_EXPIRY_TIME = timedelta(days=gameplay_settings.GameplaySettings.foreign.aid
 
 class AidRejectCode(IntEnum):
     SUCCESS = auto()
+    DOES_NOT_EXIST = auto()
     NOT_THE_RECIPIENT = auto()
 
 
@@ -31,7 +32,7 @@ class AidAcceptCode(IntEnum):
     NOT_THE_RECIPIENT = auto()
     EXPIRED = auto()
     ZERO_SLOTS = auto()
-
+    DOES_NOT_EXIST = auto()
 
 class AidRequestCode(IntEnum):
     SUCCESS = auto()
@@ -280,6 +281,9 @@ class Foreign(Ministry):
         if request.recipient != self._player.identifier:
             return AidAcceptCode.NOT_THE_RECIPIENT
 
+        if self._session.query(models.AidRequestModel).filter_by(aid_id=request.id).first() is None:
+            return AidAcceptCode.DOES_NOT_EXIST
+
         if request.expires < datetime.now():
             self._cancel_request(request)
             return AidAcceptCode.EXPIRED
@@ -300,6 +304,9 @@ class Foreign(Ministry):
     def reject(self, request: AidRequest) -> AidRejectCode:
         if request.recipient != self._player.identifier:
             return AidRejectCode.NOT_THE_RECIPIENT
+
+        if self._session.query(models.AidRequestModel).filter_by(aid_id=request.id).first() is None:
+            return AidRejectCode.DOES_NOT_EXIST
 
         self._cancel_request(request)
         return AidRejectCode.SUCCESS

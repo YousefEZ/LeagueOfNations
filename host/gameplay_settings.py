@@ -3,6 +3,12 @@ import json
 from pydantic import BaseModel
 
 
+class ForeignGameplaySettings(BaseModel):
+    maximum_aid_slots: int
+    maximum_aid_amount: float
+    aid_slot_expire_days: float
+
+
 class BankGameplaySettings(BaseModel):
     maximum_tax_rate: float
     starter_funds: float
@@ -20,6 +26,7 @@ class InteriorGameplaySettings(BaseModel):
 class GameplaySettingsModel(BaseModel):
     bank: BankGameplaySettings
     interior: InteriorGameplaySettings
+    foreign: ForeignGameplaySettings
 
 
 with open("settings/gameplay_settings.json", "r") as gameplay_settings_file:

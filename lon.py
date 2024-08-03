@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Optional
 
 import discord
 from discord.ext import commands
@@ -15,7 +16,7 @@ from host.base_types import UserId
 from host.nation import Nation
 from view.notifications import NotificationRenderer
 
-cogs = "start", "economy", "search", "government"
+cogs = "start", "economy", "search", "government", "aid"
 connect_to_db = False
 
 
@@ -45,6 +46,9 @@ class LeagueOfNations(commands.AutoShardedBot):
         Returns (discord.User): The user
         """
         return Nation(UserId(user_id), self.session)
+
+    def get_nation_from_name(self, nation_name: str) -> Optional[Nation]:
+        return Nation.fetch_from_name(nation_name, self.session)
 
     async def ready(self):
         await self.wait_until_ready()

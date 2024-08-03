@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from functools import cached_property
-from typing import List, get_args
+from typing import List, Optional, get_args
 
 from sqlalchemy.orm import Session
 
@@ -37,6 +37,13 @@ class Nation:
         if with_like:
             return session.query(models.MetadataModel).filter(models.MetadataModel.nation.like(f"%{name}%")).all()
         return session.query(models.MetadataModel).filter(models.MetadataModel.nation == name).all()
+
+    @classmethod
+    def fetch_from_name(cls, name: str, session: Session) -> Optional[Nation]:
+        nation = cls.search_for_nations(name, session)
+        if not nation:
+            return None
+        return cls(nation[0].user_id, session)
 
     @cached_property
     def identifier(self) -> base_types.UserId:

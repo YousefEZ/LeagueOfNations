@@ -164,14 +164,14 @@ class Bank(Ministry, FundReceiver, FundSender):
         self._session.commit()
 
     @host.ureg.Registry.wraps(None, [None, host.currency.Currency, None])
-    def send(self, amount: host.currency.Currency, target: FundReceiver) -> SendingResponses:
-        if self.funds < amount:
+    def send(self, funds: host.currency.Currency, target: FundReceiver) -> SendingResponses:
+        if self.funds < funds:
             return "insufficient_funds"
-        self.deduct(amount)
+        self.deduct(funds)
         try:
-            target.receive(amount)
+            target.receive(funds)
         except Exception as e:
-            self.add(amount)
+            self.add(funds)
             raise e
         return "success"
 

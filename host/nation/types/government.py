@@ -28,6 +28,7 @@ class GovernmentSchema(BaseModel, frozen=True):
     boosts: BoostsLookup
     colour: Colour
 
+
 with open("objects/governments.json", encoding="utf8", mode="r") as governments_file:
     Governments = {
         identifier: GovernmentSchema.model_validate(government)

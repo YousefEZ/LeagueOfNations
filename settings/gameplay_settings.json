@@ -10,5 +10,10 @@
     "starter_infrastructure": 100,
     "starter_land": 50,
     "starter_technology": 0
+  },
+  "foreign": {
+    "maximum_aid_slots": 3,
+    "maximum_aid_amount": 6000000.0,
+    "aid_slot_expire_days": 3
   }
 }

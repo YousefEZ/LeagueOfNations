@@ -1,0 +1,38 @@
+<discord>
+    {% macro insufficient_funds(nation, amount) -%}
+	<message key="insufficient_funds">
+		<embed>
+			<title>Insufficient Funds</title>
+			<description>{{ nation.metadata.emoji }} {{ nation.name }} does not have {{ amount|currency }} to complete this transaction</description>
+			<colour>red</colour>
+		</embed>
+		<view></view>
+	</message>
+    {%- endmacro %}
+    {% macro generic_errors() -%}
+	<message key="player_not_exist">
+		<embed>
+			<title>You are not a Ruler</title>
+			<description>You need to start your own nation through the `/start` command</description>
+			<colour>red</colour>
+		</embed>
+		<view></view>
+	</message>
+	<message key="target_not_exist">
+		<embed>
+			<title>Target not a Ruler</title>
+			<description>The individual that has been refereced is not a ruler of a nation</description>
+			<colour>red</colour>	
+		</embed>
+		<view></view>
+	</message>
+	<message key="invalid_amount">
+		<embed>
+			<title>Invalid Amount</title>
+			<description>The amount argument supplied is not a valid amount</description>
+			<colour>red</colour>
+		</embed>
+		<view></view>
+	</message>
+    {%- endmacro %}
+</discord>

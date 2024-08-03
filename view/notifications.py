@@ -26,7 +26,7 @@ class NotificationRenderer:
 
     async def render(self, notification: host.notifier.Notification) -> None:
         user = await self.bot.fetch_user(notification.user_id)
-        await user.send("This is a notification")
+        await user.send(**self._renderer.render("notification", keywords={"notification": notification}).dict())
 
     def start(self) -> None:
         self.notifier.start()

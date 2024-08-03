@@ -1,4 +1,4 @@
-discord-qalib==2.5.0
+discord-qalib==2.5.3
 discord.py>=2.2.3
 python-dotenv~=1.0.0
 sqlalchemy~=2.0.13

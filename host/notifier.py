@@ -3,7 +3,7 @@ from __future__ import annotations
 import threading
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from sched import scheduler
 from typing import Optional, Callable, Any, List
 from uuid import uuid4
@@ -13,8 +13,6 @@ from sqlalchemy.orm import Session
 
 from host.base_models import NotificationModel
 from host.base_types import UserId
-
-NOTIFIER_RESOLUTION: timedelta = timedelta(seconds=5)
 
 
 @dataclass(frozen=True)
@@ -38,6 +36,7 @@ class Notifier:
     _hooks: List[Callable[[Notification], Any]] = []
     _loaded: bool = False
     _lock: threading.Lock = threading.Lock()
+    _condition: threading.Condition = threading.Condition()
 
     def __init__(self, engine: Engine):
         self._engine = engine
@@ -62,7 +61,9 @@ class Notifier:
             self._display(notification_id)
             return
         delay = int((date - now).total_seconds())
-        self._scheduler.enter(delay, 0, self._display, argument=(notification_id,))
+        with self._condition:
+            self._scheduler.enter(delay, 0, self._display, argument=(notification_id,))
+            self._condition.notify()
 
     def _display(self, notification_id: str) -> None:
         print("Displaying notification", notification_id)
@@ -92,7 +93,7 @@ class Notifier:
                     user_id=notification.user_id,
                     date=notification.time,
                     message=notification.message,
-                    keywords=notification.data,
+                    data=notification.data,
                 )
             )
             session.commit()
@@ -108,7 +109,6 @@ class Notifier:
 
     def schedule(self, notification: Notification) -> None:
         """Method that schedules a notification for consumption by the view"""
-
         self._add_notification_to_db(notification)
         self._schedule(notification.notification_id, notification.time)
 
@@ -116,8 +116,11 @@ class Notifier:
         """This method is start when the view is ready, so it begins consuming updates"""
 
         def run():
-            while True:
-                self._scheduler.run(blocking=False)
-                time.sleep(NOTIFIER_RESOLUTION.total_seconds())
+            with self._condition:
+                while True:
+                    now = time.time()
+                    deadline = self._scheduler.run(blocking=False)
+                    sleep_time = deadline - now if deadline is not None else None
+                    self._condition.wait(sleep_time if sleep_time is not None and sleep_time > 0 else None)
 
-        threading.Thread(target=run, daemon=True).start()
+        threading.Thread(target=run).start()

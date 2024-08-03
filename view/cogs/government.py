@@ -74,7 +74,9 @@ class Government(commands.Cog):
 
         async def set_confirmation(interaction: discord.Interaction) -> None:
             await interaction.response.defer()
-            difference = BoostsLookup.combine(Governments[government_type].boosts, nation.government.type.boosts.inverse())
+            difference = BoostsLookup.combine(
+                Governments[government_type].boosts, nation.government.type.boosts.inverse()
+            )
             nation.government.set(government_type)
             await ctx.display(
                 "new_government",

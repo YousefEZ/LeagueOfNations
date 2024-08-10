@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections import OrderedDict
-from typing import Protocol, TypeVar
+from typing import Protocol, Optional, TypeVar
 
 from host import currency
 from host.nation import models
@@ -25,8 +27,13 @@ class Data(Protocol[K]):
     def set(interior: models.InteriorModel, value: K) -> None:
         raise NotImplementedError
 
+    @staticmethod
+    def singleton() -> Data[K]:
+        raise NotImplementedError
+
 
 class InfrastructurePoints(Data[InfrastructureUnit]):
+    _singleton: Optional[InfrastructurePoints] = None
     PriceModifier: PriceModifierBoosts = "infrastructure_cost_modifier"
     FloorPrice = currency.lnd(500)
     PricePoints = OrderedDict(
@@ -66,14 +73,21 @@ class InfrastructurePoints(Data[InfrastructureUnit]):
 
     @staticmethod
     def get(interior: models.InteriorModel) -> InfrastructureUnit:
-        return interior.infrastructure
+        return InfrastructureUnit(interior.infrastructure)
 
     @staticmethod
     def set(interior: models.InteriorModel, value: InfrastructureUnit) -> None:
         interior.infrastructure = value
 
+    @staticmethod
+    def singleton() -> InfrastructurePoints:
+        if InfrastructurePoints._singleton is None:
+            InfrastructurePoints._singleton = InfrastructurePoints()
+        return InfrastructurePoints._singleton
+
 
 class LandPoints(Data[LandUnit]):
+    _singleton: Optional[LandPoints] = None
     PriceModifier: PriceModifierBoosts = "land_cost_modifier"
     FloorPrice: currency.Currency = currency.lnd(400)
     PricePoints: OrderedDict[LandUnit, currency.Currency] = OrderedDict(
@@ -97,7 +111,7 @@ class LandPoints(Data[LandUnit]):
         ]
     )
     BillModifier: BillModifierBoosts = "land_bill_modifier"
-    FloorBill: currency.Currency = currency.lnd_rate(0.3)
+    FloorBill: currency.CurrencyRate = currency.lnd_rate(0.3)
     BillPoints: OrderedDict[LandUnit, currency.CurrencyRate] = OrderedDict(
         [
             (LandUnit(20), currency.lnd_rate(0.001)),
@@ -127,8 +141,15 @@ class LandPoints(Data[LandUnit]):
     def set(interior: models.InteriorModel, value: LandUnit) -> None:
         interior.land = value
 
+    @staticmethod
+    def singleton() -> LandPoints:
+        if LandPoints._singleton is None:
+            LandPoints._singleton = LandPoints()
+        return LandPoints._singleton
+
 
 class TechnologyPoints(Data[TechnologyUnit]):
+    _singleton: Optional[TechnologyPoints] = None
     PriceModifier: PriceModifierBoosts = "technology_cost_modifier"
     FloorPrice = currency.lnd(0)
     PricePoints = OrderedDict(
@@ -168,8 +189,14 @@ class TechnologyPoints(Data[TechnologyUnit]):
 
     @staticmethod
     def get(interior: models.InteriorModel) -> TechnologyUnit:
-        return interior.technology
+        return TechnologyUnit(interior.technology)
 
     @staticmethod
     def set(interior: models.InteriorModel, value: TechnologyUnit) -> None:
         interior.technology = value
+
+    @staticmethod
+    def singleton() -> TechnologyPoints:
+        if TechnologyPoints._singleton is None:
+            TechnologyPoints._singleton = TechnologyPoints()
+        return TechnologyPoints._singleton

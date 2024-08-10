@@ -1,0 +1,97 @@
+<!DOCTYPE xml>
+<discord>
+    {% macro mechanisms(require_mechanisms) -%}
+    {% if require_mechanisms is defined %}
+    <menu key="nation_lookup">
+        <pages>
+            {% set step = 10 %}
+            {% for index in range(0, nations|length, step) %}
+                <message key="{{ index }}"> 
+                    <embed>
+                        <title>Nation Lookup</title>
+                        <description>Select the nation that matches your search query.</description>                    
+                       	<colour>teal</colour> 
+			<fields>
+                            {% for nation_index in range(index, [nations|length, index+step] | min) %}
+                                <field>
+                                    <name>{{nations[nation_index].emoji}} {{ nations[nation_index].nation }}</name>
+                                    <value>&lt;@{{ nations[nation_index].user_id }}&gt;</value>
+                                    <inline>true</inline>
+                                </field>
+                            {% endfor %}
+                        </fields>
+                    </embed>
+                    <view>
+                        <components>
+                            <select key="on_select">
+                                <options>
+                                    {% for nation_index in range(index, [nations|length, index+step] | min)%}
+                                        <option>
+                                            <value>{{ nations[nation_index].user_id }}</value>
+                                            <label>{{ nations[nation_index].nation }}</label> 
+                                            <emoji>
+                                                <name>{{ nations[nation_index].emoji.split(':')[1] }}</name>  
+                                                <id>{{ nations[nation_index].emoji.split(':')[2].split('>')[0] }}</id>
+                                            </emoji>
+                                        </option>
+                                    {% endfor %} 
+                                </options>
+                            </select>
+                        </components>
+                    </view>
+                </message>
+            {% endfor %}
+        </pages>     
+    </menu>
+    <message key="nation_preview">
+        <embed>
+            <title>{{ nation.name }}</title>
+            <colour>{{ nation.government.type.colour }}</colour>
+            <fields>
+                <field>
+                    <name>:crown: Country</name>
+                    <value>{{ nation.name }}</value>
+                </field>
+                <field>
+                    <name>:crown: Ruler</name>
+                    <value>&lt;@{{ nation.identifier }}&gt;</value>
+                </field>     
+            </fields>
+        </embed>
+        <thumbnail>
+            <url>{{ nation.metadata.flag }}</url>
+        </thumbnail> 
+	<view>
+		<components>
+			<button key="on_accept">
+				<label>Accept</label>
+				<emoji>
+					<name>✔️</name>
+				</emoji>
+			</button>
+			<button key="on_reject">
+				<label>Reject</label>
+				<emoji>
+					<name>❌</name>
+				</emoji>	
+			</button>
+		</components>
+	</view>
+    </message>
+    <message key="lookup_nation_name_not_found">
+	<embed>
+		<title>Error</title>
+		<colour>red</colour>
+		<description>Could not find any nations with that name</description>
+	</embed>
+    </message>
+    <message key="lookup_nation_id_not_found">
+	<embed>
+		<title>Error</title>
+		<colour>red</colour>
+		<description>Could not find any nations with that identifier</description>
+	</embed>
+    </message>
+    {% endif %}
+    {%- endmacro %}
+</discord>

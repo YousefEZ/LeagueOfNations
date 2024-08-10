@@ -2,22 +2,20 @@ from __future__ import annotations
 
 from abc import ABC
 
-import host.base_types
-import host.currency
-import host.ureg
+from host.currency import DailyCurrencyRate, wraps
 from host.nation import types
 
 
 class Ministry(ABC):
     @property
-    @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
-    def bill(self) -> host.currency.CurrencyRate:
-        return 0 * host.currency.CurrencyRate
+    @wraps(DailyCurrencyRate, (None,))
+    def bill(self) -> int:
+        return 0
 
     @property
-    @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
-    def revenue(self) -> host.currency.CurrencyRate:
-        return 0 * host.currency.CurrencyRate
+    @wraps(DailyCurrencyRate, (None,))
+    def revenue(self) -> int:
+        return 0
 
     @property
     def happiness(self) -> types.basic.Happiness:

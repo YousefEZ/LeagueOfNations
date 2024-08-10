@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, UTC
 from functools import cached_property
 from typing import List, Optional, get_args
 
 from sqlalchemy.orm import Session
 
-import host.ureg
-from host import base_types, currency
+from host.currency import DailyCurrencyRate, wraps
+from host import base_types
 from host.defaults import defaults
 from host.gameplay_settings import GameplaySettings
 from host.nation import types, models
@@ -92,7 +92,7 @@ class Nation:
             nation=name,
             emoji=defaults.meta.emoji,
             flag=defaults.meta.flag,
-            created=datetime.utcnow(),
+            created=datetime.now(UTC),
         )
 
         with Session(engine) as session:
@@ -133,8 +133,8 @@ class Nation:
         return types.boosts.BoostsLookup.combine(*[ministry_object.boost() for ministry_object in self.ministries])
 
     @property
-    @host.ureg.Registry.wraps(currency.CurrencyRate, None)
-    def revenue(self) -> currency.CurrencyRate:
+    @wraps(DailyCurrencyRate, (None,))
+    def revenue(self) -> float:
         happiness = self.happiness
         population = self.population
-        return happiness * 3 * population * currency.CurrencyRate
+        return happiness * 3 * population

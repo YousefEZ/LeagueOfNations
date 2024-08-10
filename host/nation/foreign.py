@@ -7,8 +7,7 @@ from typing import TYPE_CHECKING, List, Optional, Set, Tuple, Union
 
 from sqlalchemy.orm import Session
 
-import host.currency
-import host.ureg
+from host.currency import Currency, check, wraps
 from host import alliance, base_types, gameplay_settings
 from host.alliance import Alliance
 import host.alliance.models as alliance_models
@@ -33,6 +32,7 @@ class AidAcceptCode(IntEnum):
     EXPIRED = auto()
     ZERO_SLOTS = auto()
     DOES_NOT_EXIST = auto()
+
 
 class AidRequestCode(IntEnum):
     SUCCESS = auto()
@@ -77,9 +77,8 @@ class Aid:
         return self._model.date
 
     @property
-    @host.ureg.Registry.wraps(host.currency.Currency, None)
-    def amount(self) -> host.currency.Currency:
-        return self._model.amount
+    def amount(self) -> Currency:
+        return Currency(self._model.amount)
 
     @property
     def reason(self) -> str:
@@ -92,6 +91,7 @@ class AidRequest(Aid):
 
     @property
     def expires(self) -> datetime:
+        assert isinstance(self._model, models.AidRequestModel)
         return self._model.expires
 
     @classmethod
@@ -108,10 +108,12 @@ class AidAgreement(Aid):
 
     @property
     def accepted(self) -> datetime:
+        assert isinstance(self._model, models.AidModel)
         return self._model.accepted
 
     @property
     def expires(self) -> datetime:
+        assert isinstance(self._model, models.AidModel)
         return self._model.accepted + SLOT_EXPIRY_TIME
 
     @classmethod
@@ -175,13 +177,13 @@ class Foreign(Ministry):
             }
         )
 
-    @host.ureg.Registry.check(None, None, host.currency.Currency, None)
-    def _send(self, recipient: base_types.UserId, amount: host.currency.Currency, reason: str) -> AidRequest:
+    @wraps(None, [None, Currency, None])
+    def _send(self, recipient: base_types.UserId, amount: Currency, reason: str) -> AidRequest:
         request = models.AidRequestModel(
             aid_id=str(uuid.uuid4()),
             sponsor=self._player.identifier,
             recipient=recipient,
-            amount=int(amount.magnitude),
+            amount=int(amount),
             date=datetime.now(),
             expires=datetime.now() + timedelta(days=3),
             reason=reason,
@@ -206,10 +208,8 @@ class Foreign(Ministry):
             for request in self._session.query(models.AidRequestModel).filter_by(sponsor=self._player.identifier).all()
         ]
 
-    @host.ureg.Registry.check(None, None, host.currency.Currency, None)
-    def _verify_send_request(
-        self, recipient: base_types.UserId, amount: host.currency.Currency, reason: str
-    ) -> AidRequestCode:
+    @check(None, None, Currency, None)
+    def _verify_send_request(self, recipient: base_types.UserId, amount: Currency, reason: str) -> AidRequestCode:
         if not self._player.find_player(recipient).exists:
             return AidRequestCode.PLAYER_NOT_EXISTS
 
@@ -219,10 +219,10 @@ class Foreign(Ministry):
         if not self._player.find_player(recipient).exists:
             return AidRequestCode.INVALID_RECIPIENT
 
-        if amount < host.currency.lnd(0):
+        if amount < Currency(0):
             return AidRequestCode.INVALID_AMOUNT
 
-        if amount > host.currency.lnd(gameplay_settings.GameplaySettings.foreign.maximum_aid_amount):
+        if amount > Currency(gameplay_settings.GameplaySettings.foreign.maximum_aid_amount):
             return AidRequestCode.ABOVE_LIMIT
 
         if not self._player.bank.enough_funds(amount):
@@ -236,15 +236,15 @@ class Foreign(Ministry):
 
         return AidRequestCode.SUCCESS
 
-    @host.ureg.Registry.wraps(None, [None, None, host.currency.Currency, None])
+    @wraps(None, [None, None, Currency, None])
     def send(
-        self, recipient: base_types.UserId, amount: host.currency.Currency, reason: str
+        self, recipient: base_types.UserId, amount: Currency, reason: str
     ) -> Tuple[AidRequestCode, Optional[AidRequest]]:
-        code = self._verify_send_request(recipient, amount * host.currency.Currency, reason)
+        code = self._verify_send_request(recipient, amount, reason)
         if code != AidRequestCode.SUCCESS:
             return code, None
 
-        request = self._send(recipient, amount * host.currency.Currency, reason)
+        request = self._send(recipient, amount, reason)
         return AidRequestCode.SUCCESS, request
 
     def _cancel_request(self, request: AidRequest) -> None:
@@ -267,7 +267,7 @@ class Foreign(Ministry):
             aid_id=request.id,
             sponsor=request.sponsor,
             recipient=request.recipient,
-            amount=int(request.amount.magnitude),
+            amount=int(request.amount),
             date=request.date,
             accepted=datetime.now(),
             reason=request.reason,

@@ -84,7 +84,7 @@ class InteriorModel(Base):
 
     user_id: Mapped[int] = mapped_column(primary_key=True)
     infrastructure: Mapped[int]
-    land: Mapped[int]
+    land: Mapped[float]
     technology: Mapped[int]
     spent_technology: Mapped[int]
 

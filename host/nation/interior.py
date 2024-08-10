@@ -2,19 +2,17 @@ from __future__ import annotations
 
 import logging
 from functools import cached_property
-from typing import TYPE_CHECKING, Literal, TypeVar, Protocol, Type, Generic
+from typing import TYPE_CHECKING, Literal, TypeVar, Protocol, Type, cast
 
 from pint.facets.plain import PlainQuantity
-from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-import host.ureg
+from host.currency import CurrencyRate, DailyCurrencyRate, wraps
 from host import currency
-from host.defaults import defaults
 from host.gameplay_settings import GameplaySettings
 from host.nation import models
 from host.nation.ministry import Ministry
-from host.nation.types.basic import Population
+from host.nation.types.basic import InfrastructureUnit, LandUnit, Population, TechnologyUnit
 from host.nation.types.interior import (
     Data,
     InfrastructurePoints,
@@ -43,7 +41,7 @@ BuyMessages = Literal[
     "insufficient_",
 ]
 
-K = TypeVar("K")
+K = TypeVar("K", bound=float)
 
 
 class UnitExchangeProtocol(Protocol[K]):
@@ -51,18 +49,20 @@ class UnitExchangeProtocol(Protocol[K]):
     def amount(self) -> K:
         raise NotImplementedError
 
-    def price_at(self, level: K) -> currency.Currency:
+    @wraps(currency.Currency, (None, None))
+    def price_at(self, level: K) -> float:
         raise NotImplementedError
 
-    def price_order(self, amount: K) -> currency.Currency:
+    @wraps(currency.Currency, (None, None))
+    def price_order(self, amount: K) -> PlainQuantity:
         raise NotImplementedError
 
-    def bill_at(self, level: K) -> currency.CurrencyRate:
+    @wraps(currency.Currency, (None, None))
+    def bill_at(self, level: K) -> PlainQuantity:
         raise NotImplementedError
 
     @property
-    @host.ureg.Registry.wraps(currency.CurrencyRate, None)
-    def bill(self) -> currency.CurrencyRate:
+    def bill(self) -> CurrencyRate:
         raise NotImplementedError
 
     def buy(self, amount: K) -> PurchaseResult:
@@ -77,7 +77,7 @@ class UnitExchangeProtocol(Protocol[K]):
 
 
 def unit_exchange(cls: Type[Data[K]]) -> Type[UnitExchangeProtocol[K]]:
-    class UnitExchange(Generic[K]):
+    class UnitExchange:
         __slots__ = "_singleton", "_interior", "_nation", "_session"
         unit: Type[Data[K]] = cls
 
@@ -87,36 +87,37 @@ def unit_exchange(cls: Type[Data[K]]) -> Type[UnitExchangeProtocol[K]]:
             self._session = session
 
         @classmethod
-        def load_player(cls, nation: Nation, interior: models.InteriorModel, session: Session) -> UnitExchange[K]:
+        def load_player(cls, nation: Nation, interior: models.InteriorModel, session: Session) -> UnitExchange:
             return cls(nation, interior, session)
 
-        @host.ureg.Registry.wraps(currency.Currency, [None, None, None])
+        @wraps(currency.Currency, [None, None, None])
         def _get_unit_price_at(self, point: K, level: K) -> currency.Currency:
-            return self.unit.PricePoints[point] * level + self.unit.FloorPrice
+            return self.unit.singleton().PricePoints[point] * level + self.unit.FloorPrice
 
-        @host.ureg.Registry.wraps(currency.Currency, [None, None])
+        @wraps(currency.Currency, [None, None])
         def price_at(self, level: K) -> currency.Currency:
             point = 0
-            for point in self.unit.PricePoints:
+            for point in self.unit.singleton().PricePoints:
                 if level <= point:
                     return self._get_unit_price_at(point, level) * self.price_modifier
             return self._get_unit_price_at(point, level) * self.price_modifier
 
-        @host.ureg.Registry.wraps(currency.Currency, [None, None])
+        @wraps(currency.Currency, [None, None])
         def price_order(self, amount: K) -> currency.Currency:
             return sum(
-                (self.price_at(self.amount + i) for i in range(1, amount + 1)),
+                (self.price_at(self.amount + i) for i in range(1, int(amount + 1))),
                 currency.lnd(0),
             )
 
-        @host.ureg.Registry.wraps(currency.CurrencyRate, [None, None, None])
-        def _get_unit_bill_at(self, point: K, level: K) -> currency.CurrencyRate:
-            return self.unit.BillPoints[point] * level.magnitude if isinstance(level, PlainQuantity) else level
+        @wraps(DailyCurrencyRate, [None, None, None])
+        def _get_unit_bill_at(self, point: K, level: K) -> float:
+            return (
+                self.unit.singleton().BillPoints[point] * level.magnitude if isinstance(level, PlainQuantity) else level
+            )
 
-        @host.ureg.Registry.wraps(currency.CurrencyRate, [None, None])
-        def bill_at(self, level: K) -> currency.CurrencyRate:
+        def bill_at(self, level: K) -> DailyCurrencyRate:
             point = 0
-            for point in self.unit.BillPoints:
+            for point in self.unit.singleton().BillPoints:
                 if level <= point:
                     return self._get_unit_bill_at(point, level)
             return self._get_unit_bill_at(point, level)
@@ -145,7 +146,7 @@ def unit_exchange(cls: Type[Data[K]]) -> Type[UnitExchangeProtocol[K]]:
             if not self._nation.bank.enough_funds(price):
                 return PurchaseResult.INSUFFICIENT_FUNDS
             self._nation.bank.deduct(price)
-            self._set_amount(self.amount + amount)
+            self._set_amount(cast(K, self.amount + amount))
             return PurchaseResult.SUCCESS
 
         def sell(self, amount: K) -> SellResult:
@@ -153,11 +154,10 @@ def unit_exchange(cls: Type[Data[K]]) -> Type[UnitExchangeProtocol[K]]:
             if self.amount < amount:
                 return SellResult.INSUFFICIENT_AMOUNT
             self._nation.bank.add(self.price_order(amount) * GameplaySettings.interior.cashback_modifier)
-            self._set_amount(self.amount - amount)
+            self._set_amount(cast(K, self.amount - amount))
             return SellResult.SUCCESS
 
         @property
-        @host.ureg.Registry.wraps(currency.CurrencyRate, None)
         def bill(self) -> currency.CurrencyRate:
             return self.bill_at(self.amount) * self.bill_modifier
 
@@ -196,26 +196,25 @@ class Interior(Ministry):
         return Population(self.infrastructure.amount * GameplaySettings.interior.population_per_infrastructure)
 
     @property
-    @host.ureg.Registry.wraps(currency.CurrencyRate, None)
-    def revenue(self) -> currency.CurrencyRate:
+    @wraps(DailyCurrencyRate, (None,))
+    def revenue(self) -> float:
         gdb_per_capita = GameplaySettings.interior.revenue_per_population + self._player.boost.income_increase
         income_modifier = 1 + self._player.boost.income_modifier
         return self.population * gdb_per_capita * income_modifier
 
     @cached_property
-    def infrastructure(self) -> Infrastructure:
+    def infrastructure(self) -> UnitExchangeProtocol[InfrastructureUnit]:
         return Infrastructure.load_player(self._player, self._interior, self._session)
 
     @cached_property
-    def technology(self) -> Technology:
+    def technology(self) -> UnitExchangeProtocol[TechnologyUnit]:
         return Technology.load_player(self._player, self._interior, self._session)
 
     @cached_property
-    def land(self) -> Land:
+    def land(self) -> UnitExchangeProtocol[LandUnit]:
         return Land.load_player(self._player, self._interior, self._session)
 
     @property
-    @host.ureg.Registry.wraps(currency.CurrencyRate, None)
     def bill(self) -> currency.CurrencyRate:
         bill = self.infrastructure.bill + self.technology.bill + self.land.bill
         return bill * (1 - self._player.boost.bill_modifier)

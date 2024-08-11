@@ -6,7 +6,7 @@ from typing import List, Optional, get_args
 
 from sqlalchemy.orm import Session
 
-from host.currency import DailyCurrencyRate, wraps
+from host.currency import as_daily_currency_rate, as_currency
 from host import base_types
 from host.defaults import defaults
 from host.gameplay_settings import GameplaySettings
@@ -43,7 +43,7 @@ class Nation:
         nation = cls.search_for_nations(name, session)
         if not nation:
             return None
-        return cls(nation[0].user_id, session)
+        return cls(base_types.UserId(nation[0].user_id), session)
 
     @cached_property
     def identifier(self) -> base_types.UserId:
@@ -133,7 +133,8 @@ class Nation:
         return types.boosts.BoostsLookup.combine(*[ministry_object.boost() for ministry_object in self.ministries])
 
     @property
-    @wraps(DailyCurrencyRate, (None,))
+    @as_daily_currency_rate
+    @as_currency
     def revenue(self) -> float:
         happiness = self.happiness
         population = self.population

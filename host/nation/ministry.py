@@ -2,18 +2,21 @@ from __future__ import annotations
 
 from abc import ABC
 
-from host.currency import DailyCurrencyRate, wraps
+from host.currency import as_currency, as_daily_currency_rate
 from host.nation import types
 
 
 class Ministry(ABC):
+
     @property
-    @wraps(DailyCurrencyRate, (None,))
+    @as_daily_currency_rate
+    @as_currency
     def bill(self) -> int:
         return 0
 
     @property
-    @wraps(DailyCurrencyRate, (None,))
+    @as_daily_currency_rate
+    @as_currency
     def revenue(self) -> int:
         return 0
 

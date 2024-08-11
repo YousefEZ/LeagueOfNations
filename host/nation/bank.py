@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Optional, Protocol, Literal
 
 from sqlalchemy.orm import Session
 
-from host.currency import wraps, Currency, CurrencyRate, DailyCurrencyRate
+from host.currency import Currency, CurrencyRate, DailyCurrencyRate, as_currency
 from host.defaults import defaults
 from host.gameplay_settings import GameplaySettings
 from host.nation.ministry import Ministry
@@ -23,13 +23,11 @@ REVENUE_PER_HAPPINESS = 3 * 86400
 
 
 class FundReceiver(Protocol):
-    @wraps(None, [None, Currency])
     def receive(self, funds: Currency) -> None:
         raise NotImplementedError
 
 
 class FundSender(Protocol):
-    @wraps(None, [None, Currency, None])
     def send(self, funds: Currency, target: FundReceiver) -> SendingResponses:
         raise NotImplementedError
 
@@ -70,7 +68,7 @@ class Bank(Ministry, FundReceiver, FundSender):
         self._session.commit()
 
     @property
-    @wraps(Currency, (None,))
+    @as_currency
     def funds(self) -> float:
         self._update_treasury()
         return self.model.treasury
@@ -120,15 +118,12 @@ class Bank(Ministry, FundReceiver, FundSender):
         self.model.last_accessed = current_time
         self._session.commit()
 
-    @wraps(Currency, [None, None])
     def _retrieve_revenue(self, timestamp: datetime) -> Currency:
         return self.national_revenue.amount_in_delta(timestamp - self.model.last_accessed)
 
-    @wraps(Currency, [None, None])
     def _retrieve_bill(self, timestamp: datetime) -> Currency:
         return self.national_bill.amount_in_delta(timestamp - self.model.last_accessed)
 
-    @wraps(Currency, [None, None])
     def _retrieve_profit(self, timestamp: datetime) -> Currency:
         revenue: Currency = self._retrieve_revenue(timestamp)
         expenses: Currency = self._retrieve_bill(timestamp)

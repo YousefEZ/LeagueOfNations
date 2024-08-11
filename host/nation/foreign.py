@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, List, Optional, Set, Tuple, Union
 
 from sqlalchemy.orm import Session
 
-from host.currency import Currency, check, wraps
+from host.currency import Currency
 from host import alliance, base_types, gameplay_settings
 from host.alliance import Alliance
 import host.alliance.models as alliance_models
@@ -177,7 +177,6 @@ class Foreign(Ministry):
             }
         )
 
-    @wraps(None, [None, Currency, None])
     def _send(self, recipient: base_types.UserId, amount: Currency, reason: str) -> AidRequest:
         request = models.AidRequestModel(
             aid_id=str(uuid.uuid4()),
@@ -208,7 +207,6 @@ class Foreign(Ministry):
             for request in self._session.query(models.AidRequestModel).filter_by(sponsor=self._player.identifier).all()
         ]
 
-    @check(None, None, Currency, None)
     def _verify_send_request(self, recipient: base_types.UserId, amount: Currency, reason: str) -> AidRequestCode:
         if not self._player.find_player(recipient).exists:
             return AidRequestCode.PLAYER_NOT_EXISTS
@@ -236,7 +234,6 @@ class Foreign(Ministry):
 
         return AidRequestCode.SUCCESS
 
-    @wraps(None, [None, None, Currency, None])
     def send(
         self, recipient: base_types.UserId, amount: Currency, reason: str
     ) -> Tuple[AidRequestCode, Optional[AidRequest]]:

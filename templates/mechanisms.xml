@@ -11,7 +11,7 @@
                         <title>Nation Lookup</title>
                         <description>Select the nation that matches your search query.</description>                    
                        	<colour>teal</colour> 
-			<fields>
+                        <fields>
                             {% for nation_index in range(index, [nations|length, index+step] | min) %}
                                 <field>
                                     <name>{{nations[nation_index].emoji}} {{ nations[nation_index].nation }}</name>
@@ -61,37 +61,37 @@
         <thumbnail>
             <url>{{ nation.metadata.flag }}</url>
         </thumbnail> 
-	<view>
-		<components>
-			<button key="on_accept">
-				<label>Accept</label>
-				<emoji>
-					<name>✔️</name>
-				</emoji>
-			</button>
-			<button key="on_reject">
-				<label>Reject</label>
-				<emoji>
-					<name>❌</name>
-				</emoji>	
-			</button>
-		</components>
-	</view>
+      <view>
+        <components>
+          <button key="on_accept">
+            <label>Accept</label>
+            <emoji>
+              <name>✔️</name>
+            </emoji>
+          </button>
+          <button key="on_reject">
+            <label>Reject</label>
+            <emoji>
+              <name>❌</name>
+            </emoji>	
+          </button>
+        </components>
+      </view>
     </message>
-    <message key="lookup_nation_name_not_found">
-	<embed>
-		<title>Error</title>
-		<colour>red</colour>
-		<description>Could not find any nations with that name</description>
-	</embed>
-    </message>
-    <message key="lookup_nation_id_not_found">
-	<embed>
-		<title>Error</title>
-		<colour>red</colour>
-		<description>Could not find any nations with that identifier</description>
-	</embed>
-    </message>
-    {% endif %}
-    {%- endmacro %}
+  <message key="lookup_nation_name_not_found">
+    <embed>
+      <title>Error</title>
+      <colour>red</colour>
+      <description>Could not find any nations with that name</description>
+    </embed>
+  </message>
+  <message key="lookup_nation_id_not_found">
+    <embed>
+      <title>Error</title>
+      <colour>red</colour>
+      <description>Could not find any nations with that identifier</description>
+    </embed>
+  </message>
+  {% endif %}
+  {%- endmacro %}
 </discord>

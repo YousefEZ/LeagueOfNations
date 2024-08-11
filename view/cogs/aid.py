@@ -17,17 +17,30 @@ from discord.ext import commands
 from qalib.template_engines.jinja2 import Jinja2
 from qalib.translators.modal import ModalEvents
 
-from lon import LeagueOfNations, interaction_morph
+from lon import mechanisms_messages, LeagueOfNations, interaction_morph
 from view.cogs.custom_jinja2 import ENVIRONMENT
 
 
-AidSelectionMessages = Literal["list", "display", "set", "error", "new_government", "reason"]
+AidSelectionMessages = Literal[
+    "list",
+    "requests",
+    "display",
+    "set",
+    "error",
+    "new_government",
+    "reason",
+    "view_aid",
+    "view_sponsorship",
+    "sponsorships",
+    "aid_slots",
+    "aid_slot",
+]
 
 PositiveInteger = discord.app_commands.Range[int, 1]
 
-
 AidRequestMessages = Literal[
     "escrow",
+    "confirm_aid",
     "player_not_exist",
     "same_as_sponsor",
     "insufficient_funds",
@@ -36,6 +49,9 @@ AidRequestMessages = Literal[
     "above_limit",
     "reason_not_ascii",
     "reason_too_long",
+    "funds",
+    "target_selection",
+    mechanisms_messages,
 ]
 AidAcceptMessages = Literal["aid_accepted", "aid_not_exist", "not_a_recipient", "expired", "zero_slots"]
 AidCancelMessages = Literal["aid_cancelled", "aid_not_exist", "not_a_sponsor"]
@@ -92,7 +108,7 @@ class Aid(commands.Cog):
             reason = cast(TextInput, modal.children[0]).value
             await interaction.response.defer()
 
-            result, request = nation.foreign.send(UserId(target.identifier), currency.lnd(amount), reason)
+            result, request = nation.foreign.send(UserId(target.identifier), currency.lnd(amount), reason or "")
             if result == AidRequestCode.SUCCESS:
                 await ctx.display(
                     aid_request_code_mapping[result], keywords={"nation": nation, "target": target, "aid": request}
@@ -111,7 +127,7 @@ class Aid(commands.Cog):
 
         await ctx.display(
             "confirm_aid",
-            keywords={"amount": amount * currency.Currency, "nation": nation, "target": target},
+            keywords={"amount": currency.Currency(amount), "nation": nation, "target": target},
             callables={"confirm": confirm_aid},
         )
 
@@ -146,7 +162,7 @@ class Aid(commands.Cog):
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
     async def send(
         self,
-        ctx: qalib.interaction.QalibInteraction[AidSelectionMessages],
+        ctx: qalib.interaction.QalibInteraction[AidRequestMessages],
     ) -> None:
         def extract_funds(raw_funds: Optional[str]) -> Optional[float]:
             if raw_funds is None:
@@ -169,7 +185,7 @@ class Aid(commands.Cog):
             else:
                 funds = extract_funds(cast(TextInput, modal.children[1]).value)
                 if funds is not None:
-                    await self.send_aid(self.bot.get_nation(user_id), ctx, funds)
+                    await self.send_aid(self.bot.get_nation(UserId(int(user_id))), ctx, funds)
                 else:
                     await interaction.response.send_message("Amount is not valid")
 
@@ -185,12 +201,12 @@ class Aid(commands.Cog):
 
         @interaction_morph
         @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
-        async def open_id_modal(interaction: qalib.interaction.QalibInteraction[AidSelectionMessages]) -> None:
+        async def open_id_modal(interaction: qalib.interaction.QalibInteraction[Literal["userid"]]) -> None:
             await interaction.rendered_send("userid", events={ModalEvents.ON_SUBMIT: on_id_submit})
 
         @interaction_morph
         @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
-        async def open_nation_modal(interaction: qalib.interaction.QalibInteraction[AidSelectionMessages]) -> None:
+        async def open_nation_modal(interaction: qalib.interaction.QalibInteraction[Literal["nationselect"]]) -> None:
             await interaction.rendered_send("nationselect", events={ModalEvents.ON_SUBMIT: on_nation_submit})
 
         async def on_user_select(item: discord.ui.UserSelect, interaction: discord.Interaction) -> None:
@@ -204,19 +220,20 @@ class Aid(commands.Cog):
 
     @aid_group.command(name="list", description="List all aid packages")
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
-    async def list(self, ctx: qalib.interaction.QalibInteraction[AidSelectionMessages]) -> None:
+    async def list(
+        self,
+        ctx: qalib.interaction.QalibInteraction[Literal[AidSelectionMessages, AidAcceptMessages, AidRejectMessages]],
+    ) -> None:
         nation = self.bot.get_nation(ctx.user.id)
 
-        async def on_view(item: discord.ui.UserSelect, interaction: discord.Interaction) -> None:
+        async def on_view(item: discord.ui.Select, interaction: discord.Interaction) -> None:
             aid_request = host.nation.foreign.AidRequest.from_id(item.values[0], self.bot.session)
             if aid_request is None:
                 await ctx.display("error", keywords={"description": "Aid package not found"})
                 return
             await interaction.response.defer()
 
-            async def on_accept(
-                _: discord.ui.Item, interaction: qalib.interaction.QalibInteraction[AidSelectionMessages]
-            ) -> None:
+            async def on_accept(_: discord.ui.Item, interaction: discord.Interaction) -> None:
                 result, agreement = nation.foreign.accept(aid_request)
                 await interaction.response.defer()
                 if result == AidAcceptCode.SUCCESS and agreement is not None:
@@ -228,9 +245,7 @@ class Aid(commands.Cog):
                     self.bot.notification_renderer.notifier.schedule(notification)
                 await ctx.display(aid_accept_code_mapping[result], keywords={"nation": nation, "aid": agreement})
 
-            async def on_reject(
-                _: discord.ui.Item, interaction: qalib.interaction.QalibInteraction[AidSelectionMessages]
-            ) -> None:
+            async def on_reject(_: discord.ui.Item, interaction: discord.Interaction) -> None:
                 await interaction.response.defer()
                 result = nation.foreign.reject(aid_request)
                 notification = Notification(
@@ -242,7 +257,7 @@ class Aid(commands.Cog):
                 await ctx.display(aid_reject_code_mapping[result], keywords={"nation": nation, "aid": aid_request})
 
             await ctx.display(
-                "view-aid",
+                "view_aid",
                 keywords={"aid": aid_request, "nation": nation},
                 callables={"accept": on_accept, "reject": on_reject},
             )
@@ -251,25 +266,25 @@ class Aid(commands.Cog):
 
     @aid_group.command(name="sponsorships", description="list aid sponsorships")
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
-    async def sponsorships(self, ctx: qalib.interaction.QalibInteraction[AidSelectionMessages]) -> None:
+    async def sponsorships(
+        self, ctx: qalib.interaction.QalibInteraction[Literal[AidSelectionMessages, AidCancelMessages]]
+    ) -> None:
         nation = self.bot.get_nation(ctx.user.id)
 
-        async def on_view(item: discord.ui.UserSelect, interaction: discord.Interaction) -> None:
+        async def on_view(item: discord.ui.Select, interaction: discord.Interaction) -> None:
             package = host.nation.foreign.AidRequest.from_id(item.values[0], self.bot.session)
             if package is None:
                 await ctx.display("error", keywords={"description": "Aid package not found"})
                 return
             await interaction.response.defer()
 
-            async def on_cancel(
-                _: discord.ui.Item, interaction: qalib.interaction.QalibInteraction[AidSelectionMessages]
-            ) -> None:
+            async def on_cancel(_: discord.ui.Item, interaction: discord.Interaction) -> None:
                 await interaction.response.defer()
                 result = nation.foreign.cancel(package)
                 await ctx.display(aid_cancel_code_mapping[result], keywords={"nation": nation, "aid": package})
 
             await ctx.display(
-                "view-sponsorship", keywords={"aid": package, "nation": nation}, callables={"cancel": on_cancel}
+                "view_sponsorship", keywords={"aid": package, "nation": nation}, callables={"cancel": on_cancel}
             )
 
         await ctx.display("sponsorships", keywords={"nation": nation}, callables={"select-aid": on_view})
@@ -289,7 +304,7 @@ class Aid(commands.Cog):
                 },
             )
 
-        await ctx.display("aid-slots", keywords={"nation": nation}, callables={"select-aid": on_aid_select})
+        await ctx.display("aid_slots", keywords={"nation": nation}, callables={"select-aid": on_aid_select})
 
 
 async def setup(bot: LeagueOfNations) -> None:

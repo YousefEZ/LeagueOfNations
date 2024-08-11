@@ -349,7 +349,7 @@
         </pages>
     </menu>
 
-    <menu key="aid-slots">
+    <menu key="aid_slots">
         <pages>
             {% if nation.foreign.recipient_agreements|length == 0 %} 
             <message key="no-aid-slots">
@@ -408,7 +408,7 @@
     {% if aid is defined %}
     {% set aid_sponsor = nation.find_player(aid.sponsor) %}
     {% set aid_recipient = nation.find_player(aid.recipient) %}
-    <message key="view-aid">
+    <message key="view_aid">
         <embed>
             <title>Ministry of Foreign Affairs</title>
             <description>These are the details of the aid request that has been submitted to {{aid_recipient.metadata.emoji}} {{aid_recipient.name}}. You can view more details by selecting the request.</description>
@@ -456,7 +456,7 @@
             </components>
         </view>
     </message>
-    <message key="view-sponsorship">
+    <message key="view_sponsorship">
         <embed>
             <title>Ministry of Foreign Affairs</title>
             <description>These are the details of the aid sponsorship that has been submitted by {{aid_sponsor.metadata.emoji}} {{aid_sponsor.name}}. You can view more details by selecting the request.</description>

@@ -244,13 +244,13 @@ voice = ["PyNaCl (>=1.3.0,<1.6)"]
 
 [[package]]
 name = "discord-qalib"
-version = "2.5.6"
+version = "2.5.7"
 description = "Discord library built on discord.py to simplify source code by rendering templates of embeds and menus"
 optional = false
 python-versions = ">=3.8.0"
 files = [
-    {file = "discord_qalib-2.5.6-py3-none-any.whl", hash = "sha256:ed97e2ff0f59cdfb7679ffff36079a7fa7fe1ea97526376aaed14eb9ad330624"},
-    {file = "discord_qalib-2.5.6.tar.gz", hash = "sha256:fb445c5371d657d073c3017f623811c57afe73eaacfec34dc0c28880d90d6af5"},
+    {file = "discord_qalib-2.5.7-py3-none-any.whl", hash = "sha256:5b70b3ec135de8c0c46664be6af649e74722996a9c36a46bbbfae2f36634fd8a"},
+    {file = "discord_qalib-2.5.7.tar.gz", hash = "sha256:070bcaf5048811ce3f7d75b5ee7951be5c3cdea5d22aa082fe83f99d624a9aae"},
 ]
 
 [package.dependencies]

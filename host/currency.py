@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from babel import numbers
 from datetime import timedelta
 from dataclasses import dataclass
@@ -10,7 +10,16 @@ from typing import Any, Optional, ParamSpec, Protocol, Type, TypeVar
 SECONDS_AS_DAY: float = timedelta(days=1).total_seconds()
 DAY = timedelta(days=1)
 
-T = TypeVar("T", covariant=True)
+
+K = TypeVar("K", covariant=True)
+
+
+class ExpectedType(Protocol[K]):
+
+    def __init__(self, amount: K): ...
+
+
+T = TypeVar("T", bound=ExpectedType, covariant=True)
 P = ParamSpec("P")
 
 
@@ -152,10 +161,31 @@ class Currency:
         return float(self.amount)
 
     def __str__(self) -> str:
-        return numbers.format_compact_currency(self.amount, currency="LND", locale="en_US", fraction_digits=3)
+        return numbers.format_compact_currency(self.amount, currency="USD", locale="en_US", fraction_digits=3)
 
     def __repr__(self) -> str:
         return str(self)
+
+
+def as_currency_rate(delta: timedelta) -> Callable[[Callable[P, Currency]], Callable[P, CurrencyRate]]:
+    def decorator(func: Callable[P, Currency]) -> Callable[P, CurrencyRate]:
+        def new_func(*args: P.args, **kwargs: P.kwargs) -> CurrencyRate:
+            return CurrencyRate(func(*args, **kwargs), delta)
+
+        return new_func
+
+    return decorator
+
+
+def as_daily_currency_rate(func: Callable[P, Currency]) -> Callable[P, CurrencyRate]:
+    return as_currency_rate(DAY)(func)
+
+
+def as_currency(func: Callable[P, int | float]) -> Callable[P, Currency]:
+    def decorator(*args: P.args, **kwargs: P.kwargs) -> Currency:
+        return Currency(func(*args, **kwargs))
+
+    return decorator
 
 
 def check(*args: Optional[Type]) -> Callable[[Callable[P, T]], Callable[P, T]]:
@@ -164,31 +194,6 @@ def check(*args: Optional[Type]) -> Callable[[Callable[P, T]], Callable[P, T]]:
             for p_arg, n_arg in zip(p_args, args):
                 assert n_arg is None or isinstance(p_arg, n_arg)
             return func(*p_args, **p_kwargs)
-
-        return new_func
-
-    return decorator
-
-
-class ExpectedType(Protocol[T]):
-
-    def __init__(self, amount: T): ...
-
-
-def convert(given_value: T, expected_type: Optional[Type[ExpectedType[T]]]) -> ExpectedType[T] | T:
-    if expected_type is None or isinstance(given_value, expected_type):
-        return given_value
-    return expected_type(given_value)
-
-
-def wraps(
-    return_type: Optional[Type[ExpectedType]], types: Iterable[Optional[Type[ExpectedType]]]
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        def new_func(*args: Any, **p_kwargs: Any) -> Any:
-            return convert(
-                func(*(convert(arg, expected_type) for arg, expected_type in zip(args, types)), **p_kwargs), return_type
-            )
 
         return new_func
 

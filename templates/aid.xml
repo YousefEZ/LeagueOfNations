@@ -1,6 +1,6 @@
 <!DOCTYPE xml>
 <discord>
-    {% from "mechanisms.j2" import mechanisms with context %}
+    {% from "mechanisms.xml" import mechanisms with context %}
     {{ mechanisms(require_mechanisms) }}
     {% from "errors.j2" import generic_errors, insufficient_funds with context %}
     {{ generic_errors() }}

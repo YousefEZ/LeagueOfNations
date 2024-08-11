@@ -4,7 +4,6 @@ import logging
 from functools import cached_property
 from typing import TYPE_CHECKING, Literal, TypeVar, Protocol, Type, cast
 
-from pint.facets.plain import PlainQuantity
 from sqlalchemy.orm import Session
 
 from host.currency import Currency, CurrencyRate, as_daily_currency_rate, as_currency
@@ -102,12 +101,8 @@ def unit_exchange(cls: Type[Data[K]]) -> Type[UnitExchangeProtocol[K]]:
                 Currency(0),
             )
 
-        @as_daily_currency_rate
-        @as_currency
-        def _get_unit_bill_at(self, point: K, level: K) -> float:
-            return (
-                self.unit.singleton().BillPoints[point] * level.magnitude if isinstance(level, PlainQuantity) else level
-            )
+        def _get_unit_bill_at(self, point: K, level: K) -> CurrencyRate:
+            return self.unit.singleton().BillPoints[point] * level
 
         def bill_at(self, level: K) -> CurrencyRate:
             point = self.unit.singleton().Unit(0)

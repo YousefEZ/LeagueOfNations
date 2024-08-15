@@ -7,15 +7,15 @@ license = "AGPL-3.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.12"
 discord-qalib = "^2.5.0"
-Babel = "pint"
-Pint = "^0.23"
+babel = "2.14"
 SQLAlchemy = "^2.0.23"
 python-dotenv = "^1.0.0"
 pydantic = "^2.5.3"
 asyncio = "^3.4.3"
 Jinja2 = "^3.1.2"
+pyright = "^1.1.375"
 
 [tool.black]
 line-length = 120

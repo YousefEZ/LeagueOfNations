@@ -1,15 +1,609 @@
 <!DOCTYPE xml>
 <discord>
-    <expansive key="requests">
+    {% from "mechanisms.xml" import mechanisms with context %}
+    {{ mechanisms(require_mechanisms) }}
+    {% from "errors.j2" import generic_errors, insufficient_funds with context %}
+    {{ generic_errors() }}
+    {% if amount is defined %}
+        {{ insufficient_funds(nation, amount) }}
+    {% endif %}
+    <message key="zero_slots">
         <embed>
-            <title>Aid Requests</title>
-            <colour>teal</colour>
-            <expansive_field>
-                <name>Open Request</name>
-                <value>
-                    {{ "\n".join(map(str, player.foreign.requests)) }}
-                </value>
-            </expansive_field>
+            <title>Ministry of Foreign Affairs</title>
+            <description>You do not have any available aid slots to send aid.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
         </embed>
-    </expansive>
+        <view></view>
+    </message>
+    <message key="aid_not_exist">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The aid request does not exist.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <message key="not_a_sponsor">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>You are not a sponsor of this aid request.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <message key="not_a_recipient">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>You are not a recipient of any aid agreements.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <message key="expired">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The aid agreement has expired and the funds have been returned to the sponsor's treasury.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <message key="above_limit">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The amount of funds you are sending is above the limit</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+    </message>
+    <message key="reason_not_ascii">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The reason for the aid request must be in ASCII format.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+    </message>
+    <message key="reason_too_long">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The reason for the aid request is too long. It must be less than 200 characters.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+    </message>
+    <message key="same_as_sponsor">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>You cannot send aid to yourself.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <message key="invalid_recipient">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>You cannot send aid to the same recipient as the previous agreement.</description>
+            <colour>red</colour>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <modal key="funds" title="Ministry of Foreign Affairs">
+        <components>
+            <text_input key="funds">
+                <label>Funds</label>
+                <placeholder>Enter the amount of funds for the aid package</placeholder>
+                <min_length>1</min_length>
+                <max_length>10</max_length>
+                <style>short</style>
+            </text_input>
+        </components>
+    </modal>
+    <modal key="userid" title="Ministry of Foreign Affairs">
+        <components>
+            <text_input key="userid">
+                <label>User ID</label>
+                <placeholder>Enter the user ID of the recipient</placeholder>
+                <min_length>18</min_length>
+                <max_length>19</max_length>
+                <style>short</style>
+            </text_input>
+            <text_input key="funds">
+                <label>Funds</label>
+                <placeholder>Enter the amount of funds for the aid package</placeholder>
+                <min_length>1</min_length>
+                <max_length>10</max_length>
+                <style>short</style>
+            </text_input>
+        </components>
+    </modal>
+     <modal key="nationselect" title="Ministry of Foreign Affairs">
+        <components>
+            <text_input key="nation">
+                <label>Nation Name</label>
+                <placeholder>Enter the nation of the recipient</placeholder>
+                <style>short</style>
+            </text_input>
+            <text_input key="funds">
+                <label>Funds</label>
+                <placeholder>Enter the amount of funds for the aid package</placeholder>
+                <min_length>1</min_length>
+                <max_length>10</max_length>
+                <style>short</style>
+            </text_input>
+        </components>
+    </modal>
+    <message key="target_selection">
+        <view>
+            <components>
+                <user_select key="user_target">
+                    <placeholder>Select ruler to send aid to</placeholder>
+                    <min_value>1</min_value>
+                    <max_value>1</max_value>
+                </user_select>
+                <button key="nation">
+                    <label>Via Nation</label>
+                    <emoji>
+                        <name>👑</name>
+                    </emoji>
+                    <style>success</style>
+                </button>
+                <button key="userid">
+                    <label>Via User ID</label>
+                    <emoji>
+                        <name>🔖</name>
+                    </emoji>
+                    <style>success</style>
+                </button>
+            </components>
+        </view>
+    </message>
+    <message key="escrow">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The funds {{nation.name}} has sent an aid package in accordance with the request submitted below and it is being held in :lock: escrow for 3 days. The recipient can accept or decline it at any time.</description>
+            <colour>teal</colour>
+            <fields>
+                <field inline="True">
+                    <name>:inbox_tray: Recipient</name>
+                    <value>{{target.metadata.emoji}} {{ target.name }}</value>
+                </field>
+                <field inline="True">
+                    <name>:pound: Amount</name>
+                    <value>{{ aid.amount|currency }}</value>
+                </field>
+                <field inline="True">
+                    <name>:lock: Escrow Time</name>
+                    <value>3 days (72 hours)</value>
+                </field>
+            </fields>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <modal key="reason" title="Ministry of Foreign Affairs - Auditing">
+        <components>
+            <text_input key="reason">
+                <label>Reason</label>
+                <placeholder>(Optional - Auditing) Add reason for aid donation</placeholder>
+                <min_length>0</min_length>
+                <max_length>200</max_length>
+                <style>short</style>
+            </text_input>
+        </components>
+    </modal>
+    <message key="confirm_aid">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>This is a confirmation of your aid donation. Please confirm that the details are correct.</description>
+            <colour>teal</colour>
+            <fields>
+                <field inline="True">
+                    <name>:inbox_tray: Recipient</name>
+                    <value>{{target.metadata.emoji}} {{ target.name }}</value>
+                </field>
+                <field inline="True">
+                    <name>:pound: Amount</name>
+                    <value>{{ amount|currency }}</value>
+                </field>
+            </fields>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view>
+            <components>
+                <button key="confirm">
+                    <label>Confirm</label>
+                    <emoji>
+                        <name>✔️</name>
+                    </emoji>
+                    <style>success</style>
+                </button>
+                <button key="cancel">
+                    <label>Cancel</label>
+                    <emoji>
+                        <name>✖️</name>
+                    </emoji>
+                    <style>danger</style>
+                </button>
+            </components>
+        </view>
+    </message>
+    <menu key="requests">
+        <pages>
+            {% if nation.foreign.received_requests|length == 0 %}
+            <message key="no-requests">
+                <embed>
+                    <title>Ministry of Foreign Affairs</title>
+                    <description>You do not have any active aid requests.</description>
+                    <colour>teal</colour>
+                    <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+                </embed>
+                <view></view>
+            </message>
+            {% endif %}
+            {% set step = 5 %}
+            {% for request_number in range(0, nation.foreign.received_requests|length, step) %}
+            <message key="{{ request_number }}">
+                <embed>
+                    <title>Ministry of Foreign Affairs</title>
+                    <description>These are the current aid requests that have been submitted to {{nation.metadata.emoji}} {{nation.name}}. You can view more details by selecting the request.</description>
+                    <colour>teal</colour>
+                    <fields>
+                        {% for request in nation.foreign.received_requests[request_number:request_number+step] %}
+                            {% set sponsor = nation.find_player(request.sponsor) %}
+                            <field>
+                                <name>{{sponsor.metadata.emoji}} {{ sponsor.metadata.nation_name }}</name>
+                                <value>**{{ request.amount|currency }}** @ {{ request.date | date }}</value>
+                            </field>
+                        {% endfor %}
+                    </fields>
+                    <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+                </embed>
+                <view>
+                    <components>
+                        <select key="select-aid">
+                            <placeholder>Select an aid request to view</placeholder>
+                            <min_value>1</min_value>
+                            <max_value>1</max_value>
+                            <options>
+                                {% for request in nation.foreign.received_requests[request_number:request_number+step] %}
+                                    {% set sponsor = nation.find_player(request.sponsor) %}
+                                    <option>
+                                        <value>{{ request.id }}</value>
+                                        <label>{{ sponsor.metadata.nation_name }} {{ request.amount|currency }}</label>
+                                        <emoji>
+                                            <name>{{ sponsor.metadata.emoji.split(':')[1] }}</name>  
+                                            <id>{{ sponsor.metadata.emoji.split(':')[2].split('>')[0] }}</id>
+                                        </emoji> 
+                                    </option>            
+                                {% endfor %}
+                            </options>
+                        </select>
+                    </components>
+                </view>
+            </message>
+            {% endfor %}
+        </pages>
+    </menu>
+    
+    <menu key="sponsorships">
+        <pages>
+            {% if nation.foreign.sponsorships|length == 0 %}
+            <message key="no-sponsorships">
+                <embed>
+                    <title>Ministry of Foreign Affairs</title>
+                    <description>You do not have any active aid sponsorships.</description>
+                    <colour>teal</colour>
+                    <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+                </embed>
+                <view></view>
+            </message>
+            {% endif %}
+            {% for request_number in range(0, nation.foreign.sponsorships|length, step) %}
+            <message key="{{ request_number }}">
+                <embed>
+                    <title>Ministry of Foreign Affairs</title>
+                    <description>These are the current aid sponsorships that have been submitted by {{nation.metadata.emoji}} {{nation.name}}. You can view more details by selecting the sponsorship.</description>
+                    <colour>teal</colour>
+                    <fields>
+                        {% for request in nation.foreign.sponsorships[request_number:request_number+step] %}
+                            {% set aid_recipient = nation.find_player(request.recipient) %}
+                            <field>
+                                <name>{{aid_recipient.metadata.emoji}} {{ aid_recipient.metadata.nation_name }}</name>
+                                <value>**{{ request.amount|currency }}** @ {{ request.date | date }}</value>
+                            </field>
+                        {% endfor %}
+                    </fields>
+                    <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+                </embed>
+                <view>
+                    <components>
+                        <select key="select-aid">
+                            <placeholder>Select an aid request to view</placeholder>
+                            <min_value>1</min_value>
+                            <max_value>1</max_value>
+                            <options>
+                                {% for request in nation.foreign.sponsorships[request_number:request_number+step] %}
+                                    {% set aid_recipient = nation.find_player(request.recipient) %}
+                                    <option>
+                                        <value>{{ request.id }}</value>
+                                        <label>{{ aid_recipient.metadata.nation_name }} {{ request.amount|currency }}</label>
+                                        <emoji>
+                                            <name>{{ aid_recipient.metadata.emoji.split(':')[1] }}</name>  
+                                            <id>{{ aid_recipient.metadata.emoji.split(':')[2].split('>')[0] }}</id>
+                                        </emoji> 
+                                    </option>            
+                                {% endfor %}
+                            </options>
+                        </select>
+                    </components>
+                </view>
+            </message>
+            {% endfor %}
+        </pages>
+    </menu>
+
+    <menu key="aid_slots">
+        <pages>
+            {% if nation.foreign.recipient_agreements|length == 0 %} 
+            <message key="no-aid-slots">
+                <embed>
+                    <title>Ministry of Foreign Affairs</title>
+                    <description>You do not have any active aid agreements.</description>
+                    <colour>teal</colour>
+                    <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+                </embed>
+                <view></view>
+            </message>
+            {% endif %}
+            {% for request_number in range(0, nation.foreign.recipient_agreements|length, step) %}
+            <message key="{{ request_number }}">
+                <embed>
+                    <title>Ministry of Foreign Affairs</title>
+                    <description>These are the current aid agreements that have been accepted by {{nation.metadata.emoji}} {{nation.name}}. You can view more details by selecting the agreement.</description>
+                    <colour>teal</colour>
+                    <fields>
+                        {% for request in nation.foreign.recipient_agreements[request_number:request_number+step] %}
+                            {% set aid_sponsor = nation.find_player(request.sponsor) %}
+                            <field>
+                                <name>{{aid_sponsor.metadata.emoji}} {{ aid_sponsor.metadata.nation_name }}</name>
+                                <value>**{{ request.amount|currency }}** @ {{ request.date | date }}</value>
+                            </field>
+                        {% endfor %}
+                    </fields>
+                    <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+                </embed>
+                <view>
+                    <components>
+                        <select key="select-aid">
+                            <placeholder>Select an aid agreement to view</placeholder>
+                            <min_value>1</min_value>
+                            <max_value>1</max_value>
+                            <options>
+                                {% for request in nation.foreign.recipient_agreements[request_number:request_number+step] %}
+                                    {% set aid_sponsor = nation.find_player(request.sponsor) %}
+                                    <option>
+                                        <value>{{ request.id }}</value>
+                                        <label>{{ aid_sponsor.metadata.nation_name }} {{ request.amount|currency }}</label>
+                                        <emoji>
+                                            <name>{{ aid_sponsor.metadata.emoji.split(':')[1] }}</name>  
+                                            <id>{{ aid_sponsor.metadata.emoji.split(':')[2].split('>')[0] }}</id>
+                                        </emoji> 
+                                    </option>            
+                                {% endfor %}
+                            </options>
+                        </select>
+                    </components>
+                </view>
+            </message>
+            {% endfor %}
+        </pages>
+    </menu>
+    {% if aid is defined %}
+    {% set aid_sponsor = nation.find_player(aid.sponsor) %}
+    {% set aid_recipient = nation.find_player(aid.recipient) %}
+    <message key="view_aid">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>These are the details of the aid request that has been submitted to {{aid_recipient.metadata.emoji}} {{aid_recipient.name}}. You can view more details by selecting the request.</description>
+            <colour>teal</colour>
+            <fields>
+                <field>
+                    <name>:outbox_tray: Sponsor</name>
+                    <value>{{ aid_sponsor.metadata.emoji }} {{ aid_sponsor.name }}</value>
+                </field>
+                <field>
+                    <name>:pound: Amount</name>
+                    <value>{{ aid.amount|currency }}</value>
+                </field>
+                <field>
+                    <name>:calendar: Date</name>
+                    <value>{{ aid.date | date }}</value>
+                </field>
+                <field>
+                    <name>:hourglass: Expires</name>
+                    <value>{{ aid.expires | date }}</value>
+                </field>
+                <field>
+                    <name>:memo: Reason</name>
+                    <value>{{ aid.reason }}</value>
+                </field>
+            </fields>
+            <thumbnail>{{ aid_sponsor.metadata.flag }}</thumbnail>
+        </embed>
+        <view>
+            <components>
+                <button key="accept">
+                    <label>Accept</label>
+                    <emoji>
+                        <name>✔️</name>
+                    </emoji>
+                    <style>success</style> 
+                </button>     
+                <button key="reject">
+                    <label>Reject</label>
+                    <emoji>
+                        <name>✖️</name>
+                    </emoji>
+                    <style>danger</style>
+                </button>
+            </components>
+        </view>
+    </message>
+    <message key="view_sponsorship">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>These are the details of the aid sponsorship that has been submitted by {{aid_sponsor.metadata.emoji}} {{aid_sponsor.name}}. You can view more details by selecting the request.</description>
+            <colour>teal</colour>
+            <fields>
+                <field>
+                    <name>:inbox_tray: Recipient</name>
+                    <value>{{ aid_recipient.metadata.emoji }} {{ aid_recipient.name }}</value>
+                </field>
+                <field>
+                    <name>:pound: Amount</name>
+                    <value>{{ aid.amount|currency }}</value>
+                </field>
+                <field>
+                    <name>:calendar: Date</name>
+                    <value>{{ aid.date | date }}</value>
+                </field>
+                <field>
+                    <name>:hourglass: Expires</name>
+                    <value>{{ aid.expires | date }}</value>
+                </field>
+                <field>
+                    <name>:memo: Reason</name>
+                    <value>{{ aid.reason }}</value>
+                </field>
+            </fields>
+            <thumbnail>{{ aid_recipient.metadata.flag }}</thumbnail>
+        </embed>
+        <view>
+            <components>
+                <button key="cancel">
+                    <label>Cancel</label>
+                    <emoji>
+                        <name>✖️</name>
+                    </emoji>
+                    <style>danger</style>
+                </button>
+            </components>
+        </view>
+    </message>
+    <message key="aid_cancelled">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The aid request has been cancelled and the funds have been returned to your treasury.</description>
+            <colour>teal</colour>
+            <fields>
+                <field>
+                    <name>:inbox_tray: Recipient</name>
+                    <value>{{aid_recipient.metadata.emoji}} {{ aid_recipient.name }}</value>
+                </field>
+                <field>
+                    <name>:pound: Amount</name>
+                    <value>{{ aid.amount|currency }}</value>
+                </field>
+                <field>
+                    <name>:memo: Reason</name>
+                    <value>{{ aid.reason }}</value>
+                </field>
+            </fields>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <message key="aid_rejected">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The aid request has been rejected and the funds have been returned to the sponsor's treasury.</description>
+            <colour>teal</colour>
+            <fields>
+                <field>
+                    <name>:outbox_tray: Sponsor</name>
+                    <value>{{aid_sponsor.metadata.emoji}} {{ aid_sponsor.name }}</value>
+                </field>
+                <field>
+                    <name>:pound: Amount</name>
+                    <value>{{ aid.amount|currency }}</value>
+                </field>
+                <field>
+                    <name>:memo: Reason</name>
+                    <value>{{ aid.reason }}</value>
+                </field>
+            </fields>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <message key="aid_accepted">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>The aid request has been accepted and the funds have been transferred to the recipient's treasury.</description>
+            <colour>teal</colour>
+            <fields>
+                <field>
+                    <name>:outbox_tray: Sponsor</name>
+                    <value>{{aid_sponsor.metadata.emoji}} {{ aid_sponsor.name }}</value>
+                </field>
+                <field>
+                    <name>:inbox_tray: Recipient</name>
+                    <value>{{aid_recipient.metadata.emoji}} {{ aid_recipient.name }}</value>
+                </field>
+                <field>
+                    <name>:pound: Amount</name>
+                    <value>{{ aid.amount|currency }}</value>
+                </field>
+                <field>
+                    <name>:memo: Reason</name>
+                    <value>{{ aid.reason }}</value>
+                </field>
+            </fields>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    <message key="aid_slot">
+        <embed>
+            <title>Ministry of Foreign Affairs</title>
+            <description>This is an active aid agreement</description>
+            <colour>teal</colour>
+            <fields>
+                <field>
+                    <name>:outbox_tray: Sponsor</name>
+                    <value>{{aid_sponsor.metadata.emoji}} {{ aid_sponsor.name }}</value>
+                </field>
+                <field>
+                    <name>:inbox_tray: Recipient</name>
+                    <value>{{aid_recipient.metadata.emoji}} {{ aid_recipient.name }}</value>
+                </field>
+                <field>
+                    <name>:pound: Amount</name>
+                    <value>{{ aid.amount|currency }}</value>
+                </field>
+                <field>
+                    <name>:clock10: Accepted At</name>
+                    <value>{{ aid.date | date }}</value>
+                </field>
+                <field>
+                    <name>:hourglass: Expires</name>
+                    <value>{{ aid.expires | date }}</value>
+                </field>
+                <field>
+                    <name>:memo: Reason</name>
+                    <value>{{ aid.reason }}</value>
+                </field>
+            </fields>
+            <thumbnail>{{ nation.metadata.flag }}</thumbnail>
+        </embed>
+        <view></view>
+    </message>
+    {% endif %}
 </discord>

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, UTC
 from functools import cached_property
-from typing import List, get_args
+from typing import List, Optional, get_args
 
 from sqlalchemy.orm import Session
 
-import host.ureg
-from host import base_types, currency
+from host.currency import as_daily_currency_rate, as_currency
+from host import base_types
 from host.defaults import defaults
 from host.gameplay_settings import GameplaySettings
 from host.nation import types, models
@@ -37,6 +37,13 @@ class Nation:
         if with_like:
             return session.query(models.MetadataModel).filter(models.MetadataModel.nation.like(f"%{name}%")).all()
         return session.query(models.MetadataModel).filter(models.MetadataModel.nation == name).all()
+
+    @classmethod
+    def fetch_from_name(cls, name: str, session: Session) -> Optional[Nation]:
+        nation = cls.search_for_nations(name, session)
+        if not nation:
+            return None
+        return cls(base_types.UserId(nation[0].user_id), session)
 
     @cached_property
     def identifier(self) -> base_types.UserId:
@@ -85,7 +92,7 @@ class Nation:
             nation=name,
             emoji=defaults.meta.emoji,
             flag=defaults.meta.flag,
-            created=datetime.utcnow(),
+            created=datetime.now(UTC),
         )
 
         with Session(engine) as session:
@@ -126,8 +133,9 @@ class Nation:
         return types.boosts.BoostsLookup.combine(*[ministry_object.boost() for ministry_object in self.ministries])
 
     @property
-    @host.ureg.Registry.wraps(currency.CurrencyRate, None)
-    def revenue(self) -> currency.CurrencyRate:
+    @as_daily_currency_rate
+    @as_currency
+    def revenue(self) -> float:
         happiness = self.happiness
         population = self.population
-        return happiness * 3 * population * currency.CurrencyRate
+        return happiness * 3 * population

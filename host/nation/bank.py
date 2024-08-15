@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import cached_property
 from typing import TYPE_CHECKING, Optional, Protocol, Literal
 
 from sqlalchemy.orm import Session
 
-import host.currency
-import host.ureg
+from host.currency import Currency, CurrencyRate, DailyCurrencyRate, as_currency
 from host.defaults import defaults
 from host.gameplay_settings import GameplaySettings
 from host.nation.ministry import Ministry
@@ -24,14 +23,12 @@ REVENUE_PER_HAPPINESS = 3 * 86400
 
 
 class FundReceiver(Protocol):
-    @host.ureg.Registry.wraps(None, [None, host.currency.Currency])
-    def receive(self, funds: host.currency.Currency) -> None:
+    def receive(self, funds: Currency) -> None:
         raise NotImplementedError
 
 
 class FundSender(Protocol):
-    @host.ureg.Registry.wraps(None, [None, host.currency.Currency, None])
-    def send(self, funds: host.currency.Currency, target: FundReceiver) -> SendingResponses:
+    def send(self, funds: Currency, target: FundReceiver) -> SendingResponses:
         raise NotImplementedError
 
 
@@ -71,34 +68,33 @@ class Bank(Ministry, FundReceiver, FundSender):
         self._session.commit()
 
     @property
-    @host.ureg.Registry.wraps(host.currency.Currency, None)
-    def funds(self) -> host.currency.Currency:
+    @as_currency
+    def funds(self) -> float:
         self._update_treasury()
-        return host.currency.lnd(self.model.treasury)
+        return self.model.treasury
 
     @property
-    @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
-    def national_revenue(self) -> host.currency.CurrencyRate:
+    def national_revenue(self) -> CurrencyRate:
         income_modifier = 1 + self._player.boost.income_modifier
 
         return self._player.revenue * income_modifier
 
     @property
-    @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
-    def national_bill(self) -> host.currency.CurrencyRate:
+    def national_bill(self) -> CurrencyRate:
         bill_modifier = self._player.boost.bill_modifier
-        bill_reduction = self._player.boost.bill_reduction * host.currency.CurrencyRate
+        bill_reduction = DailyCurrencyRate(Currency(self._player.boost.bill_reduction))
 
-        costs = sum(ministry.bill for ministry in self._player.ministries)
-        costs = 0 * host.currency.CurrencyRate if costs < bill_reduction else costs - bill_reduction
+        costs: CurrencyRate = sum(
+            (ministry.bill for ministry in self._player.ministries), start=DailyCurrencyRate(Currency(0))
+        )
+        costs = DailyCurrencyRate(Currency(0)) if costs < bill_reduction else costs - bill_reduction
 
         return costs * (1 - bill_modifier / 100)
 
     @property
-    @host.ureg.Registry.wraps(host.currency.CurrencyRate, None)
-    def national_profit(self) -> host.currency.CurrencyRate:
-        revenue: host.currency.CurrencyRate = self.national_revenue
-        expenditure: host.currency.CurrencyRate = self.national_bill
+    def national_profit(self) -> CurrencyRate:
+        revenue: CurrencyRate = self.national_revenue
+        expenditure: CurrencyRate = self.national_bill
         return revenue - expenditure
 
     @property
@@ -107,7 +103,7 @@ class Bank(Ministry, FundReceiver, FundSender):
 
     @tax_rate.setter
     def tax_rate(self, value: float) -> None:
-        if value > defaults["max_tax_rate"]:
+        if value > defaults.bank.tax_rate:
             raise ValueError(f"Tax rate cannot be more than {GameplaySettings.bank.maximum_tax_rate}")
         self.model.tax_rate = value
         self._session.commit()
@@ -118,63 +114,51 @@ class Bank(Ministry, FundReceiver, FundSender):
 
     def _update_treasury(self) -> None:
         current_time = datetime.now()
-        self.model.treasury += int(self._retrieve_profit(current_time).magnitude)
+        self.model.treasury += int(self._retrieve_profit(current_time))
         self.model.last_accessed = current_time
         self._session.commit()
 
-    @host.ureg.Registry.wraps(host.currency.Currency, [None, None])
-    def _retrieve_revenue(self, timestamp: datetime) -> host.currency.Currency:
-        time_difference: timedelta = timestamp - self.model.last_accessed
-        seconds = time_difference.total_seconds() * host.ureg.Registry.seconds
-        return self.national_revenue.to(host.currency.Currency / host.ureg.Registry.seconds) * seconds
+    def _retrieve_revenue(self, timestamp: datetime) -> Currency:
+        return self.national_revenue.amount_in_delta(timestamp - self.model.last_accessed)
 
-    @host.ureg.Registry.wraps(host.currency.Currency, [None, None])
-    def _retrieve_bill(self, timestamp: datetime) -> host.currency.Currency:
-        time_difference: timedelta = timestamp - self.model.last_accessed
-        seconds = time_difference.total_seconds() * host.ureg.Registry.seconds
-        return self.national_bill.to(host.currency.Currency / host.ureg.Registry.seconds) * seconds
+    def _retrieve_bill(self, timestamp: datetime) -> Currency:
+        return self.national_bill.amount_in_delta(timestamp - self.model.last_accessed)
 
-    @host.ureg.Registry.wraps(host.currency.Currency, [None, None])
-    def _retrieve_profit(self, timestamp: datetime) -> host.currency.Currency:
-        revenue: host.currency.Currency = self._retrieve_revenue(timestamp)
-        expenses: host.currency.Currency = self._retrieve_bill(timestamp)
+    def _retrieve_profit(self, timestamp: datetime) -> Currency:
+        revenue: Currency = self._retrieve_revenue(timestamp)
+        expenses: Currency = self._retrieve_bill(timestamp)
         return revenue - expenses
 
-    @host.ureg.Registry.check(None, host.currency.Currency)
-    def add(self, amount: host.currency.Currency) -> None:
-        if amount < host.currency.lnd(0):
+    def add(self, amount: Currency) -> None:
+        if amount < Currency(0):
             raise ValueError("Cannot add negative funds")
         logging.debug(f"Adding {amount} to {self._player.name}'s treasury, Previous: {self.funds}")
-        new_funds: host.currency.Currency = self.funds + amount
-        self.model.treasury = int(new_funds.magnitude)
+        new_funds: Currency = self.funds + amount
+        self.model.treasury = int(new_funds)
         self._session.add(self.model)
         self._session.commit()
 
-    @host.ureg.Registry.check(None, host.currency.Currency)
-    def enough_funds(self, amount: host.currency.Currency) -> bool:
+    def enough_funds(self, amount: Currency) -> bool:
         return self.funds >= amount
 
-    @host.ureg.Registry.check(None, host.currency.Currency, None)
-    def deduct(self, amount: host.currency.Currency, force: bool = True) -> None:
+    def deduct(self, amount: Currency, force: bool = True) -> None:
         if self.funds < amount and not force:
             raise ValueError("Insufficient funds")
-        new_funds: host.currency.Currency = self.funds - amount
-        self.model.treasury = int(new_funds.magnitude)
+        new_funds: Currency = self.funds - amount
+        self.model.treasury = int(new_funds)
         self._session.add(self.model)
         self._session.commit()
 
-    @host.ureg.Registry.wraps(None, [None, host.currency.Currency, None])
-    def send(self, amount: host.currency.Currency, target: FundReceiver) -> SendingResponses:
-        if self.funds < amount:
+    def send(self, funds: Currency, target: FundReceiver) -> SendingResponses:
+        if self.funds < funds:
             return "insufficient_funds"
-        self.deduct(amount)
+        self.deduct(funds)
         try:
-            target.receive(amount)
+            target.receive(funds)
         except Exception as e:
-            self.add(amount)
+            self.add(funds)
             raise e
         return "success"
 
-    @host.ureg.Registry.wraps(None, [None, host.currency.Currency])
-    def receive(self, funds: host.currency.Currency) -> None:
+    def receive(self, funds: Currency) -> None:
         self.add(funds)

@@ -36,6 +36,7 @@ class AidRequestModel(Base):
     sponsor: Mapped[int]
     recipient: Mapped[int]
     amount: Mapped[int]
+    reason: Mapped[str] = mapped_column(String(250))
 
 
 class AidModel(Base):
@@ -43,10 +44,11 @@ class AidModel(Base):
 
     aid_id: Mapped[str] = mapped_column(primary_key=True)
     date: Mapped[datetime]
-    expires: Mapped[datetime]
+    accepted: Mapped[datetime]
     sponsor: Mapped[int]
     recipient: Mapped[int]
     amount: Mapped[int]
+    reason: Mapped[str] = mapped_column(String(250))
 
 
 class ResourcesModel(Base):
@@ -82,7 +84,7 @@ class InteriorModel(Base):
 
     user_id: Mapped[int] = mapped_column(primary_key=True)
     infrastructure: Mapped[int]
-    land: Mapped[int]
+    land: Mapped[float]
     technology: Mapped[int]
     spent_technology: Mapped[int]
 

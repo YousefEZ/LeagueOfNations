@@ -16,6 +16,7 @@ pydantic = "^2.5.3"
 asyncio = "^3.4.3"
 Jinja2 = "^3.1.2"
 pyright = "^1.1.375"
+pytest = "^8.3.2"
 
 [tool.black]
 line-length = 120

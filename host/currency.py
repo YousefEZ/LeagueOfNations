@@ -2,11 +2,12 @@ from __future__ import annotations
 
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
 from babel import numbers
+from collections.abc import Callable
 from datetime import timedelta
 from dataclasses import dataclass
-from typing import Any, Generic, Optional, ParamSpec, Protocol, Self, Type, TypeAlias, TypeVar, cast
+from functools import wraps
+from typing import Any, Generic, Optional, ParamSpec, Protocol, Self, Type, TypeVar, cast
 
 SECONDS_AS_DAY: float = timedelta(days=1).total_seconds()
 DAY = timedelta(days=1)
@@ -20,7 +21,6 @@ class ExpectedType(Protocol[K]):
     def __init__(self, amount: K): ...
 
 
-C = TypeVar("C", bound=CurrencyABC, covariant=True)
 T = TypeVar("T", bound=ExpectedType, covariant=True)
 P = ParamSpec("P")
 
@@ -71,10 +71,15 @@ class CurrencyABC(ABC):
         return float(self.amount)
 
     def __str__(self) -> str:
-        return numbers.format_compact_currency(self.amount, currency="USD", locale="en_US", fraction_digits=3)
+        return numbers.format_compact_currency(
+            self.amount, currency="USD", locale="en_US", fraction_digits=3
+        )
 
     def __repr__(self) -> str:
         return str(self)
+
+
+C = TypeVar("C", bound=CurrencyABC, covariant=True)
 
 
 @dataclass(slots=True, eq=True, order=True)
@@ -190,7 +195,9 @@ class CurrencyRateABC(ABC, Generic[C]):
         return type(self)(self.amount_in_delta(DAY), DAY)
 
     def amount_in_delta(self, delta: timedelta) -> C:
-        return type(self._amount)(int(self._amount * (delta.total_seconds() / self._time.total_seconds())))
+        return type(self._amount)(
+            int(self._amount * (delta.total_seconds() / self._time.total_seconds()))
+        )
 
     def __gt__(self, other: Self) -> bool:
         return self.amount_in_delta(DAY) > other.amount_in_delta(DAY)
@@ -205,7 +212,9 @@ class CurrencyRateABC(ABC, Generic[C]):
         return self.amount_in_delta(DAY) <= other.amount_in_delta(DAY)
 
     def __eq__(self, other: Self | object) -> bool:
-        return isinstance(other, type(self)) and self.amount_in_delta(DAY) == other.amount_in_delta(DAY)
+        return isinstance(other, type(self)) and self.amount_in_delta(DAY) == other.amount_in_delta(
+            DAY
+        )
 
 
 class CurrencyRate(CurrencyRateABC[Currency]):
@@ -217,7 +226,7 @@ class CurrencyRate(CurrencyRateABC[Currency]):
         return type(self)(self._amount - amount.amount_in_delta(self._time), self._time)
 
 
-def DailyCurrencyRate(amount: Currency | CurrencyRate) -> CurrencyRate:
+def daily_currency_rate(amount: Currency | CurrencyRate) -> CurrencyRate:
     assert isinstance(amount, (Currency, CurrencyRate))
     if isinstance(amount, Currency):
         return CurrencyRate(amount, DAY)
@@ -237,6 +246,7 @@ class PriceRate(CurrencyRateABC[Price]):
 
 
 def as_currency(func: Callable[P, int | float]) -> Callable[P, Currency]:
+    @wraps(func)
     def decorator(*args: P.args, **kwargs: P.kwargs) -> Currency:
         return Currency(func(*args, **kwargs))
 
@@ -244,6 +254,7 @@ def as_currency(func: Callable[P, int | float]) -> Callable[P, Currency]:
 
 
 def as_price(func: Callable[P, int | float]) -> Callable[P, Price]:
+    @wraps(func)
     def decorator(*args: P.args, **kwargs: P.kwargs) -> Price:
         return Price(func(*args, **kwargs))
 
@@ -251,14 +262,18 @@ def as_price(func: Callable[P, int | float]) -> Callable[P, Price]:
 
 
 def as_discount(func: Callable[P, int | float]) -> Callable[P, Discount]:
+    @wraps(func)
     def decorator(*args: P.args, **kwargs: P.kwargs) -> Discount:
         return Discount(func(*args, **kwargs))
 
     return decorator
 
 
-def as_currency_rate(delta: timedelta) -> Callable[[Callable[P, Currency]], Callable[P, CurrencyRate]]:
+def as_currency_rate(
+    delta: timedelta,
+) -> Callable[[Callable[P, Currency]], Callable[P, CurrencyRate]]:
     def decorator(func: Callable[P, Currency]) -> Callable[P, CurrencyRate]:
+        @wraps(func)
         def new_func(*args: P.args, **kwargs: P.kwargs) -> CurrencyRate:
             return CurrencyRate(func(*args, **kwargs), delta)
 
@@ -269,6 +284,7 @@ def as_currency_rate(delta: timedelta) -> Callable[[Callable[P, Currency]], Call
 
 def as_price_rate(delta: timedelta) -> Callable[[Callable[P, Price]], Callable[P, PriceRate]]:
     def decorator(func: Callable[P, Price]) -> Callable[P, PriceRate]:
+        @wraps(func)
         def new_func(*args: P.args, **kwargs: P.kwargs) -> PriceRate:
             return PriceRate(func(*args, **kwargs), delta)
 
@@ -277,12 +293,34 @@ def as_price_rate(delta: timedelta) -> Callable[[Callable[P, Price]], Callable[P
     return decorator
 
 
+def as_discount_rate(
+    delta: timedelta,
+) -> Callable[[Callable[P, Discount]], Callable[P, DiscountRate]]:
+    def decorator(func: Callable[P, Discount]) -> Callable[P, DiscountRate]:
+        @wraps(func)
+        def new_func(*args: P.args, **kwargs: P.kwargs) -> DiscountRate:
+            return DiscountRate(func(*args, **kwargs), delta)
+
+        return new_func
+
+    return decorator
+
+
 def as_daily_currency_rate(func: Callable[P, Currency]) -> Callable[P, CurrencyRate]:
-    return as_currency_rate(DAY)(func)
+    return wraps(func)(as_currency_rate(DAY)(func))
+
+
+def as_daily_price_rate(func: Callable[P, Price]) -> Callable[P, PriceRate]:
+    return wraps(func)(as_price_rate(DAY)(func))
+
+
+def as_daily_discount_rate(func: Callable[P, Discount]) -> Callable[P, DiscountRate]:
+    return wraps(func)(as_discount_rate(DAY)(func))
 
 
 def check(*args: Optional[Type]) -> Callable[[Callable[P, T]], Callable[P, T]]:
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
+        @wraps(func)
         def new_func(*p_args: P.args, **p_kwargs: P.kwargs) -> T:
             for p_arg, n_arg in zip(p_args, args):
                 assert n_arg is None or isinstance(p_arg, n_arg)

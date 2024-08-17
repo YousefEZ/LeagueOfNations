@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from babel import numbers
 from datetime import timedelta
 from dataclasses import dataclass
-from typing import Any, Optional, ParamSpec, Protocol, Type, TypeVar
+from typing import Any, Generic, Optional, ParamSpec, Protocol, Self, Type, TypeAlias, TypeVar, cast
 
 SECONDS_AS_DAY: float = timedelta(days=1).total_seconds()
 DAY = timedelta(days=1)
@@ -19,140 +20,49 @@ class ExpectedType(Protocol[K]):
     def __init__(self, amount: K): ...
 
 
+C = TypeVar("C", bound=CurrencyABC, covariant=True)
 T = TypeVar("T", bound=ExpectedType, covariant=True)
 P = ParamSpec("P")
 
 
-@dataclass(slots=True)
-class CurrencyRate:
-    _amount: Currency
-    _time: timedelta
-
-    def __init__(self, amount: Currency, time: timedelta):
-        self._amount = amount
-        self._time = time
-
-    def __radd__(self, amount: Any) -> CurrencyRate:
-        return self + amount
-
-    def __iadd__(self, amount: CurrencyRate) -> CurrencyRate:
-        self._amount += amount.amount_in_delta(self._time)
-        return self
-
-    def __isub__(self, amount: CurrencyRate) -> CurrencyRate:
-        self._amount -= amount.amount_in_delta(self._time)
-        return self
-
-    def __imul__(self, multiplier: float) -> CurrencyRate:
-        self._amount *= multiplier
-        return self
-
-    def __ifloordiv__(self, divisor: float) -> CurrencyRate:
-        self._amount //= divisor
-        return self
-
-    def __itruediv__(self, divisor: float) -> CurrencyRate:
-        self._amount /= divisor
-        return self
-
-    def __add__(self, amount: CurrencyRate) -> CurrencyRate:
-        return CurrencyRate(self._amount + amount.amount_in_delta(self._time), self._time)
-
-    def __sub__(self, amount: CurrencyRate) -> CurrencyRate:
-        return CurrencyRate(self._amount - amount.amount_in_delta(self._time), self._time)
-
-    def __mul__(self, multiplier: float) -> CurrencyRate:
-        return CurrencyRate(self._amount * multiplier, self._time)
-
-    def __floordiv__(self, divisor: float) -> CurrencyRate:
-        return CurrencyRate(self._amount / divisor, self._time)
-
-    def __truediv__(self, divisor: float) -> CurrencyRate:
-        return self / divisor
-
-    def per_day(self) -> CurrencyRate:
-        if self._time.total_seconds() == SECONDS_AS_DAY:
-            return self
-
-        return CurrencyRate(self.amount_in_delta(DAY), DAY)
-
-    def amount_in_delta(self, delta: timedelta) -> Currency:
-        return Currency(int(self._amount * (delta.total_seconds() / self._time.total_seconds())))
-
-    def __gt__(self, other: CurrencyRate) -> bool:
-        return self.amount_in_delta(DAY) > other.amount_in_delta(DAY)
-
-    def __ge__(self, other: CurrencyRate) -> bool:
-        return self.amount_in_delta(DAY) >= other.amount_in_delta(DAY)
-
-    def __lt__(self, other: CurrencyRate) -> bool:
-        return self.amount_in_delta(DAY) < other.amount_in_delta(DAY)
-
-    def __le__(self, other: CurrencyRate) -> bool:
-        return self.amount_in_delta(DAY) <= other.amount_in_delta(DAY)
-
-    def __eq__(self, other: CurrencyRate | object) -> bool:
-        return isinstance(other, CurrencyRate) and self.amount_in_delta(DAY) == other.amount_in_delta(DAY)
-
-
-class DailyCurrencyRate(CurrencyRate):
-
-    def __init__(self, amount: Currency | CurrencyRate):
-        assert isinstance(amount, (Currency, CurrencyRate))
-        if isinstance(amount, Currency):
-            super().__init__(amount, DAY)
-        else:
-            super().__init__(amount.amount_in_delta(DAY), DAY)
-
-
 @dataclass(slots=True, eq=True, order=True)
-class Currency:
+class CurrencyABC(ABC):
     _amount: float | int
 
-    def __init__(self, amount: float | int):
-        self._amount = amount
+    @abstractmethod
+    def __init__(self, _: float | int): ...
 
     @property
-    def amount(self) -> float | int:
-        return self._amount
+    @abstractmethod
+    def amount(self) -> float | int: ...
 
-    def __iadd__(self, amount: Currency) -> Currency:
+    def __iadd__(self, amount: Self) -> Self:
         self._amount += amount.amount
         return self
 
-    def __isub__(self, amount: Currency) -> Currency:
-        self._amount -= amount.amount
-        return self
-
-    def __imul__(self, multiplier: float) -> Currency:
+    def __imul__(self, multiplier: float) -> Self:
         self._amount *= multiplier
         return self
 
-    def __ifloordiv__(self, divisor: float) -> Currency:
+    def __ifloordiv__(self, divisor: float) -> Self:
         self._amount //= divisor
         return self
 
-    def __itruediv__(self, divisor: float) -> Currency:
+    def __itruediv__(self, divisor: float) -> Self:
         self._amount /= divisor
         return self
 
-    def __add__(self, amount: Currency) -> Currency:
-        return Currency(self._amount + amount.amount)
+    def __add__(self, amount: Self) -> Self:
+        return type(self)(self._amount + amount.amount)
 
-    def __sub__(self, amount: Currency) -> Currency:
-        return Currency(self._amount - amount.amount)
+    def __floordiv__(self, divisor: float) -> Self:
+        return type(self)(self._amount / divisor)
 
-    def __floordiv__(self, divisor: float) -> Currency:
-        return Currency(self.amount / divisor)
-
-    def __truediv__(self, divisor: float) -> Currency:
+    def __truediv__(self, divisor: float) -> Self:
         return self / divisor
 
-    def __mul__(self, multiplier: float) -> Currency:
-        return Currency(int(self.amount * multiplier))
-
-    def as_rate(self, delta: timedelta) -> CurrencyRate:
-        return CurrencyRate(Currency(self.amount), delta)
+    def __mul__(self, multiplier: float) -> Self:
+        return type(self)(self.amount * multiplier)
 
     def __int__(self) -> int:
         return int(self.amount)
@@ -167,6 +77,186 @@ class Currency:
         return str(self)
 
 
+@dataclass(slots=True, eq=True, order=True)
+class Currency(CurrencyABC):
+    _amount: float | int
+
+    def __init__(self, amount: float | int):
+        self._amount = amount
+
+    @property
+    def amount(self) -> float | int:
+        return self._amount
+
+    def __isub__(self, amount: Price) -> Self:
+        self._amount -= amount.amount
+        return self
+
+    def __sub__(self, amount: Price) -> Self:
+        return type(self)(self._amount - amount.amount)
+
+    def as_rate(self, delta: timedelta) -> CurrencyRate:
+        return CurrencyRate(type(self)(self.amount), delta)
+
+
+class PositiveValue:
+
+    def __init__(self, amount: int | float):
+        assert amount > 0.0
+        self._amount = amount
+
+    def __get__(self, _, objtype=None) -> int | float:
+        return self._amount
+
+    def __set__(self, _, value) -> None:
+        assert value >= 0.0
+        self._amount = value
+
+
+class Discount(CurrencyABC):
+    def __init__(self, amount: int | float):
+        assert amount >= 0.0
+        self._amount = amount
+
+    @property
+    def amount(self) -> int | float:
+        return self._amount
+
+
+class Price(CurrencyABC):
+
+    def __init__(self, amount: int | float):
+        self._amount: int | float = cast(int | float, PositiveValue(amount))
+
+    @property
+    def amount(self) -> int | float:
+        return self._amount
+
+    def __isub__(self, amount: Discount) -> Self:
+        self._amount -= amount.amount
+        return self
+
+    def __sub__(self, amount: Discount) -> Self:
+        return type(self)(self._amount - amount.amount)
+
+    def as_rate(self, delta: timedelta) -> PriceRate:
+        return PriceRate(type(self)(self._amount), delta)
+
+
+@dataclass(slots=True)
+class CurrencyRateABC(ABC, Generic[C]):
+    _amount: C
+    _time: timedelta
+
+    def __init__(self, amount: C, time: timedelta):
+        self._amount = amount
+        self._time = time
+
+    def __radd__(self, amount: Any) -> Self:
+        return self + amount
+
+    def __iadd__(self, amount: Self) -> Self:
+        self._amount += amount.amount_in_delta(self._time)
+        return self
+
+    def __imul__(self, multiplier: float) -> Self:
+        self._amount *= multiplier
+        return self
+
+    def __ifloordiv__(self, divisor: float) -> Self:
+        self._amount //= divisor
+        return self
+
+    def __itruediv__(self, divisor: float) -> Self:
+        self._amount /= divisor
+        return self
+
+    def __add__(self, amount: Self) -> Self:
+        return type(self)(self._amount + amount.amount_in_delta(self._time), self._time)
+
+    def __mul__(self, multiplier: float) -> Self:
+        return type(self)(self._amount * multiplier, self._time)
+
+    def __floordiv__(self, divisor: float) -> Self:
+        return type(self)(self._amount / divisor, self._time)
+
+    def __truediv__(self, divisor: float) -> Self:
+        return self / divisor
+
+    def per_day(self) -> Self:
+        if self._time.total_seconds() == SECONDS_AS_DAY:
+            return self
+
+        return type(self)(self.amount_in_delta(DAY), DAY)
+
+    def amount_in_delta(self, delta: timedelta) -> C:
+        return type(self._amount)(int(self._amount * (delta.total_seconds() / self._time.total_seconds())))
+
+    def __gt__(self, other: Self) -> bool:
+        return self.amount_in_delta(DAY) > other.amount_in_delta(DAY)
+
+    def __ge__(self, other: Self) -> bool:
+        return self.amount_in_delta(DAY) >= other.amount_in_delta(DAY)
+
+    def __lt__(self, other: Self) -> bool:
+        return self.amount_in_delta(DAY) < other.amount_in_delta(DAY)
+
+    def __le__(self, other: Self) -> bool:
+        return self.amount_in_delta(DAY) <= other.amount_in_delta(DAY)
+
+    def __eq__(self, other: Self | object) -> bool:
+        return isinstance(other, type(self)) and self.amount_in_delta(DAY) == other.amount_in_delta(DAY)
+
+
+class CurrencyRate(CurrencyRateABC[Currency]):
+    def __isub__(self, amount: PriceRate) -> Self:
+        self._amount -= amount.amount_in_delta(self._time)
+        return self
+
+    def __sub__(self, amount: PriceRate) -> Self:
+        return type(self)(self._amount - amount.amount_in_delta(self._time), self._time)
+
+
+def DailyCurrencyRate(amount: Currency | CurrencyRate) -> CurrencyRate:
+    assert isinstance(amount, (Currency, CurrencyRate))
+    if isinstance(amount, Currency):
+        return CurrencyRate(amount, DAY)
+    return CurrencyRate(amount.amount_in_delta(DAY), DAY)
+
+
+DiscountRate = CurrencyRateABC[Discount]
+
+
+class PriceRate(CurrencyRateABC[Price]):
+    def __isub__(self, amount: DiscountRate) -> Self:
+        self._amount -= amount.amount_in_delta(self._time)
+        return self
+
+    def __sub__(self, amount: DiscountRate) -> Self:
+        return type(self)(self._amount - amount.amount_in_delta(self._time), self._time)
+
+
+def as_currency(func: Callable[P, int | float]) -> Callable[P, Currency]:
+    def decorator(*args: P.args, **kwargs: P.kwargs) -> Currency:
+        return Currency(func(*args, **kwargs))
+
+    return decorator
+
+
+def as_price(func: Callable[P, int | float]) -> Callable[P, Price]:
+    def decorator(*args: P.args, **kwargs: P.kwargs) -> Price:
+        return Price(func(*args, **kwargs))
+
+    return decorator
+
+
+def as_discount(func: Callable[P, int | float]) -> Callable[P, Discount]:
+    def decorator(*args: P.args, **kwargs: P.kwargs) -> Discount:
+        return Discount(func(*args, **kwargs))
+
+    return decorator
+
+
 def as_currency_rate(delta: timedelta) -> Callable[[Callable[P, Currency]], Callable[P, CurrencyRate]]:
     def decorator(func: Callable[P, Currency]) -> Callable[P, CurrencyRate]:
         def new_func(*args: P.args, **kwargs: P.kwargs) -> CurrencyRate:
@@ -177,15 +267,18 @@ def as_currency_rate(delta: timedelta) -> Callable[[Callable[P, Currency]], Call
     return decorator
 
 
-def as_daily_currency_rate(func: Callable[P, Currency]) -> Callable[P, CurrencyRate]:
-    return as_currency_rate(DAY)(func)
+def as_price_rate(delta: timedelta) -> Callable[[Callable[P, Price]], Callable[P, PriceRate]]:
+    def decorator(func: Callable[P, Price]) -> Callable[P, PriceRate]:
+        def new_func(*args: P.args, **kwargs: P.kwargs) -> PriceRate:
+            return PriceRate(func(*args, **kwargs), delta)
 
-
-def as_currency(func: Callable[P, int | float]) -> Callable[P, Currency]:
-    def decorator(*args: P.args, **kwargs: P.kwargs) -> Currency:
-        return Currency(func(*args, **kwargs))
+        return new_func
 
     return decorator
+
+
+def as_daily_currency_rate(func: Callable[P, Currency]) -> Callable[P, CurrencyRate]:
+    return as_currency_rate(DAY)(func)
 
 
 def check(*args: Optional[Type]) -> Callable[[Callable[P, T]], Callable[P, T]]:

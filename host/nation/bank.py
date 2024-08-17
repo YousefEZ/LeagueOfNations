@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Optional, Protocol, Literal
 
 from sqlalchemy.orm import Session
 
-from host.currency import Currency, CurrencyRate, DailyCurrencyRate, as_currency
+from host.currency import Currency, CurrencyRate, daily_currency_rate, as_currency
 from host.defaults import defaults
 from host.gameplay_settings import GameplaySettings
 from host.nation.ministry import Ministry
@@ -82,12 +82,12 @@ class Bank(Ministry, FundReceiver, FundSender):
     @property
     def national_bill(self) -> CurrencyRate:
         bill_modifier = self._player.boost.bill_modifier
-        bill_reduction = DailyCurrencyRate(Currency(self._player.boost.bill_reduction))
+        bill_reduction = daily_currency_rate(Currency(self._player.boost.bill_reduction))
 
         costs: CurrencyRate = sum(
-            (ministry.bill for ministry in self._player.ministries), start=DailyCurrencyRate(Currency(0))
+            (ministry.bill for ministry in self._player.ministries), start=daily_currency_rate(Currency(0))
         )
-        costs = DailyCurrencyRate(Currency(0)) if costs < bill_reduction else costs - bill_reduction
+        costs = daily_currency_rate(Currency(0)) if costs < bill_reduction else costs - bill_reduction
 
         return costs * (1 - bill_modifier / 100)
 

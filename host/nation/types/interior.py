@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import OrderedDict
 from typing import Protocol, Optional, Type, TypeVar
 
-from host.currency import Currency, CurrencyRate, DailyCurrencyRate
+from host.currency import Currency, CurrencyRate, daily_currency_rate
 from host.nation import models
 from host.nation.types.basic import InfrastructureUnit, LandUnit, TechnologyUnit
 from host.nation.types.boosts import PriceModifierBoosts, BillModifierBoosts
@@ -51,24 +51,24 @@ class InfrastructurePoints(Data[InfrastructureUnit]):
         ]
     )
     BillModifier: BillModifierBoosts = "infrastructure_bill_modifier"
-    FloorBill = DailyCurrencyRate(Currency(20))
+    FloorBill = daily_currency_rate(Currency(20))
     BillPoints = OrderedDict(
         [
-            (InfrastructureUnit(100), DailyCurrencyRate(Currency(0.04))),
-            (InfrastructureUnit(200), DailyCurrencyRate(Currency(0.05))),
-            (InfrastructureUnit(300), DailyCurrencyRate(Currency(0.06))),
-            (InfrastructureUnit(500), DailyCurrencyRate(Currency(0.07))),
-            (InfrastructureUnit(700), DailyCurrencyRate(Currency(0.08))),
-            (InfrastructureUnit(1_000), DailyCurrencyRate(Currency(0.09))),
-            (InfrastructureUnit(2_000), DailyCurrencyRate(Currency(0.11))),
-            (InfrastructureUnit(3_000), DailyCurrencyRate(Currency(0.13))),
-            (InfrastructureUnit(4_000), DailyCurrencyRate(Currency(0.15))),
-            (InfrastructureUnit(5_000), DailyCurrencyRate(Currency(0.17))),
-            (InfrastructureUnit(8_000), DailyCurrencyRate(Currency(0.1725))),
-            (InfrastructureUnit(32_000), DailyCurrencyRate(Currency(0.175))),
-            (InfrastructureUnit(35_000), DailyCurrencyRate(Currency(0.15))),
-            (InfrastructureUnit(37_000), DailyCurrencyRate(Currency(0.14))),
-            (InfrastructureUnit(40_000), DailyCurrencyRate(Currency(0.13))),
+            (InfrastructureUnit(100), daily_currency_rate(Currency(0.04))),
+            (InfrastructureUnit(200), daily_currency_rate(Currency(0.05))),
+            (InfrastructureUnit(300), daily_currency_rate(Currency(0.06))),
+            (InfrastructureUnit(500), daily_currency_rate(Currency(0.07))),
+            (InfrastructureUnit(700), daily_currency_rate(Currency(0.08))),
+            (InfrastructureUnit(1_000), daily_currency_rate(Currency(0.09))),
+            (InfrastructureUnit(2_000), daily_currency_rate(Currency(0.11))),
+            (InfrastructureUnit(3_000), daily_currency_rate(Currency(0.13))),
+            (InfrastructureUnit(4_000), daily_currency_rate(Currency(0.15))),
+            (InfrastructureUnit(5_000), daily_currency_rate(Currency(0.17))),
+            (InfrastructureUnit(8_000), daily_currency_rate(Currency(0.1725))),
+            (InfrastructureUnit(32_000), daily_currency_rate(Currency(0.175))),
+            (InfrastructureUnit(35_000), daily_currency_rate(Currency(0.15))),
+            (InfrastructureUnit(37_000), daily_currency_rate(Currency(0.14))),
+            (InfrastructureUnit(40_000), daily_currency_rate(Currency(0.13))),
         ]
     )
     Unit = InfrastructureUnit
@@ -113,25 +113,25 @@ class LandPoints(Data[LandUnit]):
         ]
     )
     BillModifier: BillModifierBoosts = "land_bill_modifier"
-    FloorBill: CurrencyRate = DailyCurrencyRate(Currency(0.3))
+    FloorBill: CurrencyRate = daily_currency_rate(Currency(0.3))
     BillPoints: OrderedDict[LandUnit, CurrencyRate] = OrderedDict(
         [
-            (LandUnit(20), DailyCurrencyRate(Currency(0.001))),
-            (LandUnit(30), DailyCurrencyRate(Currency(0.002))),
-            (LandUnit(40), DailyCurrencyRate(Currency(0.003))),
-            (LandUnit(100), DailyCurrencyRate(Currency(0.004))),
-            (LandUnit(150), DailyCurrencyRate(Currency(0.005))),
-            (LandUnit(200), DailyCurrencyRate(Currency(0.006))),
-            (LandUnit(250), DailyCurrencyRate(Currency(0.007))),
-            (LandUnit(300), DailyCurrencyRate(Currency(0.008))),
-            (LandUnit(400), DailyCurrencyRate(Currency(0.009))),
-            (LandUnit(500), DailyCurrencyRate(Currency(0.01))),
-            (LandUnit(800), DailyCurrencyRate(Currency(0.011))),
-            (LandUnit(1_200), DailyCurrencyRate(Currency(0.012))),
-            (LandUnit(2_000), DailyCurrencyRate(Currency(0.013))),
-            (LandUnit(3_000), DailyCurrencyRate(Currency(0.014))),
-            (LandUnit(4_000), DailyCurrencyRate(Currency(0.015))),
-            (LandUnit(8_000), DailyCurrencyRate(Currency(0.016))),
+            (LandUnit(20), daily_currency_rate(Currency(0.001))),
+            (LandUnit(30), daily_currency_rate(Currency(0.002))),
+            (LandUnit(40), daily_currency_rate(Currency(0.003))),
+            (LandUnit(100), daily_currency_rate(Currency(0.004))),
+            (LandUnit(150), daily_currency_rate(Currency(0.005))),
+            (LandUnit(200), daily_currency_rate(Currency(0.006))),
+            (LandUnit(250), daily_currency_rate(Currency(0.007))),
+            (LandUnit(300), daily_currency_rate(Currency(0.008))),
+            (LandUnit(400), daily_currency_rate(Currency(0.009))),
+            (LandUnit(500), daily_currency_rate(Currency(0.01))),
+            (LandUnit(800), daily_currency_rate(Currency(0.011))),
+            (LandUnit(1_200), daily_currency_rate(Currency(0.012))),
+            (LandUnit(2_000), daily_currency_rate(Currency(0.013))),
+            (LandUnit(3_000), daily_currency_rate(Currency(0.014))),
+            (LandUnit(4_000), daily_currency_rate(Currency(0.015))),
+            (LandUnit(8_000), daily_currency_rate(Currency(0.016))),
         ]
     )
     Unit = LandUnit
@@ -172,21 +172,21 @@ class TechnologyPoints(Data[TechnologyUnit]):
         ]
     )
     BillModifier: BillModifierBoosts = "technology_bill_modifier"
-    FloorBill = DailyCurrencyRate(Currency(10))
+    FloorBill = daily_currency_rate(Currency(10))
     BillPoints = OrderedDict(
         [
-            (TechnologyUnit(0), DailyCurrencyRate(Currency(0.01))),
-            (TechnologyUnit(10), DailyCurrencyRate(Currency(0.02))),
-            (TechnologyUnit(50), DailyCurrencyRate(Currency(0.03))),
-            (TechnologyUnit(100), DailyCurrencyRate(Currency(0.04))),
-            (TechnologyUnit(200), DailyCurrencyRate(Currency(0.05))),
-            (TechnologyUnit(400), DailyCurrencyRate(Currency(0.06))),
-            (TechnologyUnit(800), DailyCurrencyRate(Currency(0.07))),
-            (TechnologyUnit(1_500), DailyCurrencyRate(Currency(0.08))),
-            (TechnologyUnit(5_000), DailyCurrencyRate(Currency(0.09))),
-            (TechnologyUnit(10_000), DailyCurrencyRate(Currency(0.1))),
-            (TechnologyUnit(20_000), DailyCurrencyRate(Currency(0.11))),
-            (TechnologyUnit(150_000), DailyCurrencyRate(Currency(0.12))),
+            (TechnologyUnit(0), daily_currency_rate(Currency(0.01))),
+            (TechnologyUnit(10), daily_currency_rate(Currency(0.02))),
+            (TechnologyUnit(50), daily_currency_rate(Currency(0.03))),
+            (TechnologyUnit(100), daily_currency_rate(Currency(0.04))),
+            (TechnologyUnit(200), daily_currency_rate(Currency(0.05))),
+            (TechnologyUnit(400), daily_currency_rate(Currency(0.06))),
+            (TechnologyUnit(800), daily_currency_rate(Currency(0.07))),
+            (TechnologyUnit(1_500), daily_currency_rate(Currency(0.08))),
+            (TechnologyUnit(5_000), daily_currency_rate(Currency(0.09))),
+            (TechnologyUnit(10_000), daily_currency_rate(Currency(0.1))),
+            (TechnologyUnit(20_000), daily_currency_rate(Currency(0.11))),
+            (TechnologyUnit(150_000), daily_currency_rate(Currency(0.12))),
         ]
     )
     Unit = TechnologyUnit

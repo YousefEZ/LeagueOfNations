@@ -5,14 +5,13 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from sched import scheduler
-from typing import Optional, Callable, Any, List
+from typing import Any, Callable, List, Optional
 from uuid import uuid4
-
-from sqlalchemy import Engine
-from sqlalchemy.orm import Session
 
 from host.base_models import NotificationModel
 from host.base_types import UserId
+from sqlalchemy import Engine
+from sqlalchemy.orm import Session
 
 
 @dataclass(frozen=True)
@@ -48,7 +47,9 @@ class Notifier:
             if self._loaded:
                 return
             with Session(self._engine) as session:
-                result = session.query(NotificationModel.notification_id, NotificationModel.date).all()
+                result = session.query(
+                    NotificationModel.notification_id, NotificationModel.date
+                ).all()
                 for notification in result:
                     self._schedule(notification.notification_id, notification.date)
                 self._loaded = True
@@ -68,10 +69,12 @@ class Notifier:
     def _display(self, notification_id: str) -> None:
         print("Displaying notification", notification_id)
         with Session(self._engine) as session:
-            result = session.query(NotificationModel).filter_by(notification_id=notification_id).first()
+            result = (
+                session.query(NotificationModel).filter_by(notification_id=notification_id).first()
+            )
             assert result is not None, "Notification not found"
             notification = Notification(
-                user_id=result.user_id,
+                user_id=UserId(result.user_id),
                 time=result.date,
                 message=result.message,
                 data=result.data,
@@ -90,7 +93,7 @@ class Notifier:
             session.add(
                 NotificationModel(
                     notification_id=notification.notification_id,
-                    user_id=notification.user_id,
+                    user_id=int(notification.user_id),
                     date=notification.time,
                     message=notification.message,
                     data=notification.data,
@@ -121,6 +124,8 @@ class Notifier:
                     now = time.time()
                     deadline = self._scheduler.run(blocking=False)
                     sleep_time = deadline - now if deadline is not None else None
-                    self._condition.wait(sleep_time if sleep_time is not None and sleep_time > 0 else None)
+                    self._condition.wait(
+                        sleep_time if sleep_time is not None and sleep_time > 0 else None
+                    )
 
         threading.Thread(target=run).start()

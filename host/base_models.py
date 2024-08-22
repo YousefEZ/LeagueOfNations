@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
+from sqlalchemy.orm import DeclarativeBase, Mapped, MappedAsDataclass, mapped_column
 from sqlalchemy.types import JSON
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, MappedAsDataclass
 
 
 class Base(MappedAsDataclass, DeclarativeBase):
@@ -13,7 +13,7 @@ class NotificationModel(Base):
     __tablename__ = "Notifications"
 
     notification_id: Mapped[str] = mapped_column(primary_key=True)
-    user_id: Mapped[str]
+    user_id: Mapped[int]
     date: Mapped[datetime]
     message: Mapped[str]
-    data: Mapped[Dict[str, Any]]
+    data: Mapped[Optional[Dict[str, Any]]]

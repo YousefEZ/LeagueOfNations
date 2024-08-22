@@ -1,16 +1,16 @@
 from __future__ import annotations
 
+import random
 from datetime import datetime, timedelta
-from typing import List, Optional, Literal, TYPE_CHECKING
+from itertools import chain
+from typing import TYPE_CHECKING, List, Literal, Optional
 from uuid import uuid4
 
-from sqlalchemy import Engine
-from sqlalchemy.orm import Session
-
 import host.nation.types
-
 from host import base_types
 from host.nation import ministry, models
+from host.nation.types.resources import RESOURCE_NAMES
+from sqlalchemy.orm import Session
 
 if TYPE_CHECKING:
     from host.nation import Nation
@@ -94,7 +94,9 @@ class TradeAgreement:
         self._trade = None
 
 
-def filter_expired(trades: List[models.TradeRequestModel], session: Session) -> List[models.TradeRequestModel]:
+def filter_expired(
+    trades: List[models.TradeRequestModel], session: Session
+) -> List[models.TradeRequestModel]:
     now = datetime.now()
     active_requests: List[models.TradeRequestModel] = []
     for trade in trades:
@@ -111,52 +113,66 @@ class TradeError(Exception):
 
 
 class Trade(ministry.Ministry):
-    def __init__(self, player: Nation, engine: Engine):
+    def __init__(self, player: Nation, session: Session):
         self._identifier: base_types.UserId = player.identifier
         self._player: Nation = player
-        self._engine: Engine = engine
+        self._session: Session = session
 
     @property
     def resources(self) -> host.nation.types.resources.ResourcePair:
-        with Session(self._engine) as session:
-            resources = session.query(models.ResourcesModel).filter_by(user_id=self._identifier).first()
-            if resources is None:
-                resources = models.ResourcesModel(user_id=self._identifier, primary=0, secondary=0)
-                session.add(resources)
-                session.commit()
-            return host.nation.types.resources.ResourcePair(resources.primary, resources.secondary)
+        resources = (
+            self._session.query(models.ResourcesModel).filter_by(user_id=self._identifier).first()
+        )
+        if resources is None:
+            selected_resources = random.sample(RESOURCE_NAMES, k=2)
+            resources = models.ResourcesModel(
+                user_id=self._identifier,
+                primary=selected_resources[0],
+                secondary=selected_resources[1],
+            )
+            self._session.add(resources)
+            self._session.commit()
+        return host.nation.types.resources.ResourcePair(resources.primary, resources.secondary)
 
     @resources.setter
     def resources(self, resources: host.nation.types.resources.ResourcePair) -> None:
-        with Session(self._engine) as session:
-            resource_model = models.ResourcesModel(
-                user_id=self._identifier,
-                primary=resources.primary,
-                secondary=resources.secondary,
-            )
-            session.add(resource_model)
-            session.commit()
+        resource_model = models.ResourcesModel(
+            user_id=self._identifier,
+            primary=resources.primary,
+            secondary=resources.secondary,
+        )
+        self._session.add(resource_model)
+        self._session.commit()
 
     @property
-    def all_resources(self) -> List[host.nation.types.resources.ResourceTypes]:
-        resources: List[host.nation.types.resources.ResourceTypes] = list(self.resources)
-        for agreement in self.sponsored:
-            resources.extend(self._player.find_player(agreement.recipient).trade.resources)
-        for agreement in self.recipient:
-            resources.extend(self._player.find_player(agreement.sponsor).trade.resources)
-        return resources
+    def all_resources(self) -> List[str]:
+        return list(
+            chain(
+                self.resources,
+                (
+                    resource
+                    for agreement in self.sponsored
+                    for pair in self._player.find_player(agreement.recipient).trade.resources
+                    for resource in pair
+                ),
+                (
+                    resource
+                    for agreement in self.recipient
+                    for pair in self._player.find_player(agreement.sponsor).trade.resources
+                    for resource in pair
+                ),
+            )
+        )
 
     @property
     def sponsored(self) -> List[TradeAgreement]:
-        with Session(self._engine) as session:
-            trades = session.query(models.TradeModel).filter_by(sponsor=self._identifier).all()
-            return [TradeAgreement(trade) for trade in trades]
+        trades = self._session.query(models.TradeModel).filter_by(sponsor=self._identifier).all()
+        return [TradeAgreement(trade) for trade in trades]
 
     @property
     def recipient(self) -> List[TradeAgreement]:
-        with Session(self._engine) as session:
-            trades = session.query(models.TradeModel).filter_by(recipient=self._identifier).all()
-            return [TradeAgreement(trade) for trade in trades]
+        trades = self._session.query(models.TradeModel).filter_by(recipient=self._identifier).all()
+        return [TradeAgreement(trade) for trade in trades]
 
     @property
     def active_agreements(self) -> List[TradeAgreement]:
@@ -164,15 +180,19 @@ class Trade(ministry.Ministry):
 
     @property
     def requests(self) -> List[TradeRequest]:
-        with Session(self._engine) as session:
-            requests = session.query(models.TradeRequestModel).filter_by(recipient=self._identifier).all()
-            return [TradeRequest(request) for request in filter_expired(requests, session)]
+        requests = (
+            self._session.query(models.TradeRequestModel)
+            .filter_by(recipient=self._identifier)
+            .all()
+        )
+        return [TradeRequest(request) for request in filter_expired(requests, self._session)]
 
     @property
     def received(self) -> List[TradeRequest]:
-        with Session(self._engine) as session:
-            requests = session.query(models.TradeRequestModel).filter_by(sponsor=self._identifier).all()
-            return [TradeRequest(request) for request in filter_expired(requests, session)]
+        requests = (
+            self._session.query(models.TradeRequestModel).filter_by(sponsor=self._identifier).all()
+        )
+        return [TradeRequest(request) for request in filter_expired(requests, self._session)]
 
     def _send(self, recipient: base_types.UserId) -> None:
         date = datetime.now()
@@ -183,9 +203,8 @@ class Trade(ministry.Ministry):
             sponsor=self._identifier,
             recipient=recipient,
         )
-        with Session(self._engine) as session:
-            session.add(trade_request)
-            session.commit()
+        self._session.add(trade_request)
+        self._session.commit()
 
     def send(self, recipient: base_types.UserId) -> SendMessages:
         if self._identifier == recipient:
@@ -208,10 +227,9 @@ class Trade(ministry.Ministry):
             sponsor=trade_request.sponsor,
             recipient=trade_request.recipient,
         )
-        with Session(self._engine) as session:
-            session.delete(trade_request)
-            session.add(trade_agreement)
-            session.commit()
+        self._session.delete(trade_request)
+        self._session.add(trade_agreement)
+        self._session.commit()
         trade_request.invalidate()
 
     def accept(self, trade_request: TradeRequest) -> AcceptMessages:
@@ -231,18 +249,19 @@ class Trade(ministry.Ministry):
     def decline(self, trade_request: TradeRequest) -> DeclineMessages:
         if self._identifier != trade_request.recipient:
             raise TradeError("not a recipient of this request")
-        with Session(self._engine) as session:
-            session.delete(trade_request)
-            session.commit()
+        self._session.delete(trade_request)
+        self._session.commit()
         trade_request.invalidate()
         return "trade_declined"
 
     def cancel(self, trade_agreement: TradeAgreement) -> CancelMessages:
-        if self._identifier != trade_agreement.recipient and self._identifier != trade_agreement.sponsor:
+        if (
+            self._identifier != trade_agreement.recipient
+            and self._identifier != trade_agreement.sponsor
+        ):
             raise TradeError("not a participant of this agreement")
-        with Session(self._engine) as session:
-            session.delete(trade_agreement)
-            session.commit()
+        self._session.delete(trade_agreement)
+        self._session.commit()
         trade_agreement.invalidate()
         return "trade_cancelled"
 

@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from host.base_models import Base
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
-
-from host.base_models import Base
 
 
 class TradeRequestModel(Base):

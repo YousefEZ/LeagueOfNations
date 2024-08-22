@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-
 from abc import ABC, abstractmethod
-from babel import numbers
 from collections.abc import Callable
-from datetime import timedelta
 from dataclasses import dataclass
+from datetime import timedelta
 from functools import wraps
 from typing import Any, Generic, Optional, ParamSpec, Protocol, Self, Type, TypeVar, cast
+
+from babel import numbers
 
 SECONDS_AS_DAY: float = timedelta(days=1).total_seconds()
 DAY = timedelta(days=1)
@@ -82,7 +82,7 @@ class CurrencyABC(ABC):
 C = TypeVar("C", bound=CurrencyABC, covariant=True)
 
 
-@dataclass(slots=True, eq=True, order=True)
+@dataclass(slots=True)
 class Currency(CurrencyABC):
     _amount: float | int
 
@@ -103,6 +103,9 @@ class Currency(CurrencyABC):
     def as_rate(self, delta: timedelta) -> CurrencyRate:
         return CurrencyRate(type(self)(self.amount), delta)
 
+    def can_afford(self, price: Price) -> bool:
+        return self.amount > price.amount
+
 
 class PositiveValue:
 
@@ -114,8 +117,7 @@ class PositiveValue:
         return self._amount
 
     def __set__(self, _, value) -> None:
-        assert value >= 0.0
-        self._amount = value
+        self._amount = (value <= 0.0) * value
 
 
 class Discount(CurrencyABC):
@@ -149,7 +151,7 @@ class Price(CurrencyABC):
 
 
 @dataclass(slots=True)
-class CurrencyRateABC(ABC, Generic[C]):
+class Rate(Generic[C]):
     _amount: C
     _time: timedelta
 
@@ -217,7 +219,7 @@ class CurrencyRateABC(ABC, Generic[C]):
         )
 
 
-class CurrencyRate(CurrencyRateABC[Currency]):
+class CurrencyRate(Rate[Currency]):
     def __isub__(self, amount: PriceRate) -> Self:
         self._amount -= amount.amount_in_delta(self._time)
         return self
@@ -233,10 +235,25 @@ def daily_currency_rate(amount: Currency | CurrencyRate) -> CurrencyRate:
     return CurrencyRate(amount.amount_in_delta(DAY), DAY)
 
 
-DiscountRate = CurrencyRateABC[Discount]
+def daily_price_rate(amount: Price | PriceRate) -> PriceRate:
+    assert isinstance(amount, (Price, PriceRate))
+    if isinstance(amount, Price):
+        return PriceRate(amount, DAY)
+    return PriceRate(amount.amount_in_delta(DAY), DAY)
 
 
-class PriceRate(CurrencyRateABC[Price]):
+def daily_discount_rate(amount: Discount | DiscountRate) -> DiscountRate:
+    assert isinstance(amount, (Discount, Rate))
+    if isinstance(amount, Discount):
+        return DiscountRate(amount, DAY)
+    assert isinstance(amount._amount, Discount)
+    return DiscountRate(amount.amount_in_delta(DAY), DAY)
+
+
+DiscountRate = Rate[Discount]
+
+
+class PriceRate(Rate[Price]):
     def __isub__(self, amount: DiscountRate) -> Self:
         self._amount -= amount.amount_in_delta(self._time)
         return self

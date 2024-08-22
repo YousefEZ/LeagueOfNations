@@ -1,25 +1,51 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
+from enum import IntEnum, auto
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional, Protocol, Literal
+from typing import TYPE_CHECKING, Optional, Protocol
 
-from sqlalchemy.orm import Session
-
-from host.currency import Currency, CurrencyRate, daily_currency_rate, as_currency
+from host.currency import (
+    Currency,
+    CurrencyRate,
+    Discount,
+    Price,
+    PriceRate,
+    as_currency,
+    daily_discount_rate,
+    daily_price_rate,
+)
 from host.defaults import defaults
 from host.gameplay_settings import GameplaySettings
 from host.nation.ministry import Ministry
 from host.nation.models import BankModel
+from sqlalchemy.orm import Session
 
 if TYPE_CHECKING:
     from host.nation import Nation
 
-SendingResponses = Literal["success", "insufficient_funds"]
-DeductResponses = Literal["insufficient_funds"]
 
-REVENUE_PER_HAPPINESS = 3 * 86400
+class SendingResponses(IntEnum):
+    SUCCESS = auto()
+    INSUFFICIENT_FUNDS = auto()
+
+
+class DeductResponses(IntEnum):
+    SUCCESS = auto()
+    INSUFFICIENT_FUNDS = auto()
+
+
+class TaxResponses(IntEnum):
+    SUCCESS = auto()
+    INVALID_RATE = auto()
+
+
+class NameResponses(IntEnum):
+    SUCCESS = auto()
+
+
+REVENUE_PER_HAPPINESS: CurrencyRate = CurrencyRate(Currency(3), timedelta(seconds=1))
 
 
 class FundReceiver(Protocol):
@@ -28,7 +54,7 @@ class FundReceiver(Protocol):
 
 
 class FundSender(Protocol):
-    def send(self, funds: Currency, target: FundReceiver) -> SendingResponses:
+    def send(self, amount: Price, target: FundReceiver) -> SendingResponses:
         raise NotImplementedError
 
 
@@ -42,7 +68,9 @@ class Bank(Ministry, FundReceiver, FundSender):
 
     @cached_property
     def model(self) -> BankModel:
-        bank: Optional[BankModel] = self._session.query(BankModel).filter_by(user_id=self._identifier).first()
+        bank: Optional[BankModel] = (
+            self._session.query(BankModel).filter_by(user_id=self._identifier).first()
+        )
         if bank is None:
             self._session.add(
                 BankModel(
@@ -62,10 +90,10 @@ class Bank(Ministry, FundReceiver, FundSender):
     def name(self) -> str:
         return self.model.name
 
-    @name.setter
-    def name(self, value: str) -> None:
+    def set_name(self, value: str) -> NameResponses:
         self.model.name = value
         self._session.commit()
+        return NameResponses.SUCCESS
 
     @property
     @as_currency
@@ -80,33 +108,36 @@ class Bank(Ministry, FundReceiver, FundSender):
         return self._player.revenue * income_modifier
 
     @property
-    def national_bill(self) -> CurrencyRate:
+    def national_bill(self) -> PriceRate:
         bill_modifier = self._player.boost.bill_modifier
-        bill_reduction = daily_currency_rate(Currency(self._player.boost.bill_reduction))
+        bill_reduction = daily_discount_rate(Discount(self._player.boost.bill_reduction))
 
-        costs: CurrencyRate = sum(
-            (ministry.bill for ministry in self._player.ministries), start=daily_currency_rate(Currency(0))
+        costs: PriceRate = (
+            sum(
+                (ministry.bill for ministry in self._player.ministries),
+                start=daily_price_rate(Price(0)),
+            )
+            - bill_reduction
         )
-        costs = daily_currency_rate(Currency(0)) if costs < bill_reduction else costs - bill_reduction
 
         return costs * (1 - bill_modifier / 100)
 
     @property
     def national_profit(self) -> CurrencyRate:
         revenue: CurrencyRate = self.national_revenue
-        expenditure: CurrencyRate = self.national_bill
+        expenditure: PriceRate = self.national_bill
         return revenue - expenditure
 
     @property
     def tax_rate(self) -> float:
         return self.model.tax_rate / 100
 
-    @tax_rate.setter
-    def tax_rate(self, value: float) -> None:
+    def set_tax_rate(self, value: float) -> TaxResponses:
         if value > defaults.bank.tax_rate:
-            raise ValueError(f"Tax rate cannot be more than {GameplaySettings.bank.maximum_tax_rate}")
+            return TaxResponses.INVALID_RATE
         self.model.tax_rate = value
         self._session.commit()
+        return TaxResponses.SUCCESS
 
     @property
     def last_accessed(self) -> datetime:
@@ -121,12 +152,12 @@ class Bank(Ministry, FundReceiver, FundSender):
     def _retrieve_revenue(self, timestamp: datetime) -> Currency:
         return self.national_revenue.amount_in_delta(timestamp - self.model.last_accessed)
 
-    def _retrieve_bill(self, timestamp: datetime) -> Currency:
+    def _retrieve_bill(self, timestamp: datetime) -> Price:
         return self.national_bill.amount_in_delta(timestamp - self.model.last_accessed)
 
     def _retrieve_profit(self, timestamp: datetime) -> Currency:
         revenue: Currency = self._retrieve_revenue(timestamp)
-        expenses: Currency = self._retrieve_bill(timestamp)
+        expenses: Price = self._retrieve_bill(timestamp)
         return revenue - expenses
 
     def add(self, amount: Currency) -> None:
@@ -138,27 +169,30 @@ class Bank(Ministry, FundReceiver, FundSender):
         self._session.add(self.model)
         self._session.commit()
 
+    def can_purchase(self, amount: Price) -> bool:
+        return self.funds.can_afford(amount)
+
     def enough_funds(self, amount: Currency) -> bool:
         return self.funds >= amount
 
-    def deduct(self, amount: Currency, force: bool = True) -> None:
-        if self.funds < amount and not force:
+    def deduct(self, price: Price, force: bool = True) -> None:
+        if not self.can_purchase(price) and not force:
             raise ValueError("Insufficient funds")
-        new_funds: Currency = self.funds - amount
+        new_funds: Currency = self.funds - price
         self.model.treasury = int(new_funds)
         self._session.add(self.model)
         self._session.commit()
 
-    def send(self, funds: Currency, target: FundReceiver) -> SendingResponses:
-        if self.funds < funds:
-            return "insufficient_funds"
-        self.deduct(funds)
+    def send(self, amount: Price, target: FundReceiver) -> SendingResponses:
+        if not self.can_purchase(amount):
+            return SendingResponses.INSUFFICIENT_FUNDS
+        self.deduct(amount)
         try:
-            target.receive(funds)
+            target.receive(Currency(amount.amount))
         except Exception as e:
-            self.add(funds)
+            self.add(Currency(amount.amount))
             raise e
-        return "success"
+        return SendingResponses.SUCCESS
 
     def receive(self, funds: Currency) -> None:
         self.add(funds)

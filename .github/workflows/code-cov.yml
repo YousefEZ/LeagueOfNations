@@ -5,7 +5,7 @@ on: ["push"]
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Test Discord-Qalib
+    name: Test LeagueOfNations
     defaults:
       run:
         working-directory: .

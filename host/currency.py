@@ -17,7 +17,6 @@ K = TypeVar("K", covariant=True)
 
 
 class ExpectedType(Protocol[K]):
-
     def __init__(self, amount: K): ...
 
 
@@ -108,7 +107,6 @@ class Currency(CurrencyABC):
 
 
 class PositiveValue:
-
     def __init__(self, amount: int | float):
         assert amount > 0.0
         self._amount = amount
@@ -131,7 +129,6 @@ class Discount(CurrencyABC):
 
 
 class Price(CurrencyABC):
-
     def __init__(self, amount: int | float):
         self._amount: int | float = cast(int | float, PositiveValue(amount))
 

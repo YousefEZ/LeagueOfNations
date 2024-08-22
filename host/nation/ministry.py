@@ -12,7 +12,6 @@ from host.nation import types
 
 
 class Ministry(ABC):
-
     @property
     @as_daily_price_rate
     @as_price

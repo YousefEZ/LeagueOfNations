@@ -1,17 +1,19 @@
 from typing import Literal
 
 import discord
-from host.nation import Nation
 import qalib
+import qalib.interaction
 from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import BadArgument
-from qalib.template_engines.jinja2 import Jinja2
-
+from host.nation import Nation
 from lon import LeagueOfNations
+from qalib.template_engines.jinja2 import Jinja2
 from view.cogs.custom_jinja2 import ENVIRONMENT
 
-SearchMessages = Literal["invalid_name", "search_results", "unrecognized", "statistics", "unrecognized_identifier"]
+SearchMessages = Literal[
+    "invalid_name", "search_results", "unrecognized", "statistics", "unrecognized_identifier"
+]
 
 
 class Search(commands.Cog):
@@ -21,7 +23,7 @@ class Search(commands.Cog):
     search_group = app_commands.Group(name="search", description="This is a group")
 
     class NameTransformer(app_commands.Transformer):
-        async def transform(self, interaction: discord.Interaction, value: str) -> str:
+        async def transform(self, _: discord.Interaction, value: str) -> str:
             if value.isascii():
                 return value
 
@@ -32,7 +34,9 @@ class Search(commands.Cog):
         Jinja2(ENVIRONMENT),
         "templates/search.xml",
     )
-    async def search(self, ctx: qalib.QalibInteraction[SearchMessages], name: str) -> None:
+    async def search(
+        self, ctx: qalib.interaction.QalibInteraction[SearchMessages], name: str
+    ) -> None:
         if not name.isascii():
             await ctx.rendered_send("invalid_name", keywords={"name": name})
             return
@@ -45,7 +49,9 @@ class Search(commands.Cog):
         Jinja2(ENVIRONMENT),
         "templates/search.xml",
     )
-    async def search_user(self, ctx: qalib.QalibInteraction[SearchMessages], user: discord.User) -> None:
+    async def search_user(
+        self, ctx: qalib.interaction.QalibInteraction[SearchMessages], user: discord.User
+    ) -> None:
         nation = self.bot.get_nation(user.id)
         if not nation.exists:
             await ctx.rendered_send("unrecognized", keywords={"user": user})
@@ -57,7 +63,9 @@ class Search(commands.Cog):
         Jinja2(ENVIRONMENT),
         "templates/search.xml",
     )
-    async def search_id(self, ctx: qalib.QalibInteraction[SearchMessages], identifier: int) -> None:
+    async def search_id(
+        self, ctx: qalib.interaction.QalibInteraction[SearchMessages], identifier: int
+    ) -> None:
         nation = self.bot.get_nation(identifier)
         if not nation.exists:
             await ctx.rendered_send("unrecognized_identifier", keywords={"identifier": identifier})

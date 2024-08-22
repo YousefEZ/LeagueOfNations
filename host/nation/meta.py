@@ -17,7 +17,9 @@ class Meta:
 
     @cached_property
     def metadata(self) -> models.MetadataModel:
-        metadata = self._session.query(models.MetadataModel).filter_by(user_id=self._identifier).first()
+        metadata = (
+            self._session.query(models.MetadataModel).filter_by(user_id=self._identifier).first()
+        )
         if metadata is None:
             raise ValueError(f"Metadata does not exist for {self._identifier}")
         return metadata

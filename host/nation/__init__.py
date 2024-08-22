@@ -1,25 +1,24 @@
 from __future__ import annotations
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from functools import cached_property
 from typing import List, Optional, get_args
 
-from sqlalchemy.orm import Session
-
-from host.currency import as_daily_currency_rate, as_currency
 from host import base_types
+from host.currency import as_currency, as_daily_currency_rate
 from host.defaults import defaults
 from host.gameplay_settings import GameplaySettings
-from host.nation import types, models
+from host.nation import models, types
 from host.nation.bank import Bank
-from host.nation.government import Government
 from host.nation.foreign import Foreign
-from host.nation.improvements import Improvements
+from host.nation.government import Government
+from host.nation.improvements import PublicWorks
 from host.nation.interior import Interior
 from host.nation.meta import Meta
 from host.nation.ministry import Ministry
 from host.nation.trade import Trade
 from host.nation.types.basic import Population
+from sqlalchemy.orm import Session
 
 
 class Nation:
@@ -29,13 +28,21 @@ class Nation:
 
     @property
     def exists(self) -> bool:
-        metadata = self._session.query(models.MetadataModel).filter_by(user_id=self._identifier).first()
+        metadata = (
+            self._session.query(models.MetadataModel).filter_by(user_id=self._identifier).first()
+        )
         return metadata is not None
 
     @staticmethod
-    def search_for_nations(name: str, session: Session, with_like: bool = False) -> List[models.MetadataModel]:
+    def search_for_nations(
+        name: str, session: Session, with_like: bool = False
+    ) -> List[models.MetadataModel]:
         if with_like:
-            return session.query(models.MetadataModel).filter(models.MetadataModel.nation.like(f"%{name}%")).all()
+            return (
+                session.query(models.MetadataModel)
+                .filter(models.MetadataModel.nation.like(f"%{name}%"))
+                .all()
+            )
         return session.query(models.MetadataModel).filter(models.MetadataModel.nation == name).all()
 
     @classmethod
@@ -74,8 +81,8 @@ class Nation:
         return Interior(self, self._session)
 
     @cached_property
-    def improvements(self) -> Improvements:
-        return Improvements(self, self._session)
+    def public_works(self) -> PublicWorks:
+        return PublicWorks(self, self._session)
 
     @cached_property
     def foreign(self) -> Foreign:
@@ -83,10 +90,13 @@ class Nation:
 
     @cached_property
     def ministries(self) -> List[Ministry]:
-        return [getattr(self, ministry_object) for ministry_object in get_args(types.ministries.Ministries)]
+        return [
+            getattr(self, ministry_object)
+            for ministry_object in get_args(types.ministries.Ministries)
+        ]
 
     @classmethod
-    def start(cls, identifier: base_types.UserId, name: str, engine: Session) -> Nation:
+    def start(cls, identifier: base_types.UserId, name: str, session: Session) -> Nation:
         metadata = models.MetadataModel(
             user_id=identifier,
             nation=name,
@@ -95,11 +105,10 @@ class Nation:
             created=datetime.now(UTC),
         )
 
-        with Session(engine) as session:
-            session.add(metadata)
-            session.commit()
+        session.add(metadata)
+        session.commit()
 
-        return cls(identifier, engine)
+        return cls(identifier, session)
 
     def find_player(self, identifier: base_types.UserId) -> Nation:
         return Nation(identifier, self._session)
@@ -118,7 +127,10 @@ class Nation:
 
     @property
     def population(self) -> Population:
-        return Population(self.interior.infrastructure.amount * GameplaySettings.interior.population_per_infrastructure)
+        return Population(
+            self.interior.infrastructure.amount
+            * GameplaySettings.interior.population_per_infrastructure
+        )
 
     @property
     def population_modifier(self) -> float:
@@ -130,7 +142,9 @@ class Nation:
 
     @property
     def boost(self) -> types.boosts.BoostsLookup:
-        return types.boosts.BoostsLookup.combine(*[ministry_object.boost() for ministry_object in self.ministries])
+        return types.boosts.BoostsLookup.combine(
+            *[ministry_object.boost() for ministry_object in self.ministries]
+        )
 
     @property
     @as_daily_currency_rate

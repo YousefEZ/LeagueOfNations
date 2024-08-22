@@ -43,7 +43,7 @@
                 <field>
                     <name>{{ nation_name }}'s Improvements</name>
                     <value>
-                        {% for name, collection in improvements.owned.items() %}
+                        {% for name, collection in public_works.owned.items() %}
                             {{ collection.improvement.emoji }} {{ collection.improvement.name }}: {{ collection.amount}}
                         {% endfor %}
                     </value>

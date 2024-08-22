@@ -16,9 +16,20 @@ pydantic = "^2.5.3"
 asyncio = "^3.4.3"
 Jinja2 = "^3.1.2"
 pyright = "^1.1.375"
+pytest = "^8.3.2"
+mypy = "^1.11.1"
+pylint = "^3.2.6"
+ruff = "^0.6.2"
+
+[tool.ruff]
+line-length = 100
 
 [tool.black]
-line-length = 120
+line-length = 100
+
+[tool.isort]
+profile = "hug"
+src_paths = ["isort", "test"]
 
 [build-system]
 requires = ["poetry-core"]

@@ -2,15 +2,19 @@ from __future__ import annotations
 
 from abc import ABC
 
-from host.currency import as_currency, as_daily_currency_rate
+from host.currency import (
+    as_currency,
+    as_daily_currency_rate,
+    as_daily_price_rate,
+    as_price,
+)
 from host.nation import types
 
 
 class Ministry(ABC):
-
     @property
-    @as_daily_currency_rate
-    @as_currency
+    @as_daily_price_rate
+    @as_price
     def bill(self) -> int:
         return 0
 

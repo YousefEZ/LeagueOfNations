@@ -145,19 +145,22 @@ class Bank(Ministry, FundReceiver, FundSender):
 
     def _update_treasury(self) -> None:
         current_time = datetime.now()
-        self.model.treasury += int(self._retrieve_profit(current_time))
+        delta = current_time - self.model.last_accessed
+        if delta <= timedelta():
+            return
+        self.model.treasury += int(self._retrieve_profit(delta))
         self.model.last_accessed = current_time
         self._session.commit()
 
-    def _retrieve_revenue(self, timestamp: datetime) -> Currency:
-        return self.national_revenue.amount_in_delta(timestamp - self.model.last_accessed)
+    def _retrieve_revenue(self, delta: timedelta) -> Currency:
+        return self.national_revenue.amount_in_delta(delta)
 
-    def _retrieve_bill(self, timestamp: datetime) -> Price:
-        return self.national_bill.amount_in_delta(timestamp - self.model.last_accessed)
+    def _retrieve_bill(self, delta: timedelta) -> Price:
+        return self.national_bill.amount_in_delta(delta)
 
-    def _retrieve_profit(self, timestamp: datetime) -> Currency:
-        revenue: Currency = self._retrieve_revenue(timestamp)
-        expenses: Price = self._retrieve_bill(timestamp)
+    def _retrieve_profit(self, delta: timedelta) -> Currency:
+        revenue: Currency = self._retrieve_revenue(delta)
+        expenses: Price = self._retrieve_bill(delta)
         return revenue - expenses
 
     def add(self, amount: Currency) -> None:

@@ -107,15 +107,12 @@ class Currency(CurrencyABC):
 
 
 class PositiveValue:
-    def __init__(self, amount: int | float):
-        assert amount > 0.0
-        self._amount = amount
+    def __get__(self, obj, objtype=None) -> int | float:
+        return obj._underlying_amount
 
-    def __get__(self, _, objtype=None) -> int | float:
-        return self._amount
-
-    def __set__(self, _, value) -> None:
-        self._amount = (value <= 0.0) * value
+    def __set__(self, obj, value) -> None:
+        assert value >= 0.0, "Value must be positive"
+        obj._underlying_amount = value
 
 
 class Discount(CurrencyABC):
@@ -129,8 +126,10 @@ class Discount(CurrencyABC):
 
 
 class Price(CurrencyABC):
+    _amount: int | float = cast(int | float, PositiveValue())
+
     def __init__(self, amount: int | float):
-        self._amount: int | float = cast(int | float, PositiveValue(amount))
+        self._amount = amount
 
     @property
     def amount(self) -> int | float:

@@ -23,7 +23,7 @@ host.base_models.Base.metadata.create_all(bind=engine)
 
 @pytest.fixture
 def userid() -> UserId:
-    return UserId(int(uuid.uuid4()))
+    return UserId(int(str(int(uuid.uuid4()))[:10]))
 
 
 @pytest.fixture

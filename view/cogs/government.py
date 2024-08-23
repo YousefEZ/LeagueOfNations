@@ -29,7 +29,9 @@ class Government(commands.Cog):
     def __init__(self, bot: LeagueOfNations):
         self.bot = bot
 
-    government_group = app_commands.Group(name="government", description="Group related to government commands")
+    government_group = app_commands.Group(
+        name="government", description="Group related to government commands"
+    )
 
     @government_group.command(name="list", description="Describing the possible governments")
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/government.xml")
@@ -46,7 +48,10 @@ class Government(commands.Cog):
 
     @government_group.command(name="display", description="Displaying the possible governments")
     @app_commands.choices(
-        government=[Choice(name=f"{government.emoji} {name}", value=name) for name, government in Governments.items()]
+        government=[
+            Choice(name=f"{government.emoji} {name}", value=name)
+            for name, government in Governments.items()
+        ]
     )
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/government.xml")
     async def government_display(
@@ -58,7 +63,10 @@ class Government(commands.Cog):
 
     @government_group.command(name="set", description="Setting the government of the nation")
     @app_commands.choices(
-        government=[Choice(name=f"{government.emoji} {name}", value=name) for name, government in Governments.items()]
+        government=[
+            Choice(name=f"{government.emoji} {name}", value=name)
+            for name, government in Governments.items()
+        ]
     )
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/government.xml")
     async def government_set(
@@ -80,7 +88,11 @@ class Government(commands.Cog):
             nation.government.set(government_type)
             await ctx.display(
                 "new_government",
-                keywords={"nation": nation, "government": Governments[government_type], "difference": difference},
+                keywords={
+                    "nation": nation,
+                    "government": Governments[government_type],
+                    "difference": difference,
+                },
             )
 
         await ctx.display(

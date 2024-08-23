@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, List
+from typing import List, Literal
 
 from pydantic import BaseModel, Field
 
@@ -39,6 +39,7 @@ class BoostsLookup(BaseModel, frozen=True):
     land_bill_modifier: float = Field(default=0.0, title="Land Bill Modifier")
     bill_modifier: float = Field(default=0.0, title="Bill Modifier")
     bill_reduction: float = Field(default=0.0, title="Bill Reduction")
+    population_modifier: float = Field(default=0.0, title="Population Modifier")
 
     def multiply(self, multiplier: float) -> BoostsLookup:
         return BoostsLookup(**{attr: value * multiplier for attr, value in vars(self).items()})
@@ -63,7 +64,9 @@ class BoostsLookup(BaseModel, frozen=True):
         ]
 
     def __add__(self, other: BoostsLookup) -> BoostsLookup:
-        return BoostsLookup(**{attr: value + getattr(other, attr) for attr, value in vars(self).items()})
+        return BoostsLookup(
+            **{attr: value + getattr(other, attr) for attr, value in vars(self).items()}
+        )
 
 
 default_boosts = BoostsLookup()

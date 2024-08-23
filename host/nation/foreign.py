@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from enum import IntEnum, auto
 import uuid
 from datetime import datetime, timedelta
+from enum import IntEnum, auto
 from typing import TYPE_CHECKING, List, Optional, Set, Tuple, Union
 
-from sqlalchemy.orm import Session
-
-from host.currency import Currency
+import host.alliance.models as alliance_models
 from host import alliance, base_types, gameplay_settings
 from host.alliance import Alliance
-import host.alliance.models as alliance_models
-from host.nation.ministry import Ministry
+from host.currency import Currency, Price
 from host.nation import models
+from host.nation.ministry import Ministry
+from sqlalchemy.orm import Session
 
 if TYPE_CHECKING:
     from host.nation import Nation
@@ -131,7 +130,9 @@ class Foreign(Ministry):
 
     @property
     def free_slots(self) -> int:
-        return gameplay_settings.GameplaySettings.foreign.maximum_aid_slots - len(self.recipient_agreements)
+        return gameplay_settings.GameplaySettings.foreign.maximum_aid_slots - len(
+            self.recipient_agreements
+        )
 
     def _remove_expired_agreements(self) -> None:
         self._session.query(models.AidModel).filter(
@@ -144,7 +145,9 @@ class Foreign(Ministry):
         self._remove_expired_agreements()
         return [
             AidAgreement(agreement)
-            for agreement in self._session.query(models.AidModel).filter_by(sponsor=self._player.identifier).all()
+            for agreement in self._session.query(models.AidModel)
+            .filter_by(sponsor=self._player.identifier)
+            .all()
         ]
 
     @property
@@ -152,7 +155,9 @@ class Foreign(Ministry):
         self._remove_expired_agreements()
         return [
             AidAgreement(agreement)
-            for agreement in self._session.query(models.AidModel).filter_by(recipient=self._player.identifier).all()
+            for agreement in self._session.query(models.AidModel)
+            .filter_by(recipient=self._player.identifier)
+            .all()
         ]
 
     @property
@@ -177,7 +182,7 @@ class Foreign(Ministry):
             }
         )
 
-    def _send(self, recipient: base_types.UserId, amount: Currency, reason: str) -> AidRequest:
+    def _send(self, recipient: base_types.UserId, amount: Price, reason: str) -> AidRequest:
         request = models.AidRequestModel(
             aid_id=str(uuid.uuid4()),
             sponsor=self._player.identifier,
@@ -204,10 +209,14 @@ class Foreign(Ministry):
     def sponsors(self) -> List[AidRequest]:
         return [
             AidRequest(request)
-            for request in self._session.query(models.AidRequestModel).filter_by(sponsor=self._player.identifier).all()
+            for request in self._session.query(models.AidRequestModel)
+            .filter_by(sponsor=self._player.identifier)
+            .all()
         ]
 
-    def _verify_send_request(self, recipient: base_types.UserId, amount: Currency, reason: str) -> AidRequestCode:
+    def _verify_send_request(
+        self, recipient: base_types.UserId, amount: Price, reason: str
+    ) -> AidRequestCode:
         if not self._player.find_player(recipient).exists:
             return AidRequestCode.PLAYER_NOT_EXISTS
 
@@ -217,13 +226,10 @@ class Foreign(Ministry):
         if not self._player.find_player(recipient).exists:
             return AidRequestCode.INVALID_RECIPIENT
 
-        if amount < Currency(0):
-            return AidRequestCode.INVALID_AMOUNT
-
-        if amount > Currency(gameplay_settings.GameplaySettings.foreign.maximum_aid_amount):
+        if amount > Price(gameplay_settings.GameplaySettings.foreign.maximum_aid_amount):
             return AidRequestCode.ABOVE_LIMIT
 
-        if not self._player.bank.enough_funds(amount):
+        if not self._player.bank.can_purchase(amount):
             return AidRequestCode.INSUFFICIENT_FUNDS
 
         if not reason.isascii():
@@ -235,7 +241,7 @@ class Foreign(Ministry):
         return AidRequestCode.SUCCESS
 
     def send(
-        self, recipient: base_types.UserId, amount: Currency, reason: str
+        self, recipient: base_types.UserId, amount: Price, reason: str
     ) -> Tuple[AidRequestCode, Optional[AidRequest]]:
         code = self._verify_send_request(recipient, amount, reason)
         if code != AidRequestCode.SUCCESS:
@@ -245,7 +251,9 @@ class Foreign(Ministry):
         return AidRequestCode.SUCCESS, request
 
     def _cancel_request(self, request: AidRequest) -> None:
-        model_request = self._session.query(models.AidRequestModel).filter_by(aid_id=request.id).first()
+        model_request = (
+            self._session.query(models.AidRequestModel).filter_by(aid_id=request.id).first()
+        )
         if model_request is None:
             return
         self._player.find_player(request.sponsor).bank.add(request.amount)
@@ -311,7 +319,9 @@ class Foreign(Ministry):
     @property
     def alliance(self) -> Optional[Alliance]:
         member = (
-            self._session.query(alliance_models.AllianceMemberModel).filter_by(user_id=self._player.identifier).first()
+            self._session.query(alliance_models.AllianceMemberModel)
+            .filter_by(user_id=self._player.identifier)
+            .first()
         )
         if member is None:
             return None

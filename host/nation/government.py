@@ -28,7 +28,9 @@ class Government(Ministry):
 
     @cached_property
     def model(self) -> GovernmentModel:
-        government = self._session.query(GovernmentModel).filter_by(user_id=self._player.identifier).first()
+        government = (
+            self._session.query(GovernmentModel).filter_by(user_id=self._player.identifier).first()
+        )
 
         if government is None:
             government = GovernmentModel(user_id=self._player.identifier, type="monarchy")

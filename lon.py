@@ -30,7 +30,7 @@ P = ParamSpec("P")
 
 
 def interaction_morph(
-    func: Callable[[discord.Interaction], Awaitable[None]]
+    func: Callable[[discord.Interaction], Awaitable[None]],
 ) -> Callable[[discord.ui.Item, discord.Interaction], Awaitable[None]]:
     @wraps(func)
     async def f(_: discord.ui.Item, interaction: discord.Interaction) -> None:
@@ -94,7 +94,9 @@ class LeagueOfNations(commands.AutoShardedBot):
     ):
         nation = self.get_nation(user_id)
         if not nation.exists:
-            await interaction.display("lookup_nation_id_not_found", keywords={"require_mechanisms": True}, view=None)
+            await interaction.display(
+                "lookup_nation_id_not_found", keywords={"require_mechanisms": True}, view=None
+            )
             return
 
         async def on_accept(_: discord.ui.Button, i: discord.Interaction):
@@ -121,7 +123,9 @@ class LeagueOfNations(commands.AutoShardedBot):
     ):
         nations = Nation.search_for_nations(nation_name, self.session)
         if not nations:
-            await interaction.display("lookup_nation_name_not_found", keywords={"require_mechanisms": True}, view=None)
+            await interaction.display(
+                "lookup_nation_name_not_found", keywords={"require_mechanisms": True}, view=None
+            )
             return
 
         async def on_select(item: discord.ui.Select, new_interaction: discord.Interaction):

@@ -30,4 +30,6 @@ class GameplaySettingsModel(BaseModel):
 
 
 with open("settings/gameplay_settings.json", "r") as gameplay_settings_file:
-    GameplaySettings: GameplaySettingsModel = GameplaySettingsModel.model_validate(json.load(gameplay_settings_file))
+    GameplaySettings: GameplaySettingsModel = GameplaySettingsModel.model_validate(
+        json.load(gameplay_settings_file)
+    )

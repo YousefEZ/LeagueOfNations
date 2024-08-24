@@ -152,18 +152,10 @@ class Bank(Ministry, FundReceiver, FundSender):
         self.model.last_accessed = current_time
         self._session.commit()
 
-    def _retrieve_revenue(self, delta: timedelta) -> Currency:
-        return self.national_revenue.amount_in_delta(delta)
-
-    def _retrieve_bill(self, delta: timedelta) -> Price:
-        return self.national_bill.amount_in_delta(delta)
-
     def _retrieve_profit(self, delta: timedelta) -> Currency:
-        revenue: Currency = self._retrieve_revenue(delta)
-        expenses: Price = self._retrieve_bill(delta)
-        return revenue - expenses
+        return self.national_profit.amount_in_delta(delta)
 
-    def add(self, amount: Currency) -> None:
+    def _add(self, amount: Currency) -> None:
         if amount < Currency(0):
             raise ValueError("Cannot add negative funds")
         logging.debug(f"Adding {amount} to {self._player.name}'s treasury, Previous: {self.funds}")
@@ -193,9 +185,9 @@ class Bank(Ministry, FundReceiver, FundSender):
         try:
             target.receive(Currency(amount.amount))
         except Exception as e:
-            self.add(Currency(amount.amount))
+            self._add(Currency(amount.amount))
             raise e
         return SendingResponses.SUCCESS
 
     def receive(self, funds: Currency) -> None:
-        self.add(funds)
+        self._add(funds)

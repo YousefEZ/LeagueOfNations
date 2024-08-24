@@ -1,5 +1,4 @@
 from datetime import timedelta
-from time import sleep
 
 import pytest
 from unittest.mock import patch, PropertyMock
@@ -33,13 +32,6 @@ def test_revenue_increase_randomized(delta: timedelta, revenue: int):
 
             with freeze_time(last_accessed + delta):
                 assert player.bank.funds == Currency(GameplaySettings.bank.starter_funds) + increase
-
-
-def test_revenue_increase(player: Nation):
-    rate = player.bank.national_revenue
-    increase = rate.amount_in_delta(timedelta(seconds=1))
-    sleep(1)
-    assert player.bank.funds == Currency(GameplaySettings.bank.starter_funds) + increase
 
 
 @given(st.integers(min_value=0, max_value=100_000))

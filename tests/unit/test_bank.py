@@ -7,7 +7,6 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from host.currency import Currency, Discount, Price, daily_currency_rate
-from host.nation import Nation
 from host.gameplay_settings import GameplaySettings
 from host.nation.bank import SendingResponses
 from tests.test_utils import TestingSessionLocal, UserGenerator
@@ -24,7 +23,7 @@ def test_starter_funds(player):
 @settings(deadline=None, max_examples=15)
 def test_revenue_increase_randomized(delta: timedelta, revenue: int):
     with TestingSessionLocal() as session:
-        player = Nation.start(UserGenerator.generate_id(), UserGenerator.generate_name(), session)
+        player = UserGenerator.generate_player(session)
         with patch("host.nation.Nation.revenue", new_callable=PropertyMock) as revenue_mock:
             revenue_mock.return_value = daily_currency_rate(Currency(revenue))
             rate, last_accessed = player.bank.national_profit, player.bank.model.last_accessed
@@ -38,7 +37,7 @@ def test_revenue_increase_randomized(delta: timedelta, revenue: int):
 @settings(deadline=None, max_examples=15)
 def test_receive(amount):
     with TestingSessionLocal() as session:
-        player = Nation.start(UserGenerator.generate_id(), UserGenerator.generate_name(), session)
+        player = UserGenerator.generate_player(session)
         player.bank.receive(Currency(amount))
         assert player.bank.funds == Currency(GameplaySettings.bank.starter_funds) + Currency(amount)
 
@@ -47,8 +46,8 @@ def test_receive(amount):
 @settings(deadline=None, max_examples=15)
 def test_send(amount: int):
     with TestingSessionLocal() as session:
-        player = Nation.start(UserGenerator.generate_id(), UserGenerator.generate_name(), session)
-        target = Nation.start(UserGenerator.generate_id(), UserGenerator.generate_name(), session)
+        player = UserGenerator.generate_player(session)
+        target = UserGenerator.generate_player(session)
         assert player.bank.send(Price(amount), target.bank) == SendingResponses.SUCCESS
         assert player.bank.funds == Currency(GameplaySettings.bank.starter_funds) - Price(amount)
         assert target.bank.funds == Currency(GameplaySettings.bank.starter_funds) + Currency(amount)
@@ -58,8 +57,8 @@ def test_send(amount: int):
 @settings(deadline=None, max_examples=15)
 def test_empty_send(amount: int):
     with TestingSessionLocal() as session:
-        player = Nation.start(UserGenerator.generate_id(), UserGenerator.generate_name(), session)
-        target = Nation.start(UserGenerator.generate_id(), UserGenerator.generate_name(), session)
+        player = UserGenerator.generate_player(session)
+        target = UserGenerator.generate_player(session)
         assert player.bank.send(Price(amount), target.bank) == SendingResponses.INSUFFICIENT_FUNDS
         assert player.bank.funds == Currency(GameplaySettings.bank.starter_funds)
         assert target.bank.funds == Currency(GameplaySettings.bank.starter_funds)

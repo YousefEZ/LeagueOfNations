@@ -2,8 +2,9 @@ import string
 
 from sqlalchemy.pool import StaticPool
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
+import host.nation
 import host.base_models
 from host.base_types import UserId
 
@@ -35,4 +36,10 @@ class UserGenerator:
                 string.ascii_uppercase[i % len(string.ascii_uppercase)]
                 for i in range(1 + UserGenerator.name_counter // len(string.ascii_uppercase))
             ]
+        )
+
+    @staticmethod
+    def generate_player(session: Session) -> host.nation.Nation:
+        return host.nation.Nation.start(
+            UserGenerator.generate_id(), UserGenerator.generate_name(), session
         )

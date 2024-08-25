@@ -67,7 +67,7 @@ class Bank(Ministry, FundReceiver, FundSender):
         self._session: Session = session
 
     @cached_property
-    def model(self) -> BankModel:
+    def _model(self) -> BankModel:
         bank: Optional[BankModel] = (
             self._session.query(BankModel).filter_by(user_id=self._identifier).first()
         )
@@ -83,15 +83,15 @@ class Bank(Ministry, FundReceiver, FundSender):
             )
             self._session.commit()
             bank = self._session.query(BankModel).filter_by(user_id=self._identifier).first()
-        assert bank is not None, "Bank should exist"
+        assert bank is not None
         return bank
 
     @property
     def name(self) -> str:
-        return self.model.name
+        return self._model.name
 
     def set_name(self, value: str) -> NameResponses:
-        self.model.name = value
+        self._model.name = value
         self._session.commit()
         return NameResponses.SUCCESS
 
@@ -99,7 +99,7 @@ class Bank(Ministry, FundReceiver, FundSender):
     @as_currency
     def funds(self) -> float:
         self._update_treasury()
-        return self.model.treasury
+        return self._model.treasury
 
     @property
     def national_revenue(self) -> CurrencyRate:
@@ -130,26 +130,26 @@ class Bank(Ministry, FundReceiver, FundSender):
 
     @property
     def tax_rate(self) -> float:
-        return self.model.tax_rate / 100
+        return self._model.tax_rate / 100
 
     def set_tax_rate(self, value: float) -> TaxResponses:
-        if value > defaults.bank.tax_rate:
+        if value > GameplaySettings.bank.maximum_tax_rate or value < 0:
             return TaxResponses.INVALID_RATE
-        self.model.tax_rate = value
+        self._model.tax_rate = value
         self._session.commit()
         return TaxResponses.SUCCESS
 
     @property
     def last_accessed(self) -> datetime:
-        return self.model.last_accessed
+        return self._model.last_accessed
 
     def _update_treasury(self) -> None:
         current_time = datetime.now()
-        delta = current_time - self.model.last_accessed
+        delta = current_time - self._model.last_accessed
         if delta <= timedelta():
             return
-        self.model.treasury += int(self._retrieve_profit(delta))
-        self.model.last_accessed = current_time
+        self._model.treasury += int(self._retrieve_profit(delta))
+        self._model.last_accessed = current_time
         self._session.commit()
 
     def _retrieve_profit(self, delta: timedelta) -> Currency:
@@ -160,8 +160,8 @@ class Bank(Ministry, FundReceiver, FundSender):
             raise ValueError("Cannot add negative funds")
         logging.debug(f"Adding {amount} to {self._player.name}'s treasury, Previous: {self.funds}")
         new_funds: Currency = self.funds + amount
-        self.model.treasury = int(new_funds)
-        self._session.add(self.model)
+        self._model.treasury = int(new_funds)
+        self._session.add(self._model)
         self._session.commit()
 
     def can_purchase(self, amount: Price) -> bool:
@@ -174,8 +174,8 @@ class Bank(Ministry, FundReceiver, FundSender):
         if not self.can_purchase(price) and not force:
             raise ValueError("Insufficient funds")
         new_funds: Currency = self.funds - price
-        self.model.treasury = int(new_funds)
-        self._session.add(self.model)
+        self._model.treasury = int(new_funds)
+        self._session.add(self._model)
         self._session.commit()
 
     def send(self, amount: Price, target: FundReceiver) -> SendingResponses:

@@ -3,7 +3,7 @@ from datetime import timedelta
 import pytest
 from unittest.mock import patch, PropertyMock
 from freezegun import freeze_time
-from hypothesis import given, settings
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from host.defaults import defaults
@@ -65,6 +65,20 @@ def test_empty_send(amount: int):
         assert target.bank.funds == Currency(GameplaySettings.bank.starter_funds)
 
 
+@given(st.integers(min_value=0, max_value=GameplaySettings.bank.starter_funds))
+@settings(deadline=None, max_examples=15)
+def test_exception_on_send(amount: int):
+    with TestingSessionLocal() as session:
+        player = UserGenerator.generate_player(session)
+        target = UserGenerator.generate_player(session)
+        with patch("host.nation.bank.Bank.receive", side_effect=ValueError), pytest.raises(
+            ValueError
+        ):
+            player.bank.send(Price(amount), target.bank)
+        assert player.bank.funds == Currency(GameplaySettings.bank.starter_funds)
+        assert target.bank.funds == Currency(GameplaySettings.bank.starter_funds)
+
+
 @given(st.integers(max_value=-1))
 def test_negative_price(amount: int):
     with pytest.raises(ValueError):
@@ -99,3 +113,45 @@ def test_invalid_tax_rate(amount: float):
         player = UserGenerator.generate_player(session)
         assert player.bank.set_tax_rate(amount) == TaxResponses.INVALID_RATE
         assert player.bank.tax_rate == defaults.bank.tax_rate / 100
+
+
+@given(st.floats(min_value=1))
+def test_add_negative_funds(amount: float):
+    with TestingSessionLocal() as session:
+        player = UserGenerator.generate_player(session)
+        with pytest.raises(ValueError):
+            player.bank.receive(Currency(-amount))
+        assert player.bank.funds == Currency(GameplaySettings.bank.starter_funds)
+
+
+@given(st.floats(min_value=GameplaySettings.bank.starter_funds + 1))
+def test_deduct_overdraft(amount: float):
+    with TestingSessionLocal() as session:
+        player = UserGenerator.generate_player(session)
+        with pytest.raises(ValueError):
+            player.bank.deduct(Price(amount), force=False)
+        assert player.bank.funds == Currency(GameplaySettings.bank.starter_funds)
+
+
+@given(st.floats(min_value=0, max_value=GameplaySettings.bank.starter_funds))
+def test_enough_funds_true(amount: float):
+    with TestingSessionLocal() as session:
+        player = UserGenerator.generate_player(session)
+        assert player.bank.enough_funds(Currency(amount))
+
+
+@given(st.floats(min_value=GameplaySettings.bank.starter_funds + 1))
+def test_enough_funds_false(amount: float):
+    with TestingSessionLocal() as session:
+        player = UserGenerator.generate_player(session)
+        assert not player.bank.enough_funds(Currency(amount))
+
+
+@given(st.lists(st.characters()))
+def test_name_change(name: list[str]):
+    string = "".join(name)
+    assume(string.isprintable())
+    with TestingSessionLocal() as session:
+        player = UserGenerator.generate_player(session)
+        player.bank.set_name(string)
+        assert player.bank.name == string

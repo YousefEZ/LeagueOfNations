@@ -3,7 +3,6 @@ from datetime import datetime
 
 from functools import cached_property
 
-from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
 from host import base_types

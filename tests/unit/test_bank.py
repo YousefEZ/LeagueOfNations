@@ -6,9 +6,10 @@ from freezegun import freeze_time
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
+from host.defaults import defaults
 from host.currency import Currency, Discount, Price, daily_currency_rate
 from host.gameplay_settings import GameplaySettings
-from host.nation.bank import SendingResponses
+from host.nation.bank import SendingResponses, TaxResponses
 from tests.test_utils import TestingSessionLocal, UserGenerator
 
 
@@ -26,7 +27,7 @@ def test_revenue_increase_randomized(delta: timedelta, revenue: int):
         player = UserGenerator.generate_player(session)
         with patch("host.nation.Nation.revenue", new_callable=PropertyMock) as revenue_mock:
             revenue_mock.return_value = daily_currency_rate(Currency(revenue))
-            rate, last_accessed = player.bank.national_profit, player.bank.model.last_accessed
+            rate, last_accessed = player.bank.national_profit, player.bank.last_accessed
             increase = Currency(int(rate.amount_in_delta(delta)))
 
             with freeze_time(last_accessed + delta):
@@ -74,3 +75,27 @@ def test_negative_price(amount: int):
 def test_negative_discounts(amount: int):
     with pytest.raises(ValueError):
         Discount(amount)
+
+
+@given(st.floats(min_value=0, max_value=GameplaySettings.bank.maximum_tax_rate))
+def test_valid_tax_rate(amount: float):
+    with TestingSessionLocal() as session:
+        player = UserGenerator.generate_player(session)
+        assert player.bank.set_tax_rate(amount) == TaxResponses.SUCCESS
+        assert player.bank.tax_rate == amount / 100
+
+
+@given(st.floats(max_value=-1))
+def test_negative_tax_rate(amount: float):
+    with TestingSessionLocal() as session:
+        player = UserGenerator.generate_player(session)
+        assert player.bank.set_tax_rate(amount) == TaxResponses.INVALID_RATE
+        assert player.bank.tax_rate == defaults.bank.tax_rate / 100
+
+
+@given(st.floats(min_value=GameplaySettings.bank.maximum_tax_rate + 1))
+def test_invalid_tax_rate(amount: float):
+    with TestingSessionLocal() as session:
+        player = UserGenerator.generate_player(session)
+        assert player.bank.set_tax_rate(amount) == TaxResponses.INVALID_RATE
+        assert player.bank.tax_rate == defaults.bank.tax_rate / 100

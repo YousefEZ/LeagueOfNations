@@ -12,7 +12,7 @@ from qalib.template_engines.jinja2 import Jinja2
 from sqlalchemy.orm import Session
 from view.cogs.custom_jinja2 import ENVIRONMENT
 
-StartMessages = Literal["start", "NonAscii"]
+StartMessages = Literal["start", "confirmation", "NonAscii"]
 
 
 class Start(commands.Cog):
@@ -34,8 +34,10 @@ class Start(commands.Cog):
 
         async def confirm_start(_: discord.ui.Button, interaction: discord.Interaction):
             with Session(self.bot.engine) as session:
-                Nation.start(UserId(ctx.user.id), nation_name, session)
-            await interaction.response.send_message(":white_check_mark: Confirmed")
+                result = Nation.start(UserId(ctx.user.id), nation_name, session)
+                print(result)
+            await interaction.response.defer()
+            await ctx.display("confirmation", keywords={"nation_name": nation_name})
 
         async def decline_start(_: discord.ui.Button, interaction: discord.Interaction):
             await interaction.response.send_message(":x: Declined")
@@ -44,9 +46,9 @@ class Start(commands.Cog):
             await ctx.rendered_send("NonAscii")
             return
 
-        await ctx.rendered_send(
+        await ctx.display(
             "start",
-            callables={"confirm": confirm_start, "decline": decline_start},
+            callables={"confirm_start": confirm_start, "decline": decline_start},
             keywords={"nation_name": nation_name},
         )
 

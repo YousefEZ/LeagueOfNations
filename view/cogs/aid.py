@@ -17,7 +17,7 @@ from discord.ext import commands
 from qalib.template_engines.jinja2 import Jinja2
 from qalib.translators.modal import ModalEvents
 
-from lon import mechanisms_messages, LeagueOfNations, interaction_morph
+from lon import lookup_messages, LeagueOfNations, interaction_morph
 from view.cogs.custom_jinja2 import ENVIRONMENT
 
 
@@ -51,7 +51,7 @@ AidRequestMessages = Literal[
     "reason_too_long",
     "funds",
     "target_selection",
-    mechanisms_messages,
+    lookup_messages,
 ]
 AidAcceptMessages = Literal[
     "aid_accepted", "aid_not_exist", "not_a_recipient", "expired", "zero_slots"
@@ -105,17 +105,16 @@ class Aid(commands.Cog):
         self,
         target: Nation,
         ctx: qalib.interaction.QalibInteraction[AidRequestMessages],
-        amount: float,
+        amount: currency.Price,
     ) -> None:
+        print("getting nation")
         nation = self.bot.get_nation(ctx.user.id)
 
         async def on_submit(modal, interaction: discord.Interaction) -> None:
             reason = cast(TextInput, modal.children[0]).value
             await interaction.response.defer()
 
-            result, request = nation.foreign.send(
-                UserId(target.identifier), currency.lnd(amount), reason or ""
-            )
+            result, request = nation.foreign.send(UserId(target.identifier), amount, reason or "")
             if result == AidRequestCode.SUCCESS:
                 await ctx.display(
                     aid_request_code_mapping[result],
@@ -124,7 +123,7 @@ class Aid(commands.Cog):
                 return
             await ctx.display(
                 aid_request_code_mapping[result],
-                keywords={"nation": nation, "target": target, "amount": currency.lnd(amount)},
+                keywords={"nation": nation, "target": target, "amount": amount},
                 view=None,
             )
 
@@ -135,11 +134,15 @@ class Aid(commands.Cog):
         ) -> None:
             await confirmed_ctx.rendered_send("reason", events={ModalEvents.ON_SUBMIT: on_submit})
 
-        await ctx.display(
-            "confirm_aid",
-            keywords={"amount": currency.Currency(amount), "nation": nation, "target": target},
-            callables={"confirm": confirm_aid},
-        )
+        try:
+            await ctx.display(
+                "confirm_aid",
+                keywords={"amount": amount, "nation": nation, "target": target},
+                callables={"confirm": confirm_aid},
+            )
+        except Exception as e:
+            print(e)
+            raise e
 
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
     async def get_funds(
@@ -157,7 +160,7 @@ class Aid(commands.Cog):
                 await funds_interaction.response.send_message("Amount is not valid")
             else:
                 await funds_interaction.response.defer()
-                await self.send_aid(self.bot.get_nation(target_id), ctx, amount)
+                await self.send_aid(self.bot.get_nation(target_id), ctx, currency.Price(amount))
 
         target = self.bot.get_nation(base_types.UserId(int(target_id)))
         if not target.exists:
@@ -173,71 +176,34 @@ class Aid(commands.Cog):
         self,
         ctx: qalib.interaction.QalibInteraction[AidRequestMessages],
     ) -> None:
-        def extract_funds(raw_funds: Optional[str]) -> Optional[float]:
+        def extract_funds(raw_funds: Optional[str]) -> Optional[currency.Price]:
             if raw_funds is None:
                 return None
             try:
-                amount = float(raw_funds)
+                amount = currency.Price(float(raw_funds))
             except ValueError:
                 return None
             else:
                 return amount
 
-        async def on_id_submit(modal, interaction: discord.Interaction) -> None:
-            user_id = cast(TextInput, modal.children[0]).value
-            assert user_id is not None
-            await interaction.response.defer()
-            if not user_id.isdigit():
-                await interaction.response.send_message("User ID is not valid")
-            elif not self.bot.get_nation(int(user_id)).exists:
-                await interaction.response.send_message("User does not have a nation")
-            else:
-                funds = extract_funds(cast(TextInput, modal.children[1]).value)
-                if funds is not None:
-                    await self.send_aid(self.bot.get_nation(UserId(int(user_id))), ctx, funds)
-                else:
+        @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
+        async def get_amount_of_funds(
+            interaction: qalib.interaction.QalibInteraction[AidMessages],
+            target: Nation,
+        ) -> None:
+            async def on_submit(modal, interaction: discord.Interaction) -> None:
+                funds = extract_funds(cast(TextInput, modal.children[0]).value)
+                if funds is None:
                     await interaction.response.send_message("Amount is not valid")
+                    return
+                await interaction.response.defer()
+                await self.send_aid(target, ctx, funds)
 
-        async def on_nation_submit(modal, interaction: discord.Interaction) -> None:
-            nation_name = cast(TextInput, modal.children[0]).value
-            funds = extract_funds(cast(TextInput, modal.children[1]).value)
-            if funds is None:
-                await interaction.response.send_message("Amount is not valid")
-                return
-            assert nation_name is not None
-            await interaction.response.defer()
-            await self.bot.get_user_from_nation_lookup(ctx, nation_name, self.send_aid, ctx, funds)
-
-        @interaction_morph
-        @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
-        async def open_id_modal(
-            interaction: qalib.interaction.QalibInteraction[Literal["userid"]],
-        ) -> None:
-            await interaction.rendered_send("userid", events={ModalEvents.ON_SUBMIT: on_id_submit})
-
-        @interaction_morph
-        @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")
-        async def open_nation_modal(
-            interaction: qalib.interaction.QalibInteraction[Literal["nationselect"]],
-        ) -> None:
             await interaction.rendered_send(
-                "nationselect", events={ModalEvents.ON_SUBMIT: on_nation_submit}
+                "funds", events={ModalEvents.ON_SUBMIT: on_submit}, view=None
             )
 
-        async def on_user_select(
-            item: discord.ui.UserSelect, interaction: discord.Interaction
-        ) -> None:
-            user = item.values[0]
-            await self.get_funds(interaction, ctx, base_types.UserId(user.id))
-
-        await ctx.display(
-            "target_selection",
-            callables={
-                "userid": open_id_modal,
-                "user_target": on_user_select,
-                "nation": open_nation_modal,
-            },
-        )
+        await self.bot.get_user_target(ctx, get_amount_of_funds)
 
     @aid_group.command(name="list", description="List all aid packages")
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/aid.xml")

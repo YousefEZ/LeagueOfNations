@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from enum import IntEnum, auto
 import random
 from datetime import datetime, timedelta
 from itertools import chain
-from typing import TYPE_CHECKING, List, Literal, Optional
+from typing import TYPE_CHECKING, List, Optional
 from uuid import uuid4
 
 import host.nation.types
@@ -15,19 +16,27 @@ from sqlalchemy.orm import Session
 if TYPE_CHECKING:
     from host.nation import Nation
 
-AcceptMessages = Literal["trade_accepted", "too_many_active_agreements", "trade_partner_full"]
 
-SendMessages = Literal[
-    "trade_sent",
-    "partner_not_found",
-    "cannot_trade_with_self",
-    "too_many_active_agreements",
-    "trade_partner_full",
-]
+class TradeAcceptResponses(IntEnum):
+    SUCCESS = auto()
+    TOO_MANY_ACTIVE_AGREEMENTS = auto()
+    TRADE_PARTNER_FULL = auto()
 
-DeclineMessages = Literal["trade_declined"]
 
-CancelMessages = Literal["trade_cancelled"]
+class TradeSentResponses(IntEnum):
+    SUCCESS = auto()
+    PARTNER_NOT_FOUND = auto()
+    CANNOT_TRADE_WITH_SELF = auto()
+    TOO_MANY_ACTIVE_AGREEMENTS = auto()
+    TRADE_PARTNER_FULL = auto()
+
+
+class TradeDeclineResponses(IntEnum):
+    TRADE_DECLINED = auto()
+
+
+class TradeCancelResponses(IntEnum):
+    TRADE_CANCELLED = auto()
 
 
 class TradeRequest:
@@ -206,19 +215,19 @@ class Trade(ministry.Ministry):
         self._session.add(trade_request)
         self._session.commit()
 
-    def send(self, recipient: base_types.UserId) -> SendMessages:
+    def send(self, recipient: base_types.UserId) -> TradeSentResponses:
         if self._identifier == recipient:
-            return "cannot_trade_with_self"
+            return TradeSentResponses.CANNOT_TRADE_WITH_SELF
 
         if len(self.active_agreements) >= 5:
-            return "too_many_active_agreements"
+            return TradeSentResponses.TOO_MANY_ACTIVE_AGREEMENTS
 
         partner = self._player.find_player(recipient)
         if len(partner.trade.active_agreements) >= 5:
-            return "trade_partner_full"
+            return TradeSentResponses.TRADE_PARTNER_FULL
 
         self._send(recipient)
-        return "trade_sent"
+        return TradeSentResponses.SUCCESS
 
     def _accept(self, trade_request: TradeRequest) -> None:
         trade_agreement = models.TradeModel(
@@ -232,29 +241,29 @@ class Trade(ministry.Ministry):
         self._session.commit()
         trade_request.invalidate()
 
-    def accept(self, trade_request: TradeRequest) -> AcceptMessages:
+    def accept(self, trade_request: TradeRequest) -> TradeAcceptResponses:
         if self._identifier != trade_request.recipient:
             raise TradeError("not a recipient of this request")
 
         if len(self.active_agreements) >= 5:
-            return "too_many_active_agreements"
+            return TradeAcceptResponses.TOO_MANY_ACTIVE_AGREEMENTS
 
         partner = self._player.find_player(trade_request.sponsor)
         if len(partner.trade.active_agreements) >= 5:
-            return "trade_partner_full"
+            return TradeAcceptResponses.TRADE_PARTNER_FULL
 
         self._accept(trade_request)
-        return "trade_accepted"
+        return TradeAcceptResponses.SUCCESS
 
-    def decline(self, trade_request: TradeRequest) -> DeclineMessages:
+    def decline(self, trade_request: TradeRequest) -> TradeDeclineResponses:
         if self._identifier != trade_request.recipient:
             raise TradeError("not a recipient of this request")
         self._session.delete(trade_request)
         self._session.commit()
         trade_request.invalidate()
-        return "trade_declined"
+        return TradeDeclineResponses.TRADE_DECLINED
 
-    def cancel(self, trade_agreement: TradeAgreement) -> CancelMessages:
+    def cancel(self, trade_agreement: TradeAgreement) -> TradeCancelResponses:
         if (
             self._identifier != trade_agreement.recipient
             and self._identifier != trade_agreement.sponsor
@@ -263,7 +272,7 @@ class Trade(ministry.Ministry):
         self._session.delete(trade_agreement)
         self._session.commit()
         trade_agreement.invalidate()
-        return "trade_cancelled"
+        return TradeCancelResponses.TRADE_CANCELLED
 
     def boost(self) -> host.nation.types.boosts.BoostsLookup:
         return host.nation.types.boosts.BoostsLookup()

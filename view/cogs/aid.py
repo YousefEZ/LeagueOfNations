@@ -107,7 +107,6 @@ class Aid(commands.Cog):
         ctx: qalib.interaction.QalibInteraction[AidRequestMessages],
         amount: currency.Price,
     ) -> None:
-        print("getting nation")
         nation = self.bot.get_nation(ctx.user.id)
 
         async def on_submit(modal, interaction: discord.Interaction) -> None:

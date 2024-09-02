@@ -1,7 +1,74 @@
 <discord>
-
+    {% from "lookup.xml" import lookup with context %}
+    {{ lookup(require_lookup) }}
+    <message key="trade_offer">
+      <embed>
+        <title>Trade Offer</title>
+        <colour>teal</colour>
+        <description>You {{sponsor.metadata.emoji}}**{{sponsor.metadata.nation_name}}** are offering a trade to {{recipient.metadata.emoji}}**{{recipient.metadata.nation_name}}**.</description>
+        <fields>
+          <field>
+            <name>:outbox_tray: Your offering</name>
+            <value>
+              {% for resource in sponsor.trade.resources -%}
+              - {{ Resources[resource].emoji }} {{resource}}
+              {% endfor -%}
+              </value>
+          </field>
+          <field>
+            <name>:inbox_tray: Receiving</name>
+            <value>
+              {%- for resource in sponsor.trade.resources -%}
+              - {{ Resources[resource].emoji }} {{resource}} 
+              {% endfor -%}
+            </value>
+          </field>
+        </fields>
+      </embed>
+      <view>
+        <components>
+          <button key="accept">
+            <label>Accept</label>
+            <emoji>
+              <name>✔️</name>
+            </emoji>
+            <style>success</style>
+          </button>
+          <button key="decline">
+            <label>Decline</label>
+            <emoji>
+              <name>✖️</name>
+            </emoji>
+            <style>danger</style>
+          </button>
+        </components>
+      </view>
+    </message>
     <message key="trade_sent">
-
+      <embed>
+        <title>Trade Offer Sent</title>
+        <colour>teal</colour>
+        <description>You {{sponsor.metadata.emoji}}**{{sponsor.metadata.nation_name}}** sent a trade to {{recipient.metadata.emoji}}**{{recipient.metadata.nation_name}}**.</description>
+        <fields>
+          <field>
+            <name>:outbox_tray: Your offering</name>
+            <value>
+              {% for resource in sponsor.trade.resources -%}
+              - {{ Resources[resource].emoji }} {{resource}}
+              {% endfor -%}
+              </value>
+          </field>
+          <field>
+            <name>:inbox_tray: Receiving</name>
+            <value>
+              {%- for resource in sponsor.trade.resources -%}
+              - {{ Resources[resource].emoji }} {{resource}} 
+              {% endfor -%}
+            </value>
+          </field>
+        </fields>
+      </embed>
+      <view></view>
     </message>
     <message key="trade_accepted">
 

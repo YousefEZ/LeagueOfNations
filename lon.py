@@ -24,7 +24,7 @@ from host.nation import Nation
 from view.cogs.custom_jinja2 import ENVIRONMENT
 from view.notifications import NotificationRenderer
 
-cogs = "start", "economy", "search", "government", "aid"
+cogs = "start", "economy", "search", "trade", "government", "aid"
 connect_to_db = False
 
 lookup_messages = Literal[

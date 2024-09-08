@@ -30,6 +30,53 @@
         </components>
       </view>
     </message>
+    <message key="select_trade_active_agreement">
+      <content>
+        :exclamation: You have active agreements and/or pending offers. Please cancel all agreements and offers before switching resources.
+      </content>
+      <view></view> 
+    </message>
+    <message key="trade_requests">
+      <embed>
+        <title>:currency_exchange: Trade Requests</title>
+        <colour>teal</colour>
+        <description>Select a trade requests to view</description>
+        <fields>
+          {% for trade in nation.trade.received %}
+          {% set sponsor = nation.find_player(trade.sponsor) %}
+          <field>
+            <name>{{sponsor.metadata.emoji}}**{{sponsor.metadata.nation_name}}**</name>
+            <value>
+              {% for resource in sponsor.resources -%}
+              - {{ Resources[resource].emoji }} {{resource}}
+              {% endfor -%}
+            </value>
+          </field>
+          {% endfor %}
+        </fields>
+      </embed>
+      <view>
+        <components>
+          <select key="trade_identifier">
+            <label>Select a request to accept</label>
+            <placeholder>Select a trade</placeholder>
+            <options>
+              {% for trade in nation.trade.received %}
+              {% set sponsor = nation.find_player(trade.sponsor) %}
+              <option>
+                <label>{{sponsor.metadata.nation_name}}</label>
+                <emoji>
+                  <name>{{ sponsor.metadata.emoji.split(':')[1] }}</name>  
+                  <id>{{ sponsor.metadata.emoji.split(':')[2].split('>')[0] }}</id>
+                </emoji> 
+                <value>{{sponsor.identifier}}</value>
+              </option>
+              {% endfor %}
+            </options>
+          </select>
+        </components>
+      </view>
+    </message>
     <message key="trades">
       <embed>
         <title>:currency_exchange: Active Trades</title>
@@ -66,7 +113,7 @@
           <field>
             <name>:inbox_tray: Receiving</name>
             <value>
-              {%- for resource in sponsor.trade.resources -%}
+              {%- for resource in recipient.trade.resources -%}
               - {{ Resources[resource].emoji }} {{resource}} 
               {% endfor -%}
             </value>
@@ -109,7 +156,7 @@
           <field>
             <name>:inbox_tray: Receiving</name>
             <value>
-              {%- for resource in sponsor.trade.resources -%}
+              {%- for resource in recipient.trade.resources -%}
               - {{ Resources[resource].emoji }} {{resource}} 
               {% endfor -%}
             </value>

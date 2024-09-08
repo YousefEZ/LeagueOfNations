@@ -28,7 +28,7 @@ TradeRequestMapping: Dict[TradeSentResponses, TradeRequestMessages] = {
 
 TradeSelectMapping: Dict[TradeSelectResponses, str] = {
     TradeSelectResponses.SUCCESS: "select_resources",
-    TradeSelectResponses.ACTIVE_AGREEMENT: "trade_active_agreement",
+    TradeSelectResponses.ACTIVE_AGREEMENT: "select_trade_active_agreement",
 }
 
 
@@ -71,7 +71,6 @@ class Trade(commands.Cog):
         self, ctx: qalib.interaction.QalibInteraction, target: Nation
     ) -> None:
         nation = self.bot.get_nation(ctx.user.id)
-
         response = nation.trade.send(target.identifier)
         await ctx.display(
             TradeRequestMapping[response],
@@ -88,6 +87,7 @@ class Trade(commands.Cog):
             @interaction_morph
             async def accept(i: discord.Interaction):
                 await i.response.defer()
+                print("sending a trade offer")
                 await self.send_trade_offer(interaction, nation)
 
             @interaction_morph
@@ -108,6 +108,21 @@ class Trade(commands.Cog):
             )
 
         await self.bot.get_user_target(ctx, target)
+
+    @trade_group.command(name="requests", description="View trade offers")
+    @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/trade.xml")
+    async def requests(self, ctx: qalib.interaction.QalibInteraction) -> None:
+        nation = self.bot.get_nation(ctx.user.id)
+
+        def on_select_request(request: Nation):
+            async def callback(select: discord.ui.Select, interaction): ...
+
+            return callback
+
+        await ctx.display(
+            "trade_requests",
+            keywords={"nation": nation, "Resources": Resources},
+        )
 
 
 async def setup(bot: LeagueOfNations) -> None:

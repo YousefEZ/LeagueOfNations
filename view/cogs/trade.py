@@ -1,20 +1,23 @@
-from typing import Dict, Literal
+from typing import Dict, Literal, ParamSpec, TypeVar
 from discord import app_commands
 import discord
 from discord.ext import commands
-from host.nation.types.resources import Resources
+from host.nation.types.resources import ResourceName, Resources
 import qalib
 import qalib.interaction
 from qalib.template_engines.jinja2 import Jinja2
 
 from host.nation import Nation
-from host.nation.trade import TradeSentResponses
+from host.nation.trade import TradeSelectResponses, TradeSentResponses
 from lon import LeagueOfNations, interaction_morph
 from view.cogs.custom_jinja2 import ENVIRONMENT
 
 
+T = TypeVar("T")
+P = ParamSpec("P")
+
 TradeRequestMessages = Literal[
-    "trade_sent", "cannot_trade_with_self", "trade_too_many_active_agreements"
+    "trade_sent", "cannot_trade_with_self", "trade_too_many_active_agreements", "select_resources"
 ]
 
 TradeRequestMapping: Dict[TradeSentResponses, TradeRequestMessages] = {
@@ -23,12 +26,46 @@ TradeRequestMapping: Dict[TradeSentResponses, TradeRequestMessages] = {
     TradeSentResponses.TOO_MANY_ACTIVE_AGREEMENTS: "trade_too_many_active_agreements",
 }
 
+TradeSelectMapping: Dict[TradeSelectResponses, str] = {
+    TradeSelectResponses.SUCCESS: "select_resources",
+    TradeSelectResponses.ACTIVE_AGREEMENT: "trade_active_agreement",
+}
+
 
 class Trade(commands.Cog):
     def __init__(self, bot: LeagueOfNations):
         self.bot = bot
 
     trade_group = app_commands.Group(name="trade", description="Group related to trade commands")
+
+    @trade_group.command(name="select", description="Select resources to trade")
+    @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/trade.xml")
+    async def select(self, ctx: qalib.interaction.QalibInteraction) -> None:
+        nation = self.bot.get_nation(ctx.user.id)
+
+        def callback_generator(resource: ResourceName):
+            async def callback(select: discord.ui.Select, interaction):
+                await interaction.response.defer()
+                result = nation.trade.swap_resources(resource, select.values[0])
+
+                if result != TradeSelectResponses.SUCCESS:
+                    await ctx.display(TradeSelectMapping[result])
+                    return
+                resources = nation.trade.resources
+                await ctx.display(
+                    "select_resources",
+                    keywords={"Resources": Resources, "nation": nation, "resources": resources},
+                    callables={resource: callback_generator(resource) for resource in resources},
+                )
+
+            return callback
+
+        resources = nation.trade.resources
+        await ctx.display(
+            "select_resources",
+            keywords={"Resources": Resources, "nation": nation, "resources": resources},
+            callables={resource: callback_generator(resource) for resource in resources},
+        )
 
     async def send_trade_offer(
         self, ctx: qalib.interaction.QalibInteraction, target: Nation

@@ -1,9 +1,57 @@
 <discord>
     {% from "lookup.xml" import lookup with context %}
     {{ lookup(require_lookup) }}
+    <message key="select_resources">
+      <content>Select the resources you would like your nation to have.</content>
+      <view>
+        <components>
+          {% for selected_resource in resources %}
+          <select key="{{selected_resource}}">
+            <label>Resource {{loop.index}}</label>
+            <placeholder>Select a resource</placeholder> 
+            <options>
+              {% for name, resource in Resources.items() %}
+              {% if name not in nation.trade.resources %} 
+                <option>
+                  <label>{{resource.emoji}}{{name}}</label>
+                  <value>{{name}}</value>
+                </option>
+              {% elif name == selected_resource %}
+                <option>
+                  <label>{{resource.emoji}}{{name}}</label>
+                  <value>{{name}}</value>
+                  <default>True</default>
+                </option>
+              {% endif %}   
+              {% endfor %}
+            </options>
+            </select>
+            {% endfor %}
+        </components>
+      </view>
+    </message>
+    <message key="trades">
+      <embed>
+        <title>:currency_exchange: Active Trades</title>
+        <colour>teal</colour>
+        <description>Here are your active trades.</description>
+        <fields>
+          {% for trade in trades %}
+          <field>
+            <name>{{trade.sponsor.metadata.emoji}}**{{trade.sponsor.metadata.nation_name}}**</name>
+            <value>
+              {% for resource in trade.resources -%}
+              - {{ Resources[resource].emoji }} {{resource}}
+              {% endfor -%}
+            </value>
+          </field>
+          {% endfor %}
+        </fields> 
+      </embed>
+    </message>
     <message key="trade_offer">
       <embed>
-        <title>Trade Offer</title>
+        <title>:currency_exchange: Trade Offer</title>
         <colour>teal</colour>
         <description>You {{sponsor.metadata.emoji}}**{{sponsor.metadata.nation_name}}** are offering a trade to {{recipient.metadata.emoji}}**{{recipient.metadata.nation_name}}**.</description>
         <fields>
@@ -46,7 +94,7 @@
     </message>
     <message key="trade_sent">
       <embed>
-        <title>Trade Offer Sent</title>
+        <title>:currency_exchange: Trade Offer Sent</title>
         <colour>teal</colour>
         <description>You {{sponsor.metadata.emoji}}**{{sponsor.metadata.nation_name}}** sent a trade to {{recipient.metadata.emoji}}**{{recipient.metadata.nation_name}}**.</description>
         <fields>

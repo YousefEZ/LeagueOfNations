@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import json
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NewType
 
 from host.nation.types.boosts import BoostsLookup
 from pydantic import BaseModel
 
 
-class ResourcePair(NamedTuple):
-    primary: str
-    secondary: str
+ResourceName = NewType("ResourceName", str)
 
 
 class Resource(BaseModel, frozen=True):
@@ -24,4 +22,4 @@ with open("objects/resources.json", "r", encoding="utf8") as resources_file:
         for identifier, resource in json.load(resources_file).items()
     }
 
-RESOURCE_NAMES: List[str] = list(Resources.keys())
+RESOURCE_NAMES: List[ResourceName] = list(map(ResourceName, Resources.keys()))

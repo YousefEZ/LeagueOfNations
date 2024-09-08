@@ -7,14 +7,22 @@ from itertools import chain
 from typing import TYPE_CHECKING, List, Optional
 from uuid import uuid4
 
+from host.gameplay_settings import GameplaySettings
 import host.nation.types
 from host import base_types
 from host.nation import ministry, models
-from host.nation.types.resources import RESOURCE_NAMES
+from host.nation.types.resources import RESOURCE_NAMES, ResourceName
 from sqlalchemy.orm import Session
 
 if TYPE_CHECKING:
     from host.nation import Nation
+
+
+class TradeSelectResponses(IntEnum):
+    SUCCESS = auto()
+    INVALID_RESOURCE = auto()
+    MISSING_RESOURCE = auto()
+    ACTIVE_AGREEMENT = auto()
 
 
 class TradeAcceptResponses(IntEnum):
@@ -78,8 +86,9 @@ class TradeRequest:
 
 
 class TradeAgreement:
-    def __init__(self, trade: models.TradeModel):
+    def __init__(self, trade: models.TradeModel, valid: bool = True):
         self._trade: Optional[models.TradeModel] = trade
+        self._valid = valid
 
     @property
     def sponsor(self) -> base_types.UserId:
@@ -100,7 +109,7 @@ class TradeAgreement:
         return self._trade.date
 
     def invalidate(self) -> None:
-        self._trade = None
+        self._valid = None
 
 
 def filter_expired(
@@ -127,31 +136,36 @@ class Trade(ministry.Ministry):
         self._player: Nation = player
         self._session: Session = session
 
-    @property
-    def resources(self) -> host.nation.types.resources.ResourcePair:
-        resources = (
-            self._session.query(models.ResourcesModel).filter_by(user_id=self._identifier).first()
+    def swap_resources(self, old_resource: str, resource: str) -> TradeSelectResponses:
+        if resource not in RESOURCE_NAMES:
+            return TradeSelectResponses.INVALID_RESOURCE
+        resource_model = (
+            self._session.query(models.ResourcesModel)
+            .filter_by(user_id=self._identifier, resource=old_resource)
+            .first()
         )
-        if resources is None:
-            selected_resources = random.sample(RESOURCE_NAMES, k=2)
-            resources = models.ResourcesModel(
-                user_id=self._identifier,
-                primary=selected_resources[0],
-                secondary=selected_resources[1],
-            )
-            self._session.add(resources)
-            self._session.commit()
-        return host.nation.types.resources.ResourcePair(resources.primary, resources.secondary)
-
-    @resources.setter
-    def resources(self, resources: host.nation.types.resources.ResourcePair) -> None:
-        resource_model = models.ResourcesModel(
-            user_id=self._identifier,
-            primary=resources.primary,
-            secondary=resources.secondary,
-        )
-        self._session.add(resource_model)
+        if resource_model is None:
+            return TradeSelectResponses.MISSING_RESOURCE
+        resource_model.resource = resource
         self._session.commit()
+        return TradeSelectResponses.SUCCESS
+
+    @property
+    def resources(self) -> List[ResourceName]:
+        resources = (
+            self._session.query(models.ResourcesModel).filter_by(user_id=self._identifier).all()
+        )
+        if not resources:
+            selected_resources = random.sample(
+                RESOURCE_NAMES, k=GameplaySettings.trade.resources_per_nation
+            )
+            for resource in selected_resources:
+                self._session.add(
+                    models.ResourcesModel(user_id=self._identifier, resource=resource)
+                )
+            self._session.commit()
+            return selected_resources
+        return [ResourceName(resource.resource) for resource in resources]
 
     @property
     def all_resources(self) -> List[str]:
@@ -219,11 +233,11 @@ class Trade(ministry.Ministry):
         if self._identifier == recipient:
             return TradeSentResponses.CANNOT_TRADE_WITH_SELF
 
-        if len(self.active_agreements) >= 5:
+        if len(self.active_agreements) >= GameplaySettings.trade.maximum_active_agreements:
             return TradeSentResponses.TOO_MANY_ACTIVE_AGREEMENTS
 
         partner = self._player.find_player(recipient)
-        if len(partner.trade.active_agreements) >= 5:
+        if len(partner.trade.active_agreements) >= GameplaySettings.trade.maximum_active_agreements:
             return TradeSentResponses.TRADE_PARTNER_FULL
 
         self._send(recipient)
@@ -245,11 +259,11 @@ class Trade(ministry.Ministry):
         if self._identifier != trade_request.recipient:
             raise TradeError("not a recipient of this request")
 
-        if len(self.active_agreements) >= 5:
+        if len(self.active_agreements) >= GameplaySettings.trade.maximum_active_agreements:
             return TradeAcceptResponses.TOO_MANY_ACTIVE_AGREEMENTS
 
         partner = self._player.find_player(trade_request.sponsor)
-        if len(partner.trade.active_agreements) >= 5:
+        if len(partner.trade.active_agreements) >= GameplaySettings.trade.maximum_active_agreements:
             return TradeAcceptResponses.TRADE_PARTNER_FULL
 
         self._accept(trade_request)

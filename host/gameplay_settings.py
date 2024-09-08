@@ -23,10 +23,16 @@ class InteriorGameplaySettings(BaseModel):
     starter_technology: int
 
 
+class TradeGameplaySettings(BaseModel):
+    maximum_active_agreements: int
+    resources_per_nation: int
+
+
 class GameplaySettingsModel(BaseModel):
     bank: BankGameplaySettings
     interior: InteriorGameplaySettings
     foreign: ForeignGameplaySettings
+    trade: TradeGameplaySettings
 
 
 with open("settings/gameplay_settings.json", "r") as gameplay_settings_file:

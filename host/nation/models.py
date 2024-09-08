@@ -54,8 +54,7 @@ class ResourcesModel(Base):
     __tablename__ = "Resources"
 
     user_id: Mapped[int] = mapped_column(primary_key=True)
-    primary: Mapped[str]
-    secondary: Mapped[str]
+    resource: Mapped[str] = mapped_column(primary_key=True)
 
 
 class MetadataModel(Base):

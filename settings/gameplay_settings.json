@@ -15,5 +15,9 @@
     "maximum_aid_slots": 3,
     "maximum_aid_amount": 6000000.0,
     "aid_slot_expire_days": 3
+  },
+  "trade": {
+    "maximum_active_agreements": 5,
+    "resources_per_nation": 2
   }
 }

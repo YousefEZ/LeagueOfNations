@@ -26,6 +26,7 @@ class InteriorGameplaySettings(BaseModel):
 class TradeGameplaySettings(BaseModel):
     maximum_active_agreements: int
     resources_per_nation: int
+    offer_expire_days: float
 
 
 class GameplaySettingsModel(BaseModel):

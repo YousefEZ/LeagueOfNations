@@ -5,7 +5,6 @@ import random
 from datetime import datetime, timedelta
 from itertools import chain
 from typing import TYPE_CHECKING, List, Optional
-from uuid import uuid4
 
 from host.gameplay_settings import GameplaySettings
 import host.nation.types
@@ -52,12 +51,6 @@ class TradeRequest:
         self._trade: Optional[models.TradeRequestModel] = trade
 
     @property
-    def id(self) -> str:
-        if self._trade is None:
-            raise ValueError("Trade has already been accepted or declined")
-        return self._trade.trade_id
-
-    @property
     def sponsor(self) -> base_types.UserId:
         if self._trade is None:
             raise ValueError("Trade has already been accepted or declined")
@@ -79,7 +72,7 @@ class TradeRequest:
     def expires(self) -> datetime:
         if self._trade is None:
             raise ValueError("Trade has already been accepted or declined")
-        return self._trade.expires
+        return self._trade.date + timedelta(days=GameplaySettings.trade.offer_expire_days)
 
     def invalidate(self) -> None:
         self._trade = None
@@ -118,7 +111,7 @@ def filter_expired(
     now = datetime.now()
     active_requests: List[models.TradeRequestModel] = []
     for trade in trades:
-        if trade.expires < now:
+        if trade.date + timedelta(days=GameplaySettings.trade.offer_expire_days) < now:
             session.delete(trade)
         else:
             active_requests.append(trade)
@@ -213,16 +206,16 @@ class Trade(ministry.Ministry):
     @property
     def received(self) -> List[TradeRequest]:
         requests = (
-            self._session.query(models.TradeRequestModel).filter_by(sponsor=self._identifier).all()
+            self._session.query(models.TradeRequestModel)
+            .filter_by(recipient=self._identifier)
+            .all()
         )
         return [TradeRequest(request) for request in filter_expired(requests, self._session)]
 
     def _send(self, recipient: base_types.UserId) -> None:
         date = datetime.now()
         trade_request = models.TradeRequestModel(
-            trade_id=str(int(uuid4())),
             date=date,
-            expires=date + timedelta(days=1),
             sponsor=self._identifier,
             recipient=recipient,
         )
@@ -245,7 +238,6 @@ class Trade(ministry.Ministry):
 
     def _accept(self, trade_request: TradeRequest) -> None:
         trade_agreement = models.TradeModel(
-            trade_id=trade_request.id,
             date=trade_request.date,
             sponsor=trade_request.sponsor,
             recipient=trade_request.recipient,

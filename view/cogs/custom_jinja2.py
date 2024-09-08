@@ -1,6 +1,7 @@
 from jinja2 import FileSystemLoader, ChainableUndefined
 from jinja2.environment import Environment
 
+from host import gameplay_settings
 from host.base_types import render_currency, render_currency_rate, render_date
 
 
@@ -10,3 +11,4 @@ ENVIRONMENT = Environment(
 ENVIRONMENT.filters["currency"] = render_currency
 ENVIRONMENT.filters["currency_rate"] = render_currency_rate
 ENVIRONMENT.filters["date"] = render_date
+ENVIRONMENT.globals["settings"] = gameplay_settings.GameplaySettings

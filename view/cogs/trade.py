@@ -8,7 +8,7 @@ import qalib.interaction
 from qalib.template_engines.jinja2 import Jinja2
 
 from host.nation import Nation
-from host.nation.trade import TradeSelectResponses, TradeSentResponses
+from host.nation.trade import TradeAcceptResponses, TradeSelectResponses, TradeSentResponses
 from lon import LeagueOfNations, interaction_morph
 from view.cogs.custom_jinja2 import ENVIRONMENT
 
@@ -29,6 +29,11 @@ TradeRequestMapping: Dict[TradeSentResponses, TradeRequestMessages] = {
 TradeSelectMapping: Dict[TradeSelectResponses, str] = {
     TradeSelectResponses.SUCCESS: "select_resources",
     TradeSelectResponses.ACTIVE_AGREEMENT: "select_trade_active_agreement",
+}
+
+TradeAcceptMapping: Dict[TradeAcceptResponses, str] = {
+    TradeAcceptResponses.SUCCESS: "trade_accept",
+    TradeAcceptResponses.NOT_FOUND: "trade_not_found",
 }
 
 
@@ -114,14 +119,25 @@ class Trade(commands.Cog):
     async def requests(self, ctx: qalib.interaction.QalibInteraction) -> None:
         nation = self.bot.get_nation(ctx.user.id)
 
-        def on_select_request(request: Nation):
-            async def callback(select: discord.ui.Select, interaction): ...
+        async def on_trade_request_select(
+            select: discord.ui.Select, interaction: discord.Interaction
+        ):
+            await interaction.response.defer()
+            target = self.bot.get_nation(int(select.values[0]))
+            response = nation.trade.accept(target.identifier)
+            if response != TradeAcceptResponses.SUCCESS:
+                await ctx.display(TradeAcceptMapping[response])
+                return
 
-            return callback
+            await ctx.display(
+                TradeAcceptMapping[response], keywords={"recipient": nation, "sponsor": target}
+            )
+            # TODO: send notification to the sponsor of the agreement that it has been accepted
 
         await ctx.display(
             "trade_requests",
             keywords={"nation": nation, "Resources": Resources},
+            callables={"trade_identifier": on_trade_request_select},
         )
 
 

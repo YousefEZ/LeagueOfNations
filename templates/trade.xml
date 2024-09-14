@@ -168,7 +168,29 @@
       <view></view>
     </message>
     <message key="trade_accepted">
-
+      <embed>
+        <title>:currency_exchange: Trade Accepted</title>
+        <colour>teal</colour>
+        <description>You {{recipient.metadata.emoji}}**{{recipient.metadata.nation_name}}** accepted the trade from {{sponsor.metadata.emoji}}**{{sponsor.metadata.nation_name}}**.</description>
+        <fields>
+          <field>
+            <name>:outbox_tray: Your offering</name>
+            <value>
+              {% for resource in sponsor.trade.resources -%}
+              - {{ Resources[resource].emoji }} {{resource}}
+              {% endfor -%}
+              </value>
+          </field>
+          <field>
+            <name>:inbox_tray: Receiving</name>
+            <value>
+              {%- for resource in recipient.trade.resources -%}
+              - {{ Resources[resource].emoji }} {{resource}} 
+              {% endfor -%}
+            </value>
+          </field>
+        </fields>
+      </embed>
     </message>
     <message key="trade_declined">
     </message>

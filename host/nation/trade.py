@@ -28,6 +28,7 @@ class TradeAcceptResponses(IntEnum):
     SUCCESS = auto()
     TOO_MANY_ACTIVE_AGREEMENTS = auto()
     TRADE_PARTNER_FULL = auto()
+    NOT_FOUND = auto()
 
 
 class TradeSentResponses(IntEnum):
@@ -247,9 +248,11 @@ class Trade(ministry.Ministry):
         self._session.commit()
         trade_request.invalidate()
 
-    def accept(self, trade_request: TradeRequest) -> TradeAcceptResponses:
-        if self._identifier != trade_request.recipient:
-            raise TradeError("not a recipient of this request")
+    def accept(self, sponsor: base_types.UserId) -> TradeAcceptResponses:
+        requests = list(filter(lambda x: x.sponsor == sponsor, self.requests))
+        if not requests:
+            return TradeAcceptResponses.NOT_FOUND
+        trade_request = requests[0]
 
         if len(self.active_agreements) >= GameplaySettings.trade.maximum_active_agreements:
             return TradeAcceptResponses.TOO_MANY_ACTIVE_AGREEMENTS

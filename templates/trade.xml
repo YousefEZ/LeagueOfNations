@@ -55,6 +55,7 @@
           {% endfor %}
         </fields>
       </embed>
+      {% if nation.trade.received %}
       <view>
         <components>
           <select key="trade_identifier">
@@ -76,6 +77,7 @@
           </select>
         </components>
       </view>
+      {% endif %}
     </message>
     <message key="trades">
       <embed>

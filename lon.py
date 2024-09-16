@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import argparse
 from functools import wraps
 import logging
 import os
+import sys
 from typing import Awaitable, Callable, Coroutine, Literal, Optional, Protocol, cast
 from discord.components import TextInput
 import qalib
 from qalib.template_engines.jinja2 import Jinja2
 from qalib.translators.modal import ModalEvents
+from qalib.translators.view import CheckEvent, ViewEvents
 from typing_extensions import Concatenate, ParamSpec
 
 import discord
@@ -98,13 +101,13 @@ class LeagueOfNations(commands.AutoShardedBot):
             for cog in cogs:
                 await self.load_extension(f"view.cogs.{cog}")
         except Exception as e:
-            print("*[CLIENT][LOADING_EXTENSION][STATUS] ERROR ", e)
+            logging.info("*[CLIENT][LOADING_EXTENSION][STATUS] ERROR ", e)
         else:
-            print("*[CLIENT][LOADING_EXTENSION][STATUS] SUCCESS")
+            logging.info("*[CLIENT][LOADING_EXTENSION][STATUS] SUCCESS")
 
         await self.tree.sync()
         self.notification_renderer.start()
-        print("*[CLIENT][NOTIFICATIONS][STATUS] READY")
+        logging.info("*[CLIENT][NOTIFICATIONS][STATUS] READY")
 
     async def get_user_from_id_lookup(
         self,
@@ -165,6 +168,7 @@ class LeagueOfNations(commands.AutoShardedBot):
 
         return confirmation
 
+    @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/lookup.xml")
     async def get_user_target(
         self,
         ctx: QalibInteraction[lookup_messages],
@@ -229,6 +233,7 @@ class LeagueOfNations(commands.AutoShardedBot):
                 "nation": open_nation_modal,
             },
             keywords={"require_lookup": True},
+            events={ViewEvents.ON_CHECK: self.ensure_user(ctx.user.id)},
         )
 
     async def get_user_from_nation_lookup(
@@ -258,6 +263,7 @@ class LeagueOfNations(commands.AutoShardedBot):
                     "nation_lookup",
                     keywords={"nations": nations, "require_lookup": True},
                     callables={"on_select": on_select},
+                    events={ViewEvents.ON_CHECK: self.ensure_user(interaction.user.id)},
                 )
 
             await selection(nation, interaction, reject_override=on_reject)
@@ -266,11 +272,33 @@ class LeagueOfNations(commands.AutoShardedBot):
             "nation_lookup",
             keywords={"nations": nations, "require_lookup": True},
             callables={"on_select": on_select},
+            events={ViewEvents.ON_CHECK: self.ensure_user(interaction.user.id)},
         )
+
+    def ensure_user(self, user: int) -> CheckEvent:
+        async def check(_: discord.ui.View, interaction: discord.Interaction) -> bool:
+            return interaction.user.id == user
+
+        return check
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    parser = argparse.ArgumentParser(prog="lon", description="Run the league of nations bot")
+    parser.add_argument("--log", type=str)
+    parser.add_argument(
+        "-l",
+        "--level",
+        choices=logging.getLevelNamesMapping().keys(),
+        default="INFO",
+    )
+    parser.add_argument("-db", "--database")
+
+    args = parser.parse_args()
+    if args.log:
+        assert args.log.endswith(".log"), "LOG FILE MUST END WITH .log"
+        logging.basicConfig(filename=args.log, level=logging.getLevelNamesMapping()[args.level])
+    else:
+        logging.basicConfig(stream=sys.stdout, level=logging.getLevelNamesMapping()[args.level])
     load_dotenv()
 
     TOKEN = os.getenv("DISCORD_TOKEN")

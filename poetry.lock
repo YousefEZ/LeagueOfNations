@@ -1352,6 +1352,21 @@ files = [
 cli = ["click (>=5.0)"]
 
 [[package]]
+name = "python-forge"
+version = "18.6.0"
+description = "forge (python signatures)"
+optional = false
+python-versions = "*"
+files = [
+    {file = "python_forge-18.6.0-py35-none-any.whl", hash = "sha256:bf91f9a42150d569c2e9a0d90ab60a8cbed378bdf185e5120532a3481067395c"},
+]
+
+[package.extras]
+dev = ["coverage", "mypy", "pylint", "pytest", "sphinx", "sphinx-autodoc-typehints", "sphinx-paramlinks"]
+docs = ["docutils", "requests", "sphinx (>=1.7.4)", "sphinx-paramlinks"]
+testing = ["coverage", "mypy", "pylint", "pytest"]
+
+[[package]]
 name = "ruff"
 version = "0.6.2"
 description = "An extremely fast Python linter and code formatter, written in Rust."
@@ -1709,4 +1724,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "c7a3a135b947ad574ce7b94453c8e187b5ed2966959ea9af0988a00c90469f32"
+content-hash = "673661baa861f8da4c5e8f9ffc3c057d557099db09e277792409c0f1879bc82f"

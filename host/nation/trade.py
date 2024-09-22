@@ -18,21 +18,22 @@ if TYPE_CHECKING:
 
 
 class TradeSelectResponses(IntEnum):
-    SUCCESS = auto()
+    SUCCESS = 0
     INVALID_RESOURCE = auto()
     MISSING_RESOURCE = auto()
     ACTIVE_AGREEMENT = auto()
+    DUPLICATE_RESOURCE = auto()
 
 
 class TradeAcceptResponses(IntEnum):
-    SUCCESS = auto()
+    SUCCESS = 0
     TOO_MANY_ACTIVE_AGREEMENTS = auto()
     TRADE_PARTNER_FULL = auto()
     NOT_FOUND = auto()
 
 
 class TradeSentResponses(IntEnum):
-    SUCCESS = auto()
+    SUCCESS = 0
     PARTNER_NOT_FOUND = auto()
     CANNOT_TRADE_WITH_SELF = auto()
     TOO_MANY_ACTIVE_AGREEMENTS = auto()
@@ -40,11 +41,12 @@ class TradeSentResponses(IntEnum):
 
 
 class TradeDeclineResponses(IntEnum):
-    TRADE_DECLINED = auto()
+    SUCCESS = 0
+    NOT_FOUND = auto()
 
 
 class TradeCancelResponses(IntEnum):
-    TRADE_CANCELLED = auto()
+    SUCCESS = 0
 
 
 class TradeRequest:
@@ -75,14 +77,14 @@ class TradeRequest:
             raise ValueError("Trade has already been accepted or declined")
         return self._trade.date + timedelta(days=GameplaySettings.trade.offer_expire_days)
 
-    def invalidate(self) -> None:
+    def invalidate(self, session: Session) -> None:
+        session.delete(self._trade)
         self._trade = None
 
 
 class TradeAgreement:
-    def __init__(self, trade: models.TradeModel, valid: bool = True):
+    def __init__(self, trade: models.TradeModel):
         self._trade: Optional[models.TradeModel] = trade
-        self._valid = valid
 
     @property
     def sponsor(self) -> base_types.UserId:
@@ -102,8 +104,9 @@ class TradeAgreement:
             raise ValueError("Trade has been cancelled")
         return self._trade.date
 
-    def invalidate(self) -> None:
-        self._valid = None
+    def invalidate(self, session: Session) -> None:
+        session.delete(self._trade)
+        self._trade = None
 
 
 def filter_expired(
@@ -140,6 +143,10 @@ class Trade(ministry.Ministry):
         )
         if resource_model is None:
             return TradeSelectResponses.MISSING_RESOURCE
+
+        if resource in self.resources:
+            return TradeSelectResponses.DUPLICATE_RESOURCE
+
         resource_model.resource = resource
         self._session.commit()
         return TradeSelectResponses.SUCCESS
@@ -243,16 +250,34 @@ class Trade(ministry.Ministry):
             sponsor=trade_request.sponsor,
             recipient=trade_request.recipient,
         )
-        self._session.delete(trade_request)
         self._session.add(trade_agreement)
+        trade_request.invalidate(self._session)
         self._session.commit()
-        trade_request.invalidate()
 
-    def accept(self, sponsor: base_types.UserId) -> TradeAcceptResponses:
+    def fetch_request_from(self, sponsor: base_types.UserId) -> Optional[TradeRequest]:
         requests = list(filter(lambda x: x.sponsor == sponsor, self.requests))
         if not requests:
+            return None
+
+        return requests[0]
+
+    def fetch_agreement_with(self, partner: base_types.UserId) -> Optional[TradeAgreement]:
+        agreements = list(
+            filter(
+                lambda x: x.sponsor == partner or x.recipient == partner,
+                self.active_agreements,
+            )
+        )
+        if not agreements:
+            return None
+
+        return agreements[0]
+
+    def accept(self, sponsor: base_types.UserId) -> TradeAcceptResponses:
+        trade_request = self.fetch_request_from(sponsor)
+
+        if trade_request is None:
             return TradeAcceptResponses.NOT_FOUND
-        trade_request = requests[0]
 
         if len(self.active_agreements) >= GameplaySettings.trade.maximum_active_agreements:
             return TradeAcceptResponses.TOO_MANY_ACTIVE_AGREEMENTS
@@ -264,24 +289,23 @@ class Trade(ministry.Ministry):
         self._accept(trade_request)
         return TradeAcceptResponses.SUCCESS
 
-    def decline(self, trade_request: TradeRequest) -> TradeDeclineResponses:
-        if self._identifier != trade_request.recipient:
-            raise TradeError("not a recipient of this request")
-        self._session.delete(trade_request)
-        self._session.commit()
-        trade_request.invalidate()
-        return TradeDeclineResponses.TRADE_DECLINED
+    def decline(self, sponsor: base_types.UserId) -> TradeDeclineResponses:
+        trade_request = self.fetch_agreement_with(sponsor)
+        if trade_request is None:
+            return TradeDeclineResponses.NOT_FOUND
+        trade_request.invalidate(self._session)
+        return TradeDeclineResponses.SUCCESS
 
-    def cancel(self, trade_agreement: TradeAgreement) -> TradeCancelResponses:
+    def cancel(self, partner: base_types.UserId) -> TradeCancelResponses:
+        trade_request = self.fetch_request_from(partner)
         if (
             self._identifier != trade_agreement.recipient
             and self._identifier != trade_agreement.sponsor
         ):
             raise TradeError("not a participant of this agreement")
-        self._session.delete(trade_agreement)
+        trade_agreement.invalidate(self._session)
         self._session.commit()
-        trade_agreement.invalidate()
-        return TradeCancelResponses.TRADE_CANCELLED
+        return TradeCancelResponses.SUCCESS
 
     def boost(self) -> host.nation.types.boosts.BoostsLookup:
         return host.nation.types.boosts.BoostsLookup()

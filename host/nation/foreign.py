@@ -182,7 +182,7 @@ class Foreign(Ministry):
             }
         )
 
-    def _send(self, recipient: base_types.UserId, amount: Price, reason: str) -> AidRequest:
+    def _send(self, recipient: base_types.UserId, amount: Price, reason: str) -> None:
         request = models.AidRequestModel(
             aid_id=str(uuid.uuid4()),
             sponsor=self._player.identifier,
@@ -195,7 +195,6 @@ class Foreign(Ministry):
         self._player.bank.deduct(amount)
         self._session.add(request)
         self._session.commit()
-        return AidRequest(request)
 
     def _remove_expired_requests(self, requests: Set[AidRequest]) -> List[AidRequest]:
         removed_requests = set()
@@ -240,15 +239,13 @@ class Foreign(Ministry):
 
         return AidRequestCode.SUCCESS
 
-    def send(
-        self, recipient: base_types.UserId, amount: Price, reason: str
-    ) -> Tuple[AidRequestCode, Optional[AidRequest]]:
+    def send(self, recipient: base_types.UserId, amount: Price, reason: str) -> AidRequestCode:
         code = self._verify_send_request(recipient, amount, reason)
-        if code != AidRequestCode.SUCCESS:
-            return code, None
+        if code is AidRequestCode.SUCCESS:
+            return code
 
-        request = self._send(recipient, amount, reason)
-        return AidRequestCode.SUCCESS, request
+        self._send(recipient, amount, reason)
+        return AidRequestCode.SUCCESS
 
     def _cancel_request(self, request: AidRequest) -> None:
         model_request = (
@@ -256,7 +253,7 @@ class Foreign(Ministry):
         )
         if model_request is None:
             return
-        self._player.find_player(request.sponsor).bank.add(request.amount)
+        self._player.find_player(request.sponsor).bank.receive(request.amount)
         self._session.delete(model_request)
         self._session.commit()
 
@@ -279,7 +276,7 @@ class Foreign(Ministry):
         )
         self._session.delete(request.model)
         self._session.add(agreement)
-        self._player.bank.add(request.amount)
+        self._player.bank.receive(request.amount)
         return AidAgreement(agreement)
 
     def _verify_accept_request(self, request: AidRequest) -> AidAcceptCode:

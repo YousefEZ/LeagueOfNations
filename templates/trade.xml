@@ -1,215 +1,231 @@
 <discord>
-    {% from "lookup.xml" import lookup with context %}
-    {{ lookup(require_lookup) }}
-    <message key="select_resources">
-      <content>Select the resources you would like your nation to have.</content>
-      <view>
-        <components>
-          {% for selected_resource in resources %}
-          <select key="{{selected_resource}}">
-            <label>Resource {{loop.index}}</label>
-            <placeholder>Select a resource</placeholder> 
-            <options>
-              {% for name, resource in Resources.items() %}
-              {% if name not in nation.trade.resources %} 
-                <option>
-                  <label>{{resource.emoji}}{{name}}</label>
-                  <value>{{name}}</value>
-                </option>
-              {% elif name == selected_resource %}
-                <option>
-                  <label>{{resource.emoji}}{{name}}</label>
-                  <value>{{name}}</value>
-                  <default>True</default>
-                </option>
-              {% endif %}   
-              {% endfor %}
-            </options>
-            </select>
+  {% macro list_resources(resources) -%}
+    {%- for resource in resources -%} 
+      - {{ Resources[resource].emoji }} {{ resource }} 
+    {% endfor -%}
+  {%- endmacro %}
+  {% macro select_trade_view(nation, trades) -%}
+  {% if trades %} 
+    <view>
+      <components>
+        <select key="trade_identifier">
+          <label>Select a request to accept</label>
+          <placeholder>Select a trade</placeholder>
+          <options>
+            {% for trade in trades %} 
+            {% set sponsor = nation.find_player(trade.sponsor) %} 
+            <option>
+              <label>{{ sponsor.metadata.nation_name }}</label>
+              <emoji>
+                <name>{{ sponsor.metadata.emoji.split(":")[1] }}</name>
+                <id>{{ sponsor.metadata.emoji.split(":")[2] .split('>')[0] }}</id>
+              </emoji>
+              <value>{{ sponsor.identifier }}</value>
+            </option> 
             {% endfor %}
-        </components>
-      </view>
+          </options>
+        </select>
+      </components>
+      </view> 
+  {% endif %}
+  {%- endmacro %} 
+  <message key="select_resources">
+    <content>Select the resources you would like your nation to have.</content>
+    <view>
+      <components>
+        {% for selected_resource in resources %} 
+        <select key="{{ selected_resource }}">
+          <label>Resource {{ loop.index }}</label>
+          <placeholder>Select a resource</placeholder>
+          <options>
+            {% for name, resource in Resources.items() %} 
+            {% if name not in nation.trade.resources %} 
+            <option>
+              <label>{{ resource.emoji }}{{ name }}</label>
+              <value>{{ name }}</value>
+            </option> 
+            {% elif name == selected_resource %} 
+            <option>
+              <label>{{ resource.emoji }}{{ name }}</label>
+              <value>{{ name }}</value>
+              <default>True</default>
+            </option> 
+            {% endif %} 
+            {% endfor %}
+          </options>
+        </select> 
+        {% endfor %}
+      </components>
+    </view>
+  </message>
+  <message key="select_trade_active_agreement">
+    <content>:exclamation: You have active agreements and/or pending offers. Please cancel all agreements and offers before switching resources.</content>
+    <view></view>
+  </message>
+  <message key="trade_requests"><embed>
+      <title>:currency_exchange: Trade Requests</title>
+      <colour>teal</colour>
+      <description>Select a trade requests to view</description>
+      <fields>
+        {% for trade in nation.trade.received %} 
+        {% set sponsor = nation.find_player(trade.sponsor) %} 
+        <field>
+          <name>{{ sponsor.metadata.emoji }}**{{ sponsor.metadata.nation_name }}**</name>
+          <value>{{ list_resources(sponsor.resources)}}</value>
+        </field>
+        {% endfor %}
+      </fields>
+    </embed> 
+    {{select_trade_view(nation, nation.trade.received)}}
     </message>
-    <message key="select_trade_active_agreement">
-      <content>
-        :exclamation: You have active agreements and/or pending offers. Please cancel all agreements and offers before switching resources.
-      </content>
-      <view></view> 
-    </message>
-    <message key="trade_requests">
-      <embed>
-        <title>:currency_exchange: Trade Requests</title>
-        <colour>teal</colour>
-        <description>Select a trade requests to view</description>
-        <fields>
-          {% for trade in nation.trade.received %}
-          {% set sponsor = nation.find_player(trade.sponsor) %}
-          <field>
-            <name>{{sponsor.metadata.emoji}}**{{sponsor.metadata.nation_name}}**</name>
-            <value>
-              {% for resource in sponsor.resources -%}
-              - {{ Resources[resource].emoji }} {{resource}}
-              {% endfor -%}
-            </value>
-          </field>
-          {% endfor %}
-        </fields>
-      </embed>
-      {% if nation.trade.received %}
-      <view>
-        <components>
-          <select key="trade_identifier">
-            <label>Select a request to accept</label>
-            <placeholder>Select a trade</placeholder>
-            <options>
-              {% for trade in nation.trade.received %}
-              {% set sponsor = nation.find_player(trade.sponsor) %}
-              <option>
-                <label>{{sponsor.metadata.nation_name}}</label>
-                <emoji>
-                  <name>{{ sponsor.metadata.emoji.split(':')[1] }}</name>  
-                  <id>{{ sponsor.metadata.emoji.split(':')[2].split('>')[0] }}</id>
-                </emoji> 
-                <value>{{sponsor.identifier}}</value>
-              </option>
-              {% endfor %}
-            </options>
-          </select>
-        </components>
-      </view>
-      {% endif %}
-    </message>
-    <message key="trades">
-      <embed>
-        <title>:currency_exchange: Active Trades</title>
-        <colour>teal</colour>
-        <description>Here are your active trades.</description>
-        <fields>
-          {% for trade in trades %}
-          <field>
-            <name>{{trade.sponsor.metadata.emoji}}**{{trade.sponsor.metadata.nation_name}}**</name>
-            <value>
-              {% for resource in trade.resources -%}
-              - {{ Resources[resource].emoji }} {{resource}}
-              {% endfor -%}
-            </value>
-          </field>
-          {% endfor %}
-        </fields> 
-      </embed>
-    </message>
-    <message key="trade_offer">
-      <embed>
-        <title>:currency_exchange: Trade Offer</title>
-        <colour>teal</colour>
-        <description>You {{sponsor.metadata.emoji}}**{{sponsor.metadata.nation_name}}** are offering a trade to {{recipient.metadata.emoji}}**{{recipient.metadata.nation_name}}**.</description>
-        <fields>
-          <field>
-            <name>:outbox_tray: Your offering</name>
-            <value>
-              {% for resource in sponsor.trade.resources -%}
-              - {{ Resources[resource].emoji }} {{resource}}
-              {% endfor -%}
-              </value>
-          </field>
-          <field>
-            <name>:inbox_tray: Receiving</name>
-            <value>
-              {%- for resource in recipient.trade.resources -%}
-              - {{ Resources[resource].emoji }} {{resource}} 
-              {% endfor -%}
-            </value>
-          </field>
-        </fields>
-      </embed>
-      <view>
-        <components>
-          <button key="accept">
-            <label>Accept</label>
-            <emoji>
-              <name>✔️</name>
-            </emoji>
-            <style>success</style>
-          </button>
-          <button key="decline">
-            <label>Decline</label>
-            <emoji>
-              <name>✖️</name>
-            </emoji>
-            <style>danger</style>
-          </button>
-        </components>
-      </view>
-    </message>
-    <message key="trade_sent">
-      <embed>
-        <title>:currency_exchange: Trade Offer Sent</title>
-        <colour>teal</colour>
-        <description>You {{sponsor.metadata.emoji}}**{{sponsor.metadata.nation_name}}** sent a trade to {{recipient.metadata.emoji}}**{{recipient.metadata.nation_name}}**.</description>
-        <fields>
-          <field>
-            <name>:outbox_tray: Your offering</name>
-            <value>
-              {% for resource in sponsor.trade.resources -%}
-              - {{ Resources[resource].emoji }} {{resource}}
-              {% endfor -%}
-              </value>
-          </field>
-          <field>
-            <name>:inbox_tray: Receiving</name>
-            <value>
-              {%- for resource in recipient.trade.resources -%}
-              - {{ Resources[resource].emoji }} {{resource}} 
-              {% endfor -%}
-            </value>
-          </field>
-        </fields>
-      </embed>
-      <view></view>
-    </message>
-    <message key="trade_accepted">
-      <embed>
-        <title>:currency_exchange: Trade Accepted</title>
-        <colour>teal</colour>
-        <description>You {{recipient.metadata.emoji}}**{{recipient.metadata.nation_name}}** accepted the trade from {{sponsor.metadata.emoji}}**{{sponsor.metadata.nation_name}}**.</description>
-        <fields>
-          <field>
-            <name>:outbox_tray: Your offering</name>
-            <value>
-              {% for resource in sponsor.trade.resources -%}
-              - {{ Resources[resource].emoji }} {{resource}}
-              {% endfor -%}
-              </value>
-          </field>
-          <field>
-            <name>:inbox_tray: Receiving</name>
-            <value>
-              {%- for resource in recipient.trade.resources -%}
-              - {{ Resources[resource].emoji }} {{resource}} 
-              {% endfor -%}
-            </value>
-          </field>
-        </fields>
-      </embed>
-    </message>
-    <message key="trade_declined">
-    </message>
-    <message key="trade_cancelled">
-    </message>
-
-    <message key="too_many_trades">
-        <content>:x: Too Many Active Trades</content>
-    </message>
-    <message key="too_many_active_agreements">
-
-    </message>
-    <message key="trade_partner_full">
-
-    </message>
-    <message key="cannot_trade_with_self">
-
-    </message>
-    <message>
-
-    </message>
+  <message key="trades">
+    <embed>
+      <title>:currency_exchange: Active Trades</title>
+      <colour>teal</colour>
+      <description>Here are your active trades.</description>
+      <fields>
+        {% for trade in trades %} <field>
+          <name>{{ trade.sponsor.metadata.emoji }}**{{ trade.sponsor.metadata.nation_name }}**</name>
+          <value>
+            {% for resource in trade.resources -%} 
+            - {{ Resources[resource].emoji }} {{ resource }} 
+            {% endfor -%}
+          </value>
+        </field> 
+        {% endfor %}
+      </fields>
+    </embed>
+    {{ select_trade_view(nation, nation.trade.active)}} 
+  </message>
+  <message key="trade_offer">
+    <embed>
+      <title>:currency_exchange: Trade Offer</title>
+      <colour>teal</colour>
+      <description>You {{ sponsor.metadata.emoji }}**{{ sponsor.metadata.nation_name }}** are offering a trade to {{ recipient.metadata.emoji }}**{{ recipient.metadata.nation_name }}**.</description>
+      <fields>
+        <field>
+          <name>:outbox_tray: Your offering</name>
+          <value>{{list_resources(sponsor.trade.resources)}}</value>
+        </field>
+        <field>
+          <name>:inbox_tray: Receiving</name>
+          <value>{{ list_resources(recipient.trade.resources) }}</value>
+        </field>
+      </fields>
+    </embed>
+    <view>
+      <components>
+        <button key="accept">
+          <label>Accept</label>
+          <emoji>
+            <name>✔️</name>
+          </emoji>
+          <style>success</style>
+        </button>
+        <button key="decline">
+          <label>Decline</label>
+          <emoji>
+            <name>❌</name>
+          </emoji>
+          <style>danger</style>
+        </button>
+      </components>
+    </view>
+  </message>
+  <message key="trade_sent">
+    <embed>
+      <title>:currency_exchange: Trade Offer Sent</title>
+      <colour>teal</colour>
+      <description>You {{ sponsor.metadata.emoji }}**{{ sponsor.metadata.nation_name }}** sent a trade to {{ recipient.metadata.emoji }}**{{ recipient.metadata.nation_name }}**.</description>
+      <fields>
+        <field>
+          <name>:outbox_tray: Your offering</name>
+          <value>{{list_resources(sponsor.trade.resources)}}</value>
+        </field>
+        <field>
+          <name>:inbox_tray: Receiving</name>
+          <value>{{list_resources(recipient.trade.resources)}}</value>
+        </field>
+      </fields>
+    </embed>
+    <view></view>
+  </message>
+  <message key="trade_accepted">
+    <embed>
+      <title>:currency_exchange: Trade Accepted</title>
+      <colour>teal</colour>
+      <description>You {{ recipient.metadata.emoji }}**{{ recipient.metadata.nation_name }}** accepted the trade from {{ sponsor.metadata.emoji }}**{{ sponsor.metadata.nation_name }}**.</description>
+      <fields>
+        <field>
+          <name>:outbox_tray: Your offering</name>
+          <value>{{list_resources(sponsor.trade.resources)}}</value>
+        </field>
+        <field>
+          <name>:inbox_tray: Receiving</name>
+          <value>{{list_resources(recipient.trade.resources)}}</value>
+        </field>
+      </fields>
+    </embed>
+  </message>
+  <message key="trade_declined">
+    <embed>
+      <title>:x: Trade Declined</title>
+      <colour>red</colour>
+      <description>You {{ recipient.metadata.emoji }}**{{ recipient.metadata.nation_name }}** declined the trade from {{ sponsor.metadata.emoji }}**{{ sponsor.metadata.nation_name }}**.</description>
+    </embed>
+  </message>
+  <message key="trade_cancelled">
+    <embed>
+      <title>:x: Trade Cancelled</title>
+      <colour>red</colour>
+      <description>You {{ nation.metadata.emoji }}**{{ nation.metadata.nation_name }}** cancelled the trade with {{ partner.metadata.emoji }}**{{ partner.metadata.nation_name }}**.</description>
+    </embed>
+  </message>
+  <message key="too_many_trades">
+    <content>:x: Too Many Active Trades</content>
+  </message>
+  <message key="too_many_active_agreements">
+    <embed>
+      <title>:x: Too Many Active Agreements</title>
+      <colour>red</colour>
+      <description>You have reached the maximum number of active agreements. Please cancel an agreement before creating a new one.</description>
+    </embed>
+  </message>
+  <message key="trade_partner_full"></message>
+  <message key="cannot_trade_with_self"></message>
+  <message key="trade_offer_selected">
+    <embed>
+      <title>:currency_exchange: Trade Offer Selected</title>
+      <colour>teal</colour>
+      <description>You have selected a trade offer from {{ sponsor.metadata.emoji }}**{{ sponsor.metadata.nation_name }}**.</description>
+      <fields>
+        <field>
+          <name>:outbox_tray: Your offering</name>
+          <value>{{list_resources(sponsor.trade.resources)}}</value>
+        </field>
+        <field>
+          <name>:inbox_tray: Receiving</name>
+          <value>{{list_resources(recipient.trade.resources)}}</value>
+        </field>
+      </fields>
+    </embed>
+    <view>
+      <components>
+        <button key="accept">
+          <label>Accept</label>
+          <emoji>
+            <name>✔️</name>
+          </emoji>
+          <style>success</style>
+        </button>
+        <button key="decline">
+          <label>Decline</label>
+          <emoji>
+            <name>❌</name>
+          </emoji>
+          <style>danger</style>
+        </button>
+      </components>
+    </view>
+  </message>
 </discord>

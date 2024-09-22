@@ -108,7 +108,7 @@
     <message key="escrow">
         <embed>
             <title>Ministry of Foreign Affairs</title>
-            <description>The funds {{nation.name}} has sent an aid package in accordance with the request submitted below and it is being held in :lock: escrow for 3 days. The recipient can accept or decline it at any time.</description>
+            <description>{{nation.name}} has sent an aid package in accordance with the request submitted below and it is being held in :lock: escrow for 3 days. The recipient can accept or decline it at any time.</description>
             <colour>teal</colour>
             <fields>
                 <field inline="True">
@@ -117,7 +117,7 @@
                 </field>
                 <field inline="True">
                     <name>:pound: Amount</name>
-                    <value>{{ aid.amount|currency }}</value>
+                    <value>{{ amount|currency }}</value>
                 </field>
                 <field inline="True">
                     <name>:lock: Escrow Time</name>

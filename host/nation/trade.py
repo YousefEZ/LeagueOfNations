@@ -4,13 +4,13 @@ from enum import IntEnum, auto
 import random
 from datetime import datetime, timedelta
 from itertools import chain
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Set
 
 from host.gameplay_settings import GameplaySettings
 import host.nation.types
 from host import base_types
 from host.nation import ministry, models
-from host.nation.types.resources import RESOURCE_NAMES, ResourceName
+from host.nation.types.resources import RESOURCE_NAMES, BonusResources, ResourceName
 from sqlalchemy.orm import Session
 
 if TYPE_CHECKING:
@@ -47,6 +47,7 @@ class TradeDeclineResponses(IntEnum):
 
 class TradeCancelResponses(IntEnum):
     SUCCESS = 0
+    NOT_FOUND = auto()
 
 
 class TradeRequest:
@@ -81,6 +82,11 @@ class TradeRequest:
         session.delete(self._trade)
         self._trade = None
 
+    def counter_party(self, user_id: base_types.UserId) -> base_types.UserId:
+        if self.sponsor == user_id:
+            return self.recipient
+        return self.sponsor
+
 
 class TradeAgreement:
     def __init__(self, trade: models.TradeModel):
@@ -107,6 +113,11 @@ class TradeAgreement:
     def invalidate(self, session: Session) -> None:
         session.delete(self._trade)
         self._trade = None
+
+    def counter_party(self, user_id: base_types.UserId) -> base_types.UserId:
+        if self.sponsor == user_id:
+            return self.recipient
+        return self.sponsor
 
 
 def filter_expired(
@@ -168,25 +179,30 @@ class Trade(ministry.Ministry):
             return selected_resources
         return [ResourceName(resource.resource) for resource in resources]
 
-    @property
-    def all_resources(self) -> List[str]:
-        return list(
+    def all_resources(self) -> Set[str]:
+        return set(
             chain(
                 self.resources,
                 (
-                    resource
+                    resources
                     for agreement in self.sponsored
-                    for pair in self._player.find_player(agreement.recipient).trade.resources
-                    for resource in pair
+                    for resources in self._player.find_player(agreement.recipient).trade.resources
                 ),
                 (
-                    resource
+                    resources
                     for agreement in self.recipient
-                    for pair in self._player.find_player(agreement.sponsor).trade.resources
-                    for resource in pair
+                    for resources in self._player.find_player(agreement.sponsor).trade.resources
                 ),
             )
         )
+
+    def bonus_resources(self) -> Set[str]:
+        all_resources = self.all_resources()
+        return {
+            bonus_resource
+            for bonus_resource in BonusResources
+            if BonusResources[bonus_resource].dependencies in all_resources
+        }
 
     @property
     def sponsored(self) -> List[TradeAgreement]:
@@ -297,13 +313,10 @@ class Trade(ministry.Ministry):
         return TradeDeclineResponses.SUCCESS
 
     def cancel(self, partner: base_types.UserId) -> TradeCancelResponses:
-        trade_request = self.fetch_request_from(partner)
-        if (
-            self._identifier != trade_agreement.recipient
-            and self._identifier != trade_agreement.sponsor
-        ):
-            raise TradeError("not a participant of this agreement")
-        trade_agreement.invalidate(self._session)
+        agreement = self.fetch_agreement_with(partner)
+        if agreement is None:
+            return TradeCancelResponses.NOT_FOUND
+        agreement.invalidate(self._session)
         self._session.commit()
         return TradeCancelResponses.SUCCESS
 

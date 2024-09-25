@@ -9,6 +9,7 @@ from discord import app_commands
 from discord.ext import commands
 from qalib.translators.view import ViewEvents
 
+from host.gameplay_settings import GameplaySettings
 from host.base_types import as_user_id
 from host.nation import Nation, StartResponses
 from lon import Event, LeagueOfNations, event_with_session
@@ -54,7 +55,9 @@ class StartEvent(Event[StartMessages]):
             response,
         )
         await interaction.response.defer()
-        await self.ctx.display(StartMapping[response], keywords={"nation_name": self.nation_name})
+        await self.ctx.display(
+            StartMapping[response], keywords={"nation_name": self.nation_name}, view=None
+        )
 
     async def decline(self, _: discord.ui.Button, interaction: discord.Interaction) -> None:
         await interaction.response.send_message(":x: Declined")
@@ -68,7 +71,13 @@ class Start(commands.Cog):
     @app_commands.describe(nation_name="The name of your nation")
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/start.xml")
     async def start(
-        self, ctx: qalib.interaction.QalibInteraction[StartMessages], nation_name: str
+        self,
+        ctx: qalib.interaction.QalibInteraction[StartMessages],
+        nation_name: app_commands.Range[
+            str,
+            GameplaySettings.metadata.minimum_nation_name_length,
+            GameplaySettings.metadata.maximum_nation_name_length,
+        ],
     ) -> None:
         """Slash Command that founds a nation with the nation_name
 

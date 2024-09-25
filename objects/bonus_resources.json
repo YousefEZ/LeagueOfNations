@@ -1,7 +1,7 @@
 {
   "Affluent": {
     "emoji": "💰",
-    "details": "Affluent worlds are rich in natural resources and have a high standard of living. They are often industrialized and produce a lot of manufactured goods.",
+    "description": "Affluent worlds are rich in natural resources and have a high standard of living. They are often industrialized and produce a lot of manufactured goods.",
     "boosts": {
       "citizen_boost": 0.05
     },
@@ -14,7 +14,7 @@
   },
   "Asphalt": {
     "emoji": "🛣️",
-    "details": "Asphalt worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
+    "description": "Asphalt worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
     "boosts": {
       "infrastructure_bill_modifier": 0.05
     },
@@ -26,7 +26,7 @@
   },
   "Automobiles": {
     "emoji": "🚗",
-    "details": "Automobile worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
+    "description": "Automobile worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
     "boosts": {
       "happiness_modifier": 0.03
     },
@@ -37,7 +37,7 @@
   },
   "Beer": {
     "emoji": "🍺",
-    "details": "Beer worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
+    "description": "Beer worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
     "boosts": {
       "happiness_modifier": 0.02
     },
@@ -50,7 +50,7 @@
   },
   "Construction": {
     "emoji": "🏗️",
-    "details": "Construction worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
+    "description": "Construction worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
     "boosts": {
       "infrastructure_cost_modifier": 0.05
     },
@@ -63,7 +63,7 @@
   },
   "FastFood": {
     "emoji": "🍔",
-    "details": "FastFood worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
+    "description": "FastFood worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
     "boosts": {
       "happiness_modifier": 0.02
     },
@@ -76,7 +76,7 @@
   },
   "Jewelry": {
     "emoji": "💍",
-    "details": "Jewelry worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
+    "description": "Jewelry worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
     "boosts": {
       "happiness_modifier": 0.03
     },
@@ -89,7 +89,7 @@
   },
   "Microchips": {
     "emoji": "💻",
-    "details": "Microchips worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
+    "description": "Microchips worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
     "boosts": {
       "income_boost": 0.05,
       "technology_cost_modifier": 0.08
@@ -102,7 +102,7 @@
   },
   "Scholar": {
     "emoji": "📚",
-    "details": "Scholarly worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
+    "description": "Scholarly worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
     "boosts": {
       "income_boost": 0.03
     },
@@ -113,7 +113,7 @@
   },
   "Steel": {
     "emoji": "🏗️",
-    "details": "Steel worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
+    "description": "Steel worlds are covered in roads and highways. They are often industrialized and produce a lot of manufactured goods.",
     "boosts": {
       "infrastructure_cost_modifier": 0.02
     },

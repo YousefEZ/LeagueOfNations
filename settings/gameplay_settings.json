@@ -20,5 +20,9 @@
     "maximum_active_agreements": 5,
     "resources_per_nation": 2,
     "offer_expire_days": 3 
+  },
+  "metadata": {
+    "minimum_nation_name_length": 5, 
+    "maximum_nation_name_length": 50
   }
 }

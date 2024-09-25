@@ -3,6 +3,11 @@ import json
 from pydantic import BaseModel
 
 
+class MetadataGameplaySettings(BaseModel):
+    minimum_nation_name_length: int
+    maximum_nation_name_length: int
+
+
 class ForeignGameplaySettings(BaseModel):
     maximum_aid_slots: int
     maximum_aid_amount: float
@@ -31,9 +36,10 @@ class TradeGameplaySettings(BaseModel):
 
 class GameplaySettingsModel(BaseModel):
     bank: BankGameplaySettings
-    interior: InteriorGameplaySettings
     foreign: ForeignGameplaySettings
+    interior: InteriorGameplaySettings
     trade: TradeGameplaySettings
+    metadata: MetadataGameplaySettings
 
 
 with open("settings/gameplay_settings.json", "r") as gameplay_settings_file:

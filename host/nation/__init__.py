@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from enum import IntEnum, auto
 from functools import cached_property
 from typing import List, Optional, get_args
 
@@ -21,6 +22,20 @@ from host.nation.types.basic import Population
 from sqlalchemy.orm import Session
 
 
+class StartResponses(IntEnum):
+    SUCCESS = 0
+    ALREADY_EXISTS = auto()
+    NAME_TAKEN = auto()
+    NAME_TOO_SHORT = auto()
+    NAME_TOO_LONG = auto()
+    NON_ASCII = auto()
+
+
+def user_exists(identifier: base_types.UserId, session: Session) -> bool:
+    metadata = session.query(models.MetadataModel).filter_by(user_id=identifier).first()
+    return metadata is not None
+
+
 class Nation:
     def __init__(self, identifier: base_types.UserId, session: Session):
         self._identifier: base_types.UserId = identifier
@@ -28,10 +43,7 @@ class Nation:
 
     @property
     def exists(self) -> bool:
-        metadata = (
-            self._session.query(models.MetadataModel).filter_by(user_id=self._identifier).first()
-        )
-        return metadata is not None
+        return user_exists(self._identifier, self._session)
 
     @staticmethod
     def search_for_nations(
@@ -95,8 +107,22 @@ class Nation:
             for ministry_object in get_args(types.ministries.Ministries)
         ]
 
-    @classmethod
-    def start(cls, identifier: base_types.UserId, name: str, session: Session) -> Nation:
+    @staticmethod
+    def start(identifier: base_types.UserId, name: str, session: Session) -> StartResponses:
+        if not name.isascii():
+            return StartResponses.NON_ASCII
+
+        if len(name) < GameplaySettings.metadata.minimum_nation_name_length:
+            return StartResponses.NAME_TOO_SHORT
+
+        if len(name) > GameplaySettings.metadata.maximum_nation_name_length:
+            return StartResponses.NAME_TOO_LONG
+
+        if user_exists(identifier, session):
+            return StartResponses.ALREADY_EXISTS
+
+        if Nation.search_for_nations(name, session):
+            return StartResponses.NAME_TAKEN
         metadata = models.MetadataModel(
             user_id=identifier,
             nation=name,
@@ -108,7 +134,7 @@ class Nation:
         session.add(metadata)
         session.commit()
 
-        return cls(identifier, session)
+        return StartResponses.SUCCESS
 
     def find_player(self, identifier: base_types.UserId) -> Nation:
         return Nation(identifier, self._session)

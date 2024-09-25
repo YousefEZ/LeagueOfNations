@@ -126,7 +126,7 @@
             </fields>
         </embed>
     </message>
-    <message key="NonAscii">
+    <message key="non_ascii_name">
       <embed>
         <title>Invalid Name</title>
         <colour>magenta</colour>

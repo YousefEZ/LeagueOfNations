@@ -1,0 +1,73 @@
+{% from "trade/macros.xml" import list_resources, select_trade_view with context %}
+<discord>
+  <message key="trades">
+    <embed>
+      <title>:currency_exchange: Active Trades</title>
+      <colour>teal</colour>
+      <description>Here are your active trades.</description>
+      <fields>
+        {% macro list_partner(partner) -%}
+        <field>
+          <name>{{ partner.metadata.emoji }}**{{ partner.metadata.nation_name }}**</name>
+          <value>{{ list_resources(partner.trade.resources, Resources) }}</value>
+        </field>
+        {%- endmacro %}
+        {% for trade in nation.trade.sponsored %} 
+        {{ list_partner(nation.find_player(trade.recipient)) }} 
+        {% endfor %}
+        {% for trade in nation.trade.recipient %} 
+        {{ list_partner(nation.find_player(trade.sponsor)) }}  
+        {% endfor %}
+        <field>
+          <name>🔮 Bonus Resources</name>
+          <value>
+            {{ list_resources(nation.trade.bonus_resources(), BonusResources) }}
+          </value>
+        </field>
+      </fields>
+    </embed>
+    {{ select_trade_view(nation, nation.trade.active_agreements)}} 
+  </message>
+  <message key="trade_view">
+    <embed>
+      <title>:currency_exchange: Trade View</title>
+      <colour>teal</colour>
+      <description>Here are the details of the trade with {{ partner.metadata.emoji }} **{{ partner.metadata.nation_name }}**</description>
+      <fields>
+        <field>
+          <name>:outbox_tray: Your offering</name>
+          <value>{{ list_resources(nation.trade.resources, Resources) }}</value>
+        </field>
+        <field>
+          <name>:inbox_tray: Receiving</name>
+          <value>{{ list_resources(partner.trade.resources, Resources) }}</value>
+        </field>
+      </fields>
+    </embed>
+    <view> 
+      <components>
+        <button key="cancel">
+          <label>Cancel</label>
+          <emoji>
+            <name>✖️</name>
+          </emoji>
+          <style>danger</style>
+        </button>
+      </components>
+    </view>
+  </message>
+  <message key="trade_cancelled">
+    <embed>
+      <title>:x: Trade Cancelled</title>
+      <colour>red</colour>
+      <description>You {{ nation.metadata.emoji }}**{{ nation.metadata.nation_name }}** cancelled the trade with {{ partner.metadata.emoji }}**{{ partner.metadata.nation_name }}**.</description>
+    </embed>
+  </message>
+  <message key="trade_not_found">
+    <embed> 
+      <title>:x: Trade Not Found</title>
+      <colour>red</colour>
+      <description>The trade you are looking for does not exist.</description>
+    </embed>
+  </message>
+</discord>

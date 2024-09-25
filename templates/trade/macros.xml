@@ -1,0 +1,30 @@
+{% macro list_resources(resources, resource_lookup) -%}
+  {%- for resource in resources -%} 
+    - {{ resource_lookup[resource].emoji }} {{ resource }} 
+  {% endfor -%}
+{%- endmacro %}
+{% macro select_trade_view(nation, trades) -%}
+{% if trades %} 
+  <view>
+    <components>
+      <select key="trade_identifier">
+        <label>Select a request to accept</label>
+        <placeholder>Select a trade</placeholder>
+        <options>
+          {% for trade in trades %} 
+          {% set partner = nation.find_player(trade.counter_party(nation.identifier)) %} 
+          <option>
+            <label>{{ partner.metadata.nation_name }}</label>
+            <emoji>
+              <name>{{ partner.metadata.emoji.split(":")[1] }}</name>
+              <id>{{ partner.metadata.emoji.split(":")[2] .split('>')[0] }}</id>
+            </emoji>
+            <value>{{ partner.identifier }}</value>
+          </option> 
+          {% endfor %}
+        </options>
+      </select>
+    </components>
+    </view> 
+{% endif %}
+{%- endmacro %} 

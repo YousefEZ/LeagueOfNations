@@ -1,0 +1,43 @@
+<discord>
+  <message key="select_resources">
+    <content>Select the resources you would like your nation to have.</content>
+    <view>
+      <components>
+        {% for selected_resource in resources %} 
+        <select key="{{ selected_resource }}">
+          <label>Resource {{ loop.index }}</label>
+          <placeholder>Select a resource</placeholder>
+          <options>
+            {% for name, resource in Resources.items() %} 
+            {% if name not in nation.trade.resources %} 
+            <option>
+              <label>{{ resource.emoji }}{{ name }}</label>
+              <value>{{ name }}</value>
+            </option> 
+            {% elif name == selected_resource %} 
+            <option>
+              <label>{{ resource.emoji }}{{ name }}</label>
+              <value>{{ name }}</value>
+              <default>True</default>
+            </option> 
+            {% endif %} 
+            {% endfor %}
+          </options>
+        </select> 
+        {% endfor %}
+      </components>
+    </view>
+  </message>
+  <message key="select_trade_active_agreement">
+    <content>:exclamation: You have active agreements and/or pending offers. Please cancel all agreements and offers before switching resources.</content>
+  </message>
+  <message key="missing_resource">
+    <content>:x: Resource no longer exists.</content>
+  </message>
+  <message key="duplicate_resource">
+    <content>:x: You cannot select the same resource more than once.</content>
+  </message>
+  <message key="invalid_resource">
+    <content>:x: Invalid resource.</content>
+  </message>
+</discord>

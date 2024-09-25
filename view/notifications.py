@@ -26,11 +26,17 @@ class NotificationRenderer:
 
     async def render(self, notification: host.notifier.Notification) -> None:
         logging.debug("[NOTIFICATION][SENDING] UserId=%s", notification.user_id)
-        user = await self.bot.fetch_user(notification.user_id)
-        await user.send(
-            **self._renderer.render("notification", keywords={"notification": notification}).dict()
-        )
-        logging.debug("[NOTIFICATION][SENT] UserId=%s", notification.user_id)
+        try:
+            user = await self.bot.fetch_user(notification.user_id)
+            await user.send(
+                **self._renderer.render(
+                    "notification", keywords={"notification": notification}
+                ).dict()
+            )
+        except Exception as e:
+            logging.error("[NOTIFICATION][ERROR] UserId=%s, Error=%s", notification.user_id, e)
+        else:
+            logging.debug("[NOTIFICATION][SENT] UserId=%s", notification.user_id)
 
     def start(self) -> None:
         self.notifier.start()

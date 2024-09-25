@@ -1,14 +1,26 @@
 from __future__ import annotations
 
 
+from dataclasses import dataclass
 import traceback
 import argparse
 from functools import wraps
 import logging
 import os
 import sys
-from typing import Awaitable, Callable, Concatenate, Coroutine, Literal, Optional, TypeVar
+from typing import (
+    Awaitable,
+    Callable,
+    Concatenate,
+    Coroutine,
+    Generic,
+    Literal,
+    Optional,
+    TypeVar,
+)
 import forge
+import qalib
+from qalib.translators.deserializer import K_contra
 from qalib.translators.view import CheckEvent
 from typing_extensions import ParamSpec
 
@@ -19,6 +31,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
+from host import base_types
 import host.base_models
 from host.base_types import UserId
 from host.nation import Nation
@@ -52,6 +65,8 @@ def interaction_morph(
 
 
 T = TypeVar("T")
+K = TypeVar("K")
+I = TypeVar("I", bound=discord.ui.Item, contravariant=True)
 
 
 class LonCog(commands.Cog):
@@ -59,6 +74,44 @@ class LonCog(commands.Cog):
 
     def __init__(self, bot: LeagueOfNations):
         self.bot = bot
+
+
+@dataclass(frozen=True)
+class Event(Generic[K_contra]):
+    ctx: qalib.interaction.QalibInteraction[K_contra]
+    bot: LeagueOfNations
+
+
+class EventProtocol(Generic[K_contra]):
+    ctx: qalib.interaction.QalibInteraction[K_contra]
+    bot: LeagueOfNations
+
+
+def event_with_session(
+    method: Callable[Concatenate[K, Session, P], Coroutine[None, None, T]],
+) -> Callable[Concatenate[K, P], Coroutine[None, None, T]]:
+    @wraps(method)
+    async def wrapper(self, *args: P.args, **kwargs: P.kwargs) -> T:
+        logging.debug(
+            "[EVENT][CALL] name=%s event_name=%s, args=%s, kwargs=%s",
+            method.__name__,
+            self,
+            args,
+            kwargs,
+        )
+        with Session(self.bot.engine) as session:
+            try:
+                return await method(self, session, *args, **kwargs)
+            except Exception as e:
+                logging.error(
+                    "[ERROR] name=%s, traceback: %s, exception: %s",
+                    method.__name__,
+                    traceback.format_exc(),
+                    e,
+                )
+                raise e
+
+    return wrapper
 
 
 def with_session(engine: Engine):
@@ -105,6 +158,26 @@ def cog_with_session(
                     e,
                 )
                 raise e
+
+    return wrapper
+
+
+def user_registered(
+    method: Callable[
+        Concatenate[commands.Cog, discord.Interaction, Session, P], Coroutine[None, None, None]
+    ],
+):
+    @wraps(method)
+    async def wrapper(
+        self, ctx: discord.Interaction, session: Session, *args: P.args, **kwargs: P.kwargs
+    ) -> None:
+        user = Nation(base_types.UserId(ctx.user.id), session)
+        if not user.exists:
+            await ctx.response.send_message(
+                ":x: You are not registered. Please use /start to register."
+            )
+        else:
+            await method(self, ctx, session, *args, **kwargs)
 
     return wrapper
 

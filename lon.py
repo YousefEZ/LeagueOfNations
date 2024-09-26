@@ -9,6 +9,7 @@ import logging
 import os
 import sys
 from typing import (
+    Any,
     Awaitable,
     Callable,
     Concatenate,
@@ -18,8 +19,12 @@ from typing import (
     Optional,
     TypeVar,
 )
+from discord.client import Coro
 import forge
 import qalib
+from qalib.interaction import QalibInteraction
+from qalib.renderer import Renderer, RenderingOptions
+from qalib.template_engines.template_engine import TemplateEngine
 from qalib.translators.deserializer import K_contra
 from qalib.translators.view import CheckEvent
 from typing_extensions import ParamSpec
@@ -78,13 +83,36 @@ class LonCog(commands.Cog):
 
 @dataclass(frozen=True)
 class Event(Generic[K_contra]):
-    ctx: qalib.interaction.QalibInteraction[K_contra]
     bot: LeagueOfNations
+
+
+@dataclass(frozen=True)
+class EventWithContext(Event, Generic[K_contra]):
+    ctx: qalib.interaction.QalibInteraction[K_contra]
 
 
 class EventProtocol(Generic[K_contra]):
     ctx: qalib.interaction.QalibInteraction[K_contra]
     bot: LeagueOfNations
+
+
+def qalib_event_interaction(
+    template_engine: TemplateEngine, filename: str, *renderer_options: RenderingOptions
+) -> Callable[[Callable[..., Coro[T]]], Callable[..., Coro[T]]]:
+    renderer_instance: Renderer[str] = Renderer(template_engine, filename, *renderer_options)
+
+    def command(func: Callable[..., Coro[T]]) -> Callable[..., Coro[T]]:
+        @wraps(func)
+        async def function(
+            self, item: discord.ui.Item, inter: discord.Interaction, *args: Any, **kwargs: Any
+        ) -> T:
+            return await func(
+                self, item, QalibInteraction(inter, renderer_instance), *args, **kwargs
+            )
+
+        return function
+
+    return command
 
 
 def event_with_session(
@@ -141,7 +169,7 @@ def cog_with_session(
     method: Callable[
         Concatenate[commands.Cog, discord.Interaction, Session, P], Coroutine[None, None, T]
     ],
-) -> Callable[Concatenate[commands.Cog, discord.Interaction, P], Coroutine[None, None, T]]:
+):
     # This is a hacky way to forge the signature of the method so that discord.py can accept it
     @wraps(method, updated=tuple())
     @forge.delete("session")
@@ -164,20 +192,19 @@ def cog_with_session(
 
 def user_registered(
     method: Callable[
-        Concatenate[commands.Cog, discord.Interaction, Session, P], Coroutine[None, None, None]
+        Concatenate[commands.Cog, discord.Interaction, P], Coroutine[None, None, None]
     ],
 ):
     @wraps(method)
-    async def wrapper(
-        self, ctx: discord.Interaction, session: Session, *args: P.args, **kwargs: P.kwargs
-    ) -> None:
-        user = Nation(base_types.UserId(ctx.user.id), session)
-        if not user.exists:
-            await ctx.response.send_message(
-                ":x: You are not registered. Please use /start to register."
-            )
-        else:
-            await method(self, ctx, session, *args, **kwargs)
+    async def wrapper(self, ctx: discord.Interaction, *args: P.args, **kwargs: P.kwargs) -> None:
+        with Session(self.bot.engine) as session:
+            user = Nation(base_types.UserId(ctx.user.id), session)
+            if not user.exists:
+                await ctx.response.send_message(
+                    ":x: You are not registered. Please use /start to register."
+                )
+                return
+        await method(self, ctx, *args, **kwargs)
 
     return wrapper
 

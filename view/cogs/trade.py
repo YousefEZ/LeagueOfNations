@@ -23,7 +23,7 @@ from host.nation.trade import (
     TradeSentResponses,
 )
 from lon import (
-    Event,
+    EventWithContext,
     LeagueOfNations,
     LonCog,
     event_with_session,
@@ -56,7 +56,7 @@ TradeSelectMessages = Literal[
 
 
 @dataclass(frozen=True)
-class ResourceSwitch(Event[TradeSelectMessages]):
+class ResourceSwitch(EventWithContext[TradeSelectMessages]):
     resource: ResourceName
 
     @event_with_session
@@ -74,7 +74,7 @@ class ResourceSwitch(Event[TradeSelectMessages]):
             "select_resources",
             keywords={"Resources": Resources, "nation": nation},
             callables={
-                resource: ResourceSwitch(self.ctx, self.bot, resource)
+                resource: ResourceSwitch(self.bot, self.ctx, resource)
                 for resource in nation.trade.resources
             },
         )
@@ -99,7 +99,7 @@ TradeOfferingMapping: Dict[TradeSentResponses, TradeOfferMessages] = {
 
 
 @dataclass(frozen=True)
-class TradeOffer(Event[TradeOfferMessages]):
+class TradeOffer(EventWithContext[TradeOfferMessages]):
     recipient: base_types.UserId
 
     @event_with_session
@@ -163,7 +163,7 @@ TradeDeclineMapping: Dict[TradeDeclineResponses, TradeRequestMessages] = {
 }
 
 
-class TradeRequestView(Event[TradeRequestMessages]):
+class TradeRequestView(EventWithContext[TradeRequestMessages]):
     @event_with_session
     async def accept(
         self,
@@ -263,7 +263,7 @@ TradeCancelMapping: Dict[TradeCancelResponses, TradeCancelMessages] = {
 }
 
 
-class TradeView(Event[TradeViewMessages | TradeCancelMessages]):
+class TradeView(EventWithContext[TradeViewMessages | TradeCancelMessages]):
     @event_with_session
     async def cancel(self, session: Session, *_: Any, partner_id: base_types.UserId) -> None:
         nation = Nation(as_user_id(self.ctx.user.id), session)
@@ -322,8 +322,8 @@ class Trade(LonCog):
     trade_group = app_commands.Group(name="trade", description="Group related to trade commands")
 
     @trade_group.command(name="select", description="Select resources to trade")
-    @cog_with_session
     @user_registered
+    @cog_with_session
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/trade/select.xml")
     async def select(
         self, ctx: qalib.interaction.QalibInteraction[TradeSelectMessages], session: Session
@@ -333,15 +333,15 @@ class Trade(LonCog):
             "select_resources",
             keywords={"Resources": Resources, "nation": nation},
             callables={
-                resource: ResourceSwitch(ctx, self.bot, resource)
+                resource: ResourceSwitch(self.bot, ctx, resource)
                 for resource in nation.trade.resources
             },
         )
 
     @trade_group.command(name="offer", description="Offer a trade to another user")
-    @cog_with_session
     @user_registered
     @cog_find_nation("recipient")
+    @cog_with_session
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/trade/offer.xml")
     async def offer(
         self,
@@ -354,7 +354,7 @@ class Trade(LonCog):
             ctx.user.id,
             recipient.identifier,
         )
-        make_offer = TradeOffer(ctx, self.bot, recipient.identifier)
+        make_offer = TradeOffer(self.bot, ctx, recipient.identifier)
         await ctx.display(
             "trade_offer",
             keywords={
@@ -367,8 +367,8 @@ class Trade(LonCog):
         )
 
     @trade_group.command(name="requests", description="View trade offers")
-    @cog_with_session
     @user_registered
+    @cog_with_session
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/trade/request.xml")
     async def requests(
         self, ctx: qalib.interaction.QalibInteraction[TradeRequestMessages], session: Session
@@ -377,13 +377,13 @@ class Trade(LonCog):
         await ctx.display(
             "trade_requests",
             keywords={"nation": nation, "Resources": Resources},
-            callables={"trade_identifier": TradeRequestView(ctx, self.bot)},
+            callables={"trade_identifier": TradeRequestView(self.bot, ctx)},
             events={ViewEvents.ON_CHECK: ensure_user(ctx.user.id)},
         )
 
     @trade_group.command(name="view", description="Cancel a trade offer")
-    @cog_with_session
     @user_registered
+    @cog_with_session
     @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/trade/view.xml")
     async def view(
         self,
@@ -393,7 +393,7 @@ class Trade(LonCog):
         await ctx.display(
             "trades",
             keywords={"nation": Nation(as_user_id(ctx.user.id), session), "Resources": Resources},
-            callables={"trade_identifier": TradeView(ctx, self.bot)},
+            callables={"trade_identifier": TradeView(self.bot, ctx)},
             events={ViewEvents.ON_CHECK: ensure_user(ctx.user.id)},
         )
 

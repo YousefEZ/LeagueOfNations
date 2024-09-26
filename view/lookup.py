@@ -1,4 +1,5 @@
-from functools import partial, wraps
+from dataclasses import dataclass
+from functools import wraps
 import logging
 import traceback
 from typing import Protocol, cast, Literal, ParamSpec, Callable, Coroutine, Concatenate
@@ -16,14 +17,16 @@ from sqlalchemy.orm import Session
 
 from host.base_types import UserId
 from host.nation import Nation
-from lon import interaction_morph
+from lon import (
+    EventWithContext,
+    LeagueOfNations,
+    event_with_session,
+    qalib_event_interaction,
+)
 from view.check import ensure_user
 from view.cogs.custom_jinja2 import ENVIRONMENT
 
-__all__ = (
-    "cog_find_nation",
-    "find_nation",
-)
+__all__ = ("cog_find_nation",)
 
 
 lookup_messages = Literal[
@@ -51,12 +54,7 @@ class Selector(Protocol):
 
 
 def _preview_and_return_nation(
-    func: Callable[
-        Concatenate[discord.Interaction, Session, Nation, P], Coroutine[None, None, None]
-    ],
-    session: Session,
-    *args: P.args,
-    **kwargs: P.kwargs,
+    func: Callable[[UserId], Coroutine[None, None, None]],
 ) -> Selector:
     async def confirmation(
         nation: Nation,
@@ -70,7 +68,7 @@ def _preview_and_return_nation(
             )
             await i.response.defer()
             try:
-                await func(interaction, session, nation, *args, **kwargs)
+                await func(nation.identifier)
             except Exception as e:
                 logging.error(
                     "[LOOKUP][ERROR] Exception: %s, Traceback: %s", e, traceback.format_exc()
@@ -99,22 +97,18 @@ def cog_find_nation(
 ) -> Callable[
     [
         Callable[
-            Concatenate[commands.Cog, discord.Interaction, Session, Nation, P],
+            Concatenate[commands.Cog, discord.Interaction, UserId, P],
             Coroutine[None, None, None],
         ]
     ],
-    Callable[
-        Concatenate[commands.Cog, discord.Interaction, Session, P], Coroutine[None, None, None]
-    ],
+    Callable[Concatenate[commands.Cog, discord.Interaction, P], Coroutine[None, None, None]],
 ]:
     def wrapper(
         method: Callable[
-            Concatenate[commands.Cog, discord.Interaction, Session, Nation, P],
+            Concatenate[commands.Cog, discord.Interaction, UserId, P],
             Coroutine[None, None, None],
         ],
-    ) -> Callable[
-        Concatenate[commands.Cog, discord.Interaction, Session, P], Coroutine[None, None, None]
-    ]:
+    ) -> Callable[Concatenate[commands.Cog, discord.Interaction, P], Coroutine[None, None, None]]:
         # signature isn't the same so we need to forge a new signature without name as discord.py inspects it
         @wraps(method)
         @forge.delete(name)
@@ -122,62 +116,30 @@ def cog_find_nation(
         async def class_find_nation(
             self,
             ctx: discord.Interaction,
-            session: Session,
             *args: P.args,
             **kwargs: P.kwargs,
         ) -> None:
-            await _get_user_target(ctx, partial(method, self), session, *args, **kwargs)
+            async def closure(nation: UserId) -> None:
+                await method(self, ctx, nation, *args, **kwargs)
+
+            await _get_user_target(ctx, closure, self.bot)
 
         return class_find_nation
 
     return wrapper
 
 
-def find_nation(
-    name: str,
-) -> Callable[
-    [
-        Callable[
-            Concatenate[discord.Interaction, Session, Nation, P],
-            Coroutine[None, None, None],
-        ]
-    ],
-    Callable[Concatenate[discord.Interaction, Session, P], Coroutine[None, None, None]],
-]:
-    def wrapper(
-        func: Callable[
-            Concatenate[discord.Interaction, Session, Nation, P],
-            Coroutine[None, None, None],
-        ],
-    ) -> Callable[Concatenate[discord.Interaction, Session, P], Coroutine[None, None, None]]:
-        @forge.delete(name)
-        @forge.copy(func)
-        async def find_nation_wrapper(
-            ctx: discord.Interaction,
-            session: Session,
-            *args: P.args,
-            **kwargs: P.kwargs,
-        ) -> None:
-            await _get_user_target(ctx, func, session, *args, **kwargs)
-
-        return find_nation_wrapper
-
-    return wrapper
+UserIdClosure = Callable[[UserId], Coroutine[None, None, None]]
 
 
-@qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/lookup.xml")
-async def _get_user_target(
-    ctx: QalibInteraction[lookup_messages],
-    func: Callable[
-        Concatenate[discord.Interaction, Session, Nation, P], Coroutine[None, None, None]
-    ],
-    session: Session,
-    *args: P.args,
-    **kwargs: P.kwargs,
-):
-    selector = _preview_and_return_nation(func, session, *args, **kwargs)
+@dataclass(frozen=True)
+class UserIdLookup(EventWithContext[lookup_messages]):
+    selector: UserIdClosure
 
-    async def on_id_submit(modal: discord.ui.Modal, interaction: discord.Interaction) -> None:
+    @event_with_session
+    async def on_submit(
+        self, session: Session, modal: discord.ui.Modal, interaction: discord.Interaction
+    ) -> None:
         user_id = cast(discord.ui.TextInput, modal.children[0]).value
         assert user_id is not None
         await interaction.response.defer()
@@ -186,50 +148,71 @@ async def _get_user_target(
         elif not (nation := Nation(UserId(int(user_id)), session)).exists:
             await interaction.response.send_message("User does not have a nation")
         else:
-            await selector(nation, ctx)
+            await _preview_and_return_nation(self.selector)(nation, self.ctx)
 
-    async def on_nation_submit(modal, interaction: discord.Interaction) -> None:
-        nation_name = cast(discord.ui.TextInput, modal.children[0]).value
-        assert nation_name is not None
-        await interaction.response.defer()
-        await _get_user_from_nation_lookup(ctx, nation_name, func, session, *args, **kwargs)
-
-    @interaction_morph
-    @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/lookup.xml")
-    async def open_id_modal(
+    @qalib_event_interaction(Jinja2(ENVIRONMENT), "templates/lookup.xml")
+    async def __call__(
+        self,
+        _: discord.ui.Button,
         interaction: qalib.interaction.QalibInteraction[lookup_messages],
     ) -> None:
         await interaction.rendered_send(
             "get_user_id",
-            events={ModalEvents.ON_SUBMIT: on_id_submit},
-            keywords={"require_lookup": True},
+            events={ModalEvents.ON_SUBMIT: self.on_submit},
         )
 
-    @interaction_morph
-    @qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/lookup.xml")
-    async def open_nation_modal(
+
+@dataclass(frozen=True)
+class NationNameLookup(EventWithContext[lookup_messages]):
+    selector: UserIdClosure
+
+    @event_with_session
+    async def on_nation_submit(
+        self, session: Session, modal: discord.ui.Modal, interaction: discord.Interaction
+    ) -> None:
+        nation_name = cast(discord.ui.TextInput, modal.children[0]).value
+        assert nation_name is not None
+        await interaction.response.defer()
+        await _get_user_from_nation_lookup(self.ctx, nation_name, self.selector, session)
+
+    @qalib_event_interaction(Jinja2(ENVIRONMENT), "templates/lookup.xml")
+    async def __call__(
+        self,
+        _: discord.ui.Button,
         interaction: qalib.interaction.QalibInteraction[lookup_messages],
     ) -> None:
         await interaction.rendered_send(
             "nation_select",
-            events={ModalEvents.ON_SUBMIT: on_nation_submit},
-            keywords={"require_lookup": True},
+            events={ModalEvents.ON_SUBMIT: self.on_nation_submit},
         )
 
-    async def on_user_select(
-        item: discord.ui.UserSelect,
-        i: discord.Interaction,
+
+@dataclass(frozen=True)
+class UserSelect(EventWithContext[lookup_messages]):
+    selector: UserIdClosure
+
+    @qalib_event_interaction(Jinja2(ENVIRONMENT), "templates/lookup.xml")
+    @event_with_session
+    async def __call__(
+        self, session: Session, item: discord.ui.UserSelect, interaction: discord.Interaction
     ) -> None:
         user = item.values[0]
-        await i.response.defer()
-        await selector(Nation(UserId(user.id), session), ctx)
+        await interaction.response.defer()
+        await _preview_and_return_nation(self.selector)(Nation(UserId(user.id), session), self.ctx)
 
+
+@qalib.qalib_interaction(Jinja2(ENVIRONMENT), "templates/lookup.xml")
+async def _get_user_target(
+    ctx: QalibInteraction[lookup_messages],
+    func: Callable[[UserId], Coroutine[None, None, None]],
+    bot: LeagueOfNations,
+):
     await ctx.display(
         "target_selection",
         callables={
-            "userid": open_id_modal,
-            "user_target": on_user_select,
-            "nation": open_nation_modal,
+            "userid": UserIdLookup(bot, ctx, func),
+            "user_target": UserSelect(bot, ctx, func),
+            "nation": NationNameLookup(bot, ctx, func),
         },
         keywords={"require_lookup": True},
         events={ViewEvents.ON_CHECK: ensure_user(ctx.user.id)},
@@ -239,16 +222,11 @@ async def _get_user_target(
 async def _get_user_from_nation_lookup(
     interaction: QalibInteraction[lookup_messages],
     nation_name: str,
-    func: Callable[
-        Concatenate[discord.Interaction, Session, Nation, P], Coroutine[None, None, None]
-    ],
+    selector: UserIdClosure,
     session: Session,
-    *args: P.args,
-    **kwargs: P.kwargs,
 ):
     nations = Nation.search_for_nations(nation_name, session)
 
-    selection = _preview_and_return_nation(func, session, *args, **kwargs)
     if not nations:
         await interaction.display(
             "lookup_nation_name_not_found", keywords={"require_lookup": True}, view=None
@@ -268,7 +246,7 @@ async def _get_user_from_nation_lookup(
                 events={ViewEvents.ON_CHECK: ensure_user(interaction.user.id)},
             )
 
-        await selection(nation, interaction, reject_override=on_reject)
+        await _preview_and_return_nation(selector)(nation, interaction, reject_override=on_reject)
 
     await interaction.display(
         "nation_lookup",

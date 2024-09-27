@@ -24,7 +24,8 @@ def session() -> Session:
 
 @pytest.fixture
 def player(userid, name, session) -> Nation:
-    return Nation.start(userid, name, session)
+    Nation.start(userid, name, session)
+    return Nation(userid, session)
 
 
 @pytest.fixture

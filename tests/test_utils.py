@@ -4,6 +4,7 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from host.gameplay_settings import GameplaySettings
 import host.nation
 import host.base_models
 from host.base_types import UserId
@@ -18,6 +19,16 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 host.base_models.Base.metadata.create_all(bind=engine)
 
+GameplaySettings.metadata.minimum_nation_name_length = 1
+GameplaySettings.metadata.maximum_nation_name_length = 500
+
+print(
+    "GameplaySettings.metadata.minimum_nation_name_length",
+    GameplaySettings.metadata.minimum_nation_name_length,
+)
+
+CHARACTER_LENGTH = len(string.ascii_uppercase)
+
 
 class UserGenerator:
     id_counter: int = 0
@@ -31,15 +42,12 @@ class UserGenerator:
     @staticmethod
     def generate_name() -> str:
         UserGenerator.name_counter += 1
-        return "".join(
-            [
-                string.ascii_uppercase[i % len(string.ascii_uppercase)]
-                for i in range(1 + UserGenerator.name_counter // len(string.ascii_uppercase))
-            ]
-        )
+        return str(hex(UserGenerator.name_counter))[2:]
 
     @staticmethod
     def generate_player(session: Session) -> host.nation.Nation:
-        return host.nation.Nation.start(
-            UserGenerator.generate_id(), UserGenerator.generate_name(), session
-        )
+        user_id = UserGenerator.generate_id()
+        user_name = UserGenerator.generate_name()
+        response = host.nation.Nation.start(user_id, user_name, session)
+        assert response is host.nation.StartResponses.SUCCESS, f"Failed to create user {response}"
+        return host.nation.Nation(user_id, session)

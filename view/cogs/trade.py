@@ -7,7 +7,7 @@ import discord
 from qalib.translators.view import ViewEvents
 from sqlalchemy.orm import Session
 from host import base_types
-from host.base_types import as_user_id
+from host.base_types import UserId, as_user_id
 from host.nation.types.resources import BonusResources, ResourceName, Resources
 from host.notifier import Notification
 import qalib
@@ -347,19 +347,19 @@ class Trade(LonCog):
         self,
         ctx: qalib.interaction.QalibInteraction[TradeOfferMessages],
         session: Session,
-        recipient: Nation,
+        recipient: UserId,
     ) -> None:
         logging.debug(
             "[TRADE][OFFER][RECIPIENT] Opening Window from UserId=%s to Recipient=%s",
             ctx.user.id,
-            recipient.identifier,
+            recipient,
         )
-        make_offer = TradeOffer(self.bot, ctx, recipient.identifier)
+        make_offer = TradeOffer(self.bot, ctx, recipient)
         await ctx.display(
             "trade_offer",
             keywords={
                 "sponsor": Nation(as_user_id(ctx.user.id), session),
-                "recipient": recipient,
+                "recipient": Nation(as_user_id(recipient), session),
                 "Resources": Resources,
             },
             callables={"accept": make_offer.confirm, "decline": make_offer.cancel},

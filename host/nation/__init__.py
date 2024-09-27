@@ -121,7 +121,7 @@ class Nation:
         if user_exists(identifier, session):
             return StartResponses.ALREADY_EXISTS
 
-        if Nation.search_for_nations(name, session):
+        if Nation.fetch_from_name(name, session) is not None:
             return StartResponses.NAME_TAKEN
         metadata = models.MetadataModel(
             user_id=identifier,

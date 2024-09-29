@@ -1,4 +1,5 @@
 import string
+from typing import ParamSpec
 
 from sqlalchemy.pool import StaticPool
 from sqlalchemy import create_engine
@@ -8,6 +9,8 @@ from host.gameplay_settings import GameplaySettings
 import host.nation
 import host.base_models
 from host.base_types import UserId
+
+P = ParamSpec("P")
 
 SQLALCHEMY_DATABASE_URL = "sqlite://"
 
@@ -22,10 +25,6 @@ host.base_models.Base.metadata.create_all(bind=engine)
 GameplaySettings.metadata.minimum_nation_name_length = 1
 GameplaySettings.metadata.maximum_nation_name_length = 500
 
-print(
-    "GameplaySettings.metadata.minimum_nation_name_length",
-    GameplaySettings.metadata.minimum_nation_name_length,
-)
 
 CHARACTER_LENGTH = len(string.ascii_uppercase)
 

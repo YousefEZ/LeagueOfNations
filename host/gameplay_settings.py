@@ -32,6 +32,8 @@ class TradeGameplaySettings(BaseModel):
     maximum_active_agreements: int
     resources_per_nation: int
     offer_expire_days: float
+    maximum_number_of_offers_sent: int
+    maximum_number_of_offers_received: int
 
 
 class GameplaySettingsModel(BaseModel):

@@ -68,4 +68,18 @@
       <description>{{ recipient.metadata.emoji }}**{{ recipient.metadata.nation_name }}** has reached the maximum number of trade agreements.</description>
     </embed>
   </message>
+  <message key="too_many_offers_sent">
+    <embed>
+      <title>:x: Too Many Offers Sent</title>
+      <colour>red</colour>
+      <description>You have reached the maximum number of trade offers you can send.</description>
+    </embed>
+  </message>
+  <message key="partner_too_many_offers">
+    <embed>
+      <title>:x: Too Many Offers Received</title>
+      <colour>red</colour>
+      <description>{{ recipient.metadata.emoji }}**{{ recipient.metadata.nation_name }}** has reached the maximum number of trade offers they can receive.</description>
+    </embed>
+  </message>
 </discord>

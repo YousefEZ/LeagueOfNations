@@ -87,6 +87,8 @@ TradeOfferMessages = Literal[
     "cannot_trade_with_self",
     "partner_not_found",
     "trade_partner_full",
+    "too_many_offers_sent",
+    "parnter_too_many_offers",
 ]
 
 TradeOfferingMapping: Dict[TradeSentResponses, TradeOfferMessages] = {
@@ -95,6 +97,8 @@ TradeOfferingMapping: Dict[TradeSentResponses, TradeOfferMessages] = {
     TradeSentResponses.TOO_MANY_ACTIVE_AGREEMENTS: "too_many_active_agreements",
     TradeSentResponses.PARTNER_NOT_FOUND: "partner_not_found",
     TradeSentResponses.TRADE_PARTNER_FULL: "trade_partner_full",
+    TradeSentResponses.TOO_MANY_OFFERS_SENT: "too_many_offers_sent",
+    TradeSentResponses.PARTNER_OFFERS_FULL: "parnter_too_many_offers",
 }
 
 

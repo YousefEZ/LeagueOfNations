@@ -10,7 +10,7 @@ from host.gameplay_settings import GameplaySettings
 import host.nation.types
 from host import base_types
 from host.nation import ministry, models
-from host.nation.types.resources import RESOURCE_NAMES, BonusResources, ResourceName
+from host.nation.types import resources
 from sqlalchemy.orm import Session
 
 if TYPE_CHECKING:
@@ -38,6 +38,8 @@ class TradeSentResponses(IntEnum):
     CANNOT_TRADE_WITH_SELF = auto()
     TOO_MANY_ACTIVE_AGREEMENTS = auto()
     TRADE_PARTNER_FULL = auto()
+    TOO_MANY_OFFERS_SENT = auto()
+    PARTNER_OFFERS_FULL = auto()
 
 
 class TradeDeclineResponses(IntEnum):
@@ -145,7 +147,7 @@ class Trade(ministry.Ministry):
         self._session: Session = session
 
     def swap_resources(self, old_resource: str, resource: str) -> TradeSelectResponses:
-        if resource not in RESOURCE_NAMES:
+        if resource not in resources.RESOURCE_NAMES:
             return TradeSelectResponses.INVALID_RESOURCE
         resource_model = (
             self._session.query(models.ResourcesModel)
@@ -163,13 +165,13 @@ class Trade(ministry.Ministry):
         return TradeSelectResponses.SUCCESS
 
     @property
-    def resources(self) -> List[ResourceName]:
-        resources = (
+    def resources(self) -> List[resources.ResourceName]:
+        resource_models = (
             self._session.query(models.ResourcesModel).filter_by(user_id=self._identifier).all()
         )
-        if not resources:
+        if not resource_models:
             selected_resources = random.sample(
-                RESOURCE_NAMES, k=GameplaySettings.trade.resources_per_nation
+                resources.RESOURCE_NAMES, k=GameplaySettings.trade.resources_per_nation
             )
             for resource in selected_resources:
                 self._session.add(
@@ -177,7 +179,7 @@ class Trade(ministry.Ministry):
                 )
             self._session.commit()
             return selected_resources
-        return [ResourceName(resource.resource) for resource in resources]
+        return [resources.ResourceName(resource.resource) for resource in resource_models]
 
     def all_resources(self) -> Set[str]:
         return set(
@@ -200,8 +202,8 @@ class Trade(ministry.Ministry):
         all_resources = self.all_resources()
         return {
             bonus_resource
-            for bonus_resource in BonusResources
-            if BonusResources[bonus_resource].dependencies in all_resources
+            for bonus_resource in resources.BonusResources
+            if resources.BonusResources[bonus_resource].dependencies.issubset(all_resources)
         }
 
     @property
@@ -221,9 +223,7 @@ class Trade(ministry.Ministry):
     @property
     def offers_sent(self) -> List[TradeRequest]:
         requests = (
-            self._session.query(models.TradeRequestModel)
-            .filter_by(recipient=self._identifier)
-            .all()
+            self._session.query(models.TradeRequestModel).filter_by(sponsor=self._identifier).all()
         )
         return [TradeRequest(request) for request in filter_expired(requests, self._session)]
 
@@ -253,9 +253,18 @@ class Trade(ministry.Ministry):
         if len(self.active_agreements) >= GameplaySettings.trade.maximum_active_agreements:
             return TradeSentResponses.TOO_MANY_ACTIVE_AGREEMENTS
 
+        if len(self.offers_sent) >= GameplaySettings.trade.maximum_number_of_offers_sent:
+            return TradeSentResponses.TOO_MANY_OFFERS_SENT
+
         partner = self._player.find_player(recipient)
         if len(partner.trade.active_agreements) >= GameplaySettings.trade.maximum_active_agreements:
             return TradeSentResponses.TRADE_PARTNER_FULL
+
+        if (
+            len(partner.trade.offers_received)
+            >= GameplaySettings.trade.maximum_number_of_offers_received
+        ):
+            return TradeSentResponses.PARTNER_OFFERS_FULL
 
         self._send(recipient)
         return TradeSentResponses.SUCCESS
@@ -306,10 +315,11 @@ class Trade(ministry.Ministry):
         return TradeAcceptResponses.SUCCESS
 
     def decline(self, sponsor: base_types.UserId) -> TradeDeclineResponses:
-        trade_request = self.fetch_agreement_with(sponsor)
+        trade_request = self.fetch_request_from(sponsor)
         if trade_request is None:
             return TradeDeclineResponses.NOT_FOUND
         trade_request.invalidate(self._session)
+        self._session.commit()
         return TradeDeclineResponses.SUCCESS
 
     def cancel(self, partner: base_types.UserId) -> TradeCancelResponses:

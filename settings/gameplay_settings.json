@@ -19,7 +19,9 @@
   "trade": {
     "maximum_active_agreements": 5,
     "resources_per_nation": 2,
-    "offer_expire_days": 3 
+    "offer_expire_days": 3, 
+    "maximum_number_of_offers_sent": 7, 
+    "maximum_number_of_offers_received": 7 
   },
   "metadata": {
     "minimum_nation_name_length": 5, 

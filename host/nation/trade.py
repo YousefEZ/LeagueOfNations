@@ -219,7 +219,7 @@ class Trade(ministry.Ministry):
         return self.sponsored + self.recipient
 
     @property
-    def requests(self) -> List[TradeRequest]:
+    def offers_sent(self) -> List[TradeRequest]:
         requests = (
             self._session.query(models.TradeRequestModel)
             .filter_by(recipient=self._identifier)
@@ -228,7 +228,7 @@ class Trade(ministry.Ministry):
         return [TradeRequest(request) for request in filter_expired(requests, self._session)]
 
     @property
-    def received(self) -> List[TradeRequest]:
+    def offers_received(self) -> List[TradeRequest]:
         requests = (
             self._session.query(models.TradeRequestModel)
             .filter_by(recipient=self._identifier)
@@ -271,7 +271,7 @@ class Trade(ministry.Ministry):
         self._session.commit()
 
     def fetch_request_from(self, sponsor: base_types.UserId) -> Optional[TradeRequest]:
-        requests = list(filter(lambda x: x.sponsor == sponsor, self.requests))
+        requests = list(filter(lambda request: request.sponsor == sponsor, self.offers_received))
         if not requests:
             return None
 
@@ -280,7 +280,7 @@ class Trade(ministry.Ministry):
     def fetch_agreement_with(self, partner: base_types.UserId) -> Optional[TradeAgreement]:
         agreements = list(
             filter(
-                lambda x: x.sponsor == partner or x.recipient == partner,
+                lambda agreement: agreement.sponsor == partner or agreement.recipient == partner,
                 self.active_agreements,
             )
         )

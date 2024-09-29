@@ -6,7 +6,7 @@
       <colour>teal</colour>
       <description>Select a trade requests to view</description>
       <fields>
-        {% for trade in nation.trade.received %} 
+        {% for trade in nation.trade.offers_received %} 
         {% set sponsor = nation.find_player(trade.sponsor) %} 
         <field>
           <name>{{ sponsor.metadata.emoji }}**{{ sponsor.metadata.nation_name }}**</name>
@@ -15,7 +15,7 @@
         {% endfor %}
       </fields>
     </embed> 
-    {{select_trade_view(nation, nation.trade.received)}}
+    {{select_trade_view(nation, nation.trade.offers_received)}}
     </message>
   <message key="trade_accepted">
     <embed>

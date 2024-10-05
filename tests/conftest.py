@@ -23,10 +23,10 @@ def session() -> Session:
 
 
 @pytest.fixture
-def player(userid, name, session) -> Nation:
-    return Nation.start(userid, name, session)
+def player(session) -> Nation:
+    return utils.UserGenerator.generate_player(session)
 
 
 @pytest.fixture
-def target(player) -> Nation:
-    return player
+def target(session) -> Nation:
+    return utils.UserGenerator.generate_player(session)

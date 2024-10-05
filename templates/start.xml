@@ -1,28 +1,43 @@
 <discord>
-    <message key="start">
+    <message key="confirmation">
         <embed>
-            <title>__NATION CREATED__</title>
-            <colour>teal</colour>
-            <fields>
-                <field>
-                    <name>:white_check_mark: {{nation_name}} Entered the League of Nations</name>
-                    <value>
-                        :sparkles: On welcome, the body hereby grants you £**`3,000,000`**
-                        We suggest joining the official server to receive updates, chat with the community, post
-                        suggestions, voice your opinion on certain game updates, and much more!
-                        https://discord.gg/ZuhPxsK
-                        **Need Help?**
-                        Type **-`help`** to view a list of all help categories.
-                    </value>
-                </field>
-            </fields>
-            <footer>
-                <text>\u00A9 2018 | LoN Bot</text>
-                <icon>https://cdn.discordapp.com/avatars/449719890312691715/f4ed4549080d4925f4954cf5077620b1.png</icon>
-            </footer>
-            <thumbnail>https://i.redd.it/piou3xdt6epz.png</thumbnail>
+          <title>__NATION CREATED__</title>
+          <colour>teal</colour>
+          <fields>
+            <field>
+              <name>:white_check_mark: {{nation_name}} Entered the League of Nations</name>
+              <value>
+                  :sparkles: On welcome, the body hereby grants you £**`3,000,000`**
+                  We suggest joining the official server to receive updates, chat with the community, post
+                  suggestions, voice your opinion on certain game updates, and much more!
+                  https://discord.gg/ZuhPxsK
+                  **Need Help?**
+                  Type **-`help`** to view a list of all help categories.
+              </value>
+            </field>
+          </fields>
+          <footer>
+              <text>\u00A9 2018 | LoN Bot</text>
+              <icon>https://cdn.discordapp.com/avatars/449719890312691715/f4ed4549080d4925f4954cf5077620b1.png</icon>
+          </footer>
+          <thumbnail>https://i.redd.it/piou3xdt6epz.png</thumbnail>
+        </embed>
+      </message>
+    <message key="start">
+        <embed> 
+          <title>__NATION CREATION__</title>
+          <colour>teal</colour>
+          <fields> 
+            <field>
+              <name>__Welcome to the League of Nations!__</name>
+              <value>
+                :sparkles: Confirm that you would like to start the nation with {{ nation_name }}. 
+              </value>
+            </field>
+          </fields>
         </embed>
         <view>
+          <components>
             <button key="confirm_start">
                 <label>Confirm</label>
                 <emoji>
@@ -39,7 +54,25 @@
                 </emoji>
                 <style>primary</style>
             </button>
+          </components>
         </view>
+    </message>
+    <message key="decline_start">
+      <embed>
+        <title>__NATION DECLINED__</title>
+        <colour>red</colour>
+        <fields>
+          <field>
+            <name>:x: {{nation_name}} Declined the League of Nations</name>
+            <value>
+              :sparkles: We are sorry to see you go, if you have any questions or need help, please join the official server.
+            </value>
+          </field>
+        </fields>
+        <footer>
+          <text>\u00A9 2018 | LoN Bot</text>
+        </footer>
+      </embed>
     </message>
     <message key="name_taken">
         <embed>
@@ -92,16 +125,16 @@
             </fields>
         </embed>
     </message>
-    <message key="NonAscii">
-   	<embed>
-	    <title>Invalid Name</title>
-	    <colour>magenta</colour>
-	    <fields>
-		<field>
-		    <name>Please use a different name</name>
-		    <value>{{name}} contains non-ascii characters, please select a different name.</value>
-		</field>
-	    </fields>
-	</embed>
+    <message key="non_ascii_name">
+      <embed>
+        <title>Invalid Name</title>
+        <colour>magenta</colour>
+        <fields>
+          <field>
+              <name>Please use a different name</name>
+              <value>{{name}} contains non-ascii characters, please select a different name.</value>
+          </field>
+        </fields>
+      </embed>
     </message>
 </discord>

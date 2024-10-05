@@ -1,0 +1,14 @@
+{
+  "AB": {
+    "description": "",
+    "emoji": "",
+    "boosts": {},
+    "dependencies": ["A", "B"]
+  },
+  "CD": {
+    "description": "",
+    "emoji": "",
+    "boosts": {},
+    "dependencies": ["C", "D"]
+  }
+}

@@ -1,7 +1,7 @@
 <!DOCTYPE xml>
 <discord>
-    {% from "mechanisms.xml" import mechanisms with context %}
-    {{ mechanisms(require_mechanisms) }}
+    {% from "lookup.xml" import lookup with context %}
+    {{ lookup(require_lookup) }}
     {% from "errors.j2" import generic_errors, insufficient_funds with context %}
     {{ generic_errors() }}
     {% if amount is defined %}
@@ -105,69 +105,10 @@
             </text_input>
         </components>
     </modal>
-    <modal key="userid" title="Ministry of Foreign Affairs">
-        <components>
-            <text_input key="userid">
-                <label>User ID</label>
-                <placeholder>Enter the user ID of the recipient</placeholder>
-                <min_length>18</min_length>
-                <max_length>19</max_length>
-                <style>short</style>
-            </text_input>
-            <text_input key="funds">
-                <label>Funds</label>
-                <placeholder>Enter the amount of funds for the aid package</placeholder>
-                <min_length>1</min_length>
-                <max_length>10</max_length>
-                <style>short</style>
-            </text_input>
-        </components>
-    </modal>
-     <modal key="nationselect" title="Ministry of Foreign Affairs">
-        <components>
-            <text_input key="nation">
-                <label>Nation Name</label>
-                <placeholder>Enter the nation of the recipient</placeholder>
-                <style>short</style>
-            </text_input>
-            <text_input key="funds">
-                <label>Funds</label>
-                <placeholder>Enter the amount of funds for the aid package</placeholder>
-                <min_length>1</min_length>
-                <max_length>10</max_length>
-                <style>short</style>
-            </text_input>
-        </components>
-    </modal>
-    <message key="target_selection">
-        <view>
-            <components>
-                <user_select key="user_target">
-                    <placeholder>Select ruler to send aid to</placeholder>
-                    <min_value>1</min_value>
-                    <max_value>1</max_value>
-                </user_select>
-                <button key="nation">
-                    <label>Via Nation</label>
-                    <emoji>
-                        <name>👑</name>
-                    </emoji>
-                    <style>success</style>
-                </button>
-                <button key="userid">
-                    <label>Via User ID</label>
-                    <emoji>
-                        <name>🔖</name>
-                    </emoji>
-                    <style>success</style>
-                </button>
-            </components>
-        </view>
-    </message>
     <message key="escrow">
         <embed>
             <title>Ministry of Foreign Affairs</title>
-            <description>The funds {{nation.name}} has sent an aid package in accordance with the request submitted below and it is being held in :lock: escrow for 3 days. The recipient can accept or decline it at any time.</description>
+            <description>{{nation.name}} has sent an aid package in accordance with the request submitted below and it is being held in :lock: escrow for 3 days. The recipient can accept or decline it at any time.</description>
             <colour>teal</colour>
             <fields>
                 <field inline="True">
@@ -176,7 +117,7 @@
                 </field>
                 <field inline="True">
                     <name>:pound: Amount</name>
-                    <value>{{ aid.amount|currency }}</value>
+                    <value>{{ amount|currency }}</value>
                 </field>
                 <field inline="True">
                     <name>:lock: Escrow Time</name>

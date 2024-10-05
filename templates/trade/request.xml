@@ -1,0 +1,79 @@
+{% from "trade/macros.xml" import list_resources, select_trade_view with context %}
+<discord>
+  {% include "trade/errors.xml" %} 
+  <message key="trade_requests"><embed>
+      <title>:currency_exchange: Trade Requests</title>
+      <colour>teal</colour>
+      <description>Select a trade requests to view</description>
+      <fields>
+        {% for trade in nation.trade.offers_received %} 
+        {% set sponsor = nation.find_player(trade.sponsor) %} 
+        <field>
+          <name>{{ sponsor.metadata.emoji }}**{{ sponsor.metadata.nation_name }}**</name>
+          <value>{{ list_resources(sponsor.resources, Resources)}}</value>
+        </field>
+        {% endfor %}
+      </fields>
+    </embed> 
+    {{select_trade_view(nation, nation.trade.offers_received)}}
+    </message>
+  <message key="trade_accepted">
+    <embed>
+      <title>:currency_exchange: Trade Accepted</title>
+      <colour>teal</colour>
+      <description>You {{ recipient.metadata.emoji }}**{{ recipient.metadata.nation_name }}** accepted the trade from {{ sponsor.metadata.emoji }}**{{ sponsor.metadata.nation_name }}**.</description>
+      <fields>
+        <field>
+          <name>:outbox_tray: Your offering</name>
+          <value>{{list_resources(sponsor.trade.resources, Resources)}}</value>
+        </field>
+        <field>
+          <name>:inbox_tray: Receiving</name>
+          <value>{{list_resources(recipient.trade.resources, Resources)}}</value>
+        </field>
+      </fields>
+    </embed>
+  </message>
+  <message key="trade_declined">
+    <embed>
+      <title>:x: Trade Declined</title>
+      <colour>red</colour>
+      <description>You {{ recipient.metadata.emoji }}**{{ recipient.metadata.nation_name }}** declined the trade from {{ sponsor.metadata.emoji }}**{{ sponsor.metadata.nation_name }}**.</description>
+    </embed>
+  </message>
+  <message key="trade_offer_selected">
+    <embed>
+      <title>:currency_exchange: Trade Offer Selected</title>
+      <colour>teal</colour>
+      <description>You have selected a trade offer from {{ sponsor.metadata.emoji }}**{{ sponsor.metadata.nation_name }}**.</description>
+      <fields>
+        <field>
+          <name>:outbox_tray: Your offering</name>
+          <value>{{list_resources(sponsor.trade.resources, Resources)}}</value>
+        </field>
+        <field>
+          <name>:inbox_tray: Receiving</name>
+          <value>{{list_resources(recipient.trade.resources, Resources)}}</value>
+        </field>
+      </fields>
+    </embed>
+    <view>
+      <components>
+        <button key="accept">
+          <label>Accept</label>
+          <emoji>
+            <name>✔️</name>
+          </emoji>
+          <style>success</style>
+        </button>
+        <button key="decline">
+          <label>Decline</label>
+          <emoji>
+            <name>❌</name>
+          </emoji>
+          <style>danger</style>
+        </button>
+      </components>
+    </view>
+  </message>
+</discord>

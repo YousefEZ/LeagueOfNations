@@ -10,6 +10,10 @@ from host.currency import Currency, CurrencyRate
 UserId = NewType("UserId", int)
 
 
+def as_user_id(value: str | int) -> UserId:
+    return UserId(int(value))
+
+
 def variable_guard(func):
     def wrapper(*args, **kwargs):
         if any(isinstance(arg, jinja2.runtime.Undefined) for arg in args):

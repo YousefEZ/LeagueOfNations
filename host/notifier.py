@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from dataclasses import dataclass, field
@@ -17,8 +18,12 @@ from sqlalchemy.orm import Session
 @dataclass(frozen=True)
 class Notification:
     user_id: UserId
-    time: datetime
     message: str
+
+
+@dataclass(frozen=True)
+class ScheduledNotification(Notification):
+    time: datetime
     data: Optional[dict[str, Any]] = None
     notification_id: str = field(default_factory=lambda: str(hex(int(uuid4()))))
 
@@ -32,7 +37,7 @@ class Notifier:
 
     _instance: Optional[Notifier] = None
     _scheduler: scheduler = scheduler()
-    _hooks: List[Callable[[Notification], Any]] = []
+    _hooks: List[Callable[[ScheduledNotification], Any]] = []
     _loaded: bool = False
     _lock: threading.Lock = threading.Lock()
     _condition: threading.Condition = threading.Condition()
@@ -57,7 +62,7 @@ class Notifier:
     def _schedule(self, notification_id: str, date: datetime) -> None:
         """Private method that schedules a notification for consumption by the view"""
         now = datetime.now()
-        print(f"Scheduling For {date - now} from now")
+        logging.info(f"Scheduling For {date - now} from now")
         if date < now:
             self._display(notification_id)
             return
@@ -67,13 +72,13 @@ class Notifier:
             self._condition.notify()
 
     def _display(self, notification_id: str) -> None:
-        print("Displaying notification", notification_id)
+        logging.info(f"Displaying notification: {notification_id}")
         with Session(self._engine) as session:
             result = (
                 session.query(NotificationModel).filter_by(notification_id=notification_id).first()
             )
-            assert result is not None, "Notification not found"
-            notification = Notification(
+            assert result is not None, "ScheduledNotification not found"
+            notification = ScheduledNotification(
                 user_id=UserId(result.user_id),
                 time=result.date,
                 message=result.message,
@@ -87,7 +92,7 @@ class Notifier:
             session.delete(result)
             session.commit()
 
-    def _add_notification_to_db(self, notification: Notification) -> None:
+    def _add_notification_to_db(self, notification: ScheduledNotification) -> None:
         """Private method that stores the notification in the database"""
         with Session(self._engine) as session:
             session.add(
@@ -102,15 +107,15 @@ class Notifier:
             session.commit()
 
     @staticmethod
-    def hook(hook: Callable[[Notification], Any]) -> None:
+    def hook(hook: Callable[[ScheduledNotification], Any]) -> None:
         """Method that adds a hook to the notifier
 
         Args:
-            hook (Callable[[Notification], Coroutine[Any, Any, Any]]): the hook to be added
+            hook (Callable[[ScheduledNotification], Coroutine[Any, Any, Any]]): the hook to be added
         """
         Notifier._hooks.append(hook)
 
-    def schedule(self, notification: Notification) -> None:
+    def schedule(self, notification: ScheduledNotification) -> None:
         """Method that schedules a notification for consumption by the view"""
         self._add_notification_to_db(notification)
         self._schedule(notification.notification_id, notification.time)

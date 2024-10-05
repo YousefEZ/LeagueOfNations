@@ -10,20 +10,17 @@ from sqlalchemy.orm import Mapped, mapped_column
 class TradeRequestModel(Base):
     __tablename__ = "TradeRequests"
 
-    trade_id: Mapped[str] = mapped_column(primary_key=True)
     date: Mapped[datetime]
-    expires: Mapped[datetime]
-    sponsor: Mapped[int]
-    recipient: Mapped[int]
+    sponsor: Mapped[int] = mapped_column(primary_key=True)
+    recipient: Mapped[int] = mapped_column(primary_key=True)
 
 
 class TradeModel(Base):
     __tablename__ = "Trades"
 
-    trade_id: Mapped[str] = mapped_column(primary_key=True)
     date: Mapped[datetime]
-    sponsor: Mapped[int]
-    recipient: Mapped[int]
+    sponsor: Mapped[int] = mapped_column(primary_key=True)
+    recipient: Mapped[int] = mapped_column(primary_key=True)
 
 
 class AidRequestModel(Base):
@@ -54,8 +51,7 @@ class ResourcesModel(Base):
     __tablename__ = "Resources"
 
     user_id: Mapped[int] = mapped_column(primary_key=True)
-    primary: Mapped[str]
-    secondary: Mapped[str]
+    resource: Mapped[str] = mapped_column(primary_key=True)
 
 
 class MetadataModel(Base):

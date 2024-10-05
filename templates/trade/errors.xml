@@ -1,0 +1,24 @@
+<message key="too_many_trades">
+  <content>:x: Too Many Active Trades</content>
+</message>
+<message key="too_many_active_agreements">
+  <embed>
+    <title>:x: Too Many Active Agreements</title>
+    <colour>red</colour>
+    <description>You have reached the maximum number of active agreements. Please cancel an agreement before creating a new one.</description>
+  </embed>
+</message>
+<message key="trade_partner_full">
+  <embed>
+    <title>:x: Trade Partner Full</title>
+    <colour>red</colour>
+    <description>{{ partner.metadata.emoji }}**{{ partner.metadata.nation_name }}** has reached the maximum number of active agreements. Please try again later.</description>
+  </embed>
+</message>
+<message key="trade_not_found">
+  <embed> 
+    <title>:x: Trade Not Found</title>
+    <colour>red</colour>
+    <description>The trade you are looking for does not exist.</description>
+  </embed>
+</message>

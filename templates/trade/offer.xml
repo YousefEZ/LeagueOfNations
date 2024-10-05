@@ -1,0 +1,85 @@
+{% from "trade/macros.xml" import list_resources with context %}
+<discord>
+  {% include "trade/errors.xml" %} 
+  <message key="trade_offer">
+    <embed>
+      <title>:currency_exchange: Trade Offer</title>
+      <colour>teal</colour>
+      <description>You {{ sponsor.metadata.emoji }}**{{ sponsor.metadata.nation_name }}** are offering a trade to {{ recipient.metadata.emoji }}**{{ recipient.metadata.nation_name }}**.</description>
+      <fields>
+        <field>
+          <name>:outbox_tray: Your offering</name>
+          <value>{{list_resources(sponsor.trade.resources, Resources)}}</value>
+        </field>
+        <field>
+          <name>:inbox_tray: Receiving</name>
+          <value>{{ list_resources(recipient.trade.resources, Resources) }}</value>
+        </field>
+      </fields>
+    </embed>
+    <view>
+      <components>
+        <button key="accept">
+          <label>Accept</label>
+          <emoji>
+            <name>✔️</name>
+          </emoji>
+          <style>success</style>
+        </button>
+        <button key="decline">
+          <label>Decline</label>
+          <emoji>
+            <name>❌</name>
+          </emoji>
+          <style>danger</style>
+        </button>
+      </components>
+    </view>
+  </message>
+  <message key="trade_sent">
+    <embed>
+      <title>:currency_exchange: Trade Offer Sent</title>
+      <colour>teal</colour>
+      <description>You {{ sponsor.metadata.emoji }}**{{ sponsor.metadata.nation_name }}** sent a trade to {{ recipient.metadata.emoji }}**{{ recipient.metadata.nation_name }}**.</description>
+      <fields>
+        <field>
+          <name>:outbox_tray: Your offering</name>
+          <value>{{list_resources(sponsor.trade.resources, Resources)}}</value>
+        </field>
+        <field>
+          <name>:inbox_tray: Receiving</name>
+          <value>{{list_resources(recipient.trade.resources, Resources)}}</value>
+        </field>
+      </fields>
+    </embed>
+    <view></view>
+  </message>
+  <message key="cannot_trade_with_self">
+    <embed>
+      <title>:x: Cannot Trade With Self</title>
+      <colour>red</colour>
+      <description>You cannot trade with yourself.</description>
+    </embed>
+  </message>
+  <message key="trade_partner_full">
+    <embed>
+      <title>:x: Trade Partner Full</title>
+      <colour>red</colour>
+      <description>{{ recipient.metadata.emoji }}**{{ recipient.metadata.nation_name }}** has reached the maximum number of trade agreements.</description>
+    </embed>
+  </message>
+  <message key="too_many_offers_sent">
+    <embed>
+      <title>:x: Too Many Offers Sent</title>
+      <colour>red</colour>
+      <description>You have reached the maximum number of trade offers you can send.</description>
+    </embed>
+  </message>
+  <message key="partner_too_many_offers">
+    <embed>
+      <title>:x: Too Many Offers Received</title>
+      <colour>red</colour>
+      <description>{{ recipient.metadata.emoji }}**{{ recipient.metadata.nation_name }}** has reached the maximum number of trade offers they can receive.</description>
+    </embed>
+  </message>
+</discord>
